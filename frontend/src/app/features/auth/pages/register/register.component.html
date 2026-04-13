@@ -1,0 +1,96 @@
+<div class="register-container">
+  <div class="register-card">
+    <h2 class="register-title">校园兼职平台</h2>
+    <p class="register-subtitle">创建新账号</p>
+    <div class="error-message" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
+      
+      <div class="form-group">
+        <label>用户类型</label>
+        <div class="role-selector">
+          <label class="role-option" *ngFor="let role of userRoles">
+            <input type="radio" [value]="role.value" formControlName="role">
+            <span>{{ role.label }}</span>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="username">用户名</label>
+        <input 
+          type="text" 
+          id="username"
+          formControlName="username"
+          placeholder="请输入用户名（3-50个字符）"
+          [class.error]="f['username'].touched && f['username'].invalid"
+        >
+        <div class="validation-error" *ngIf="f['username'].touched && f['username'].invalid">
+          <span *ngIf="f['username'].errors?.['required']">用户名不能为空</span>
+          <span *ngIf="f['username'].errors?.['minlength']">用户名至少3个字符</span>
+          <span *ngIf="f['username'].errors?.['maxlength']">用户名最多50个字符</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="email">邮箱</label>
+        <input 
+          type="email" 
+          id="email"
+          formControlName="email"
+          placeholder="请输入邮箱"
+          [class.error]="f['email'].touched && f['email'].invalid"
+        >
+        <div class="validation-error" *ngIf="f['email'].touched && f['email'].invalid">
+          <span *ngIf="f['email'].errors?.['required']">邮箱不能为空</span>
+          <span *ngIf="f['email'].errors?.['email']">请输入有效的邮箱地址</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="password">密码</label>
+        <div class="password-input">
+          <input 
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            placeholder="请输入密码（至少6位，含大小写字母和数字）"
+            [class.error]="f['password'].touched && f['password'].invalid"
+          >
+          <button type="button" class="toggle-password" (click)="togglePassword()">
+            {{ showPassword ? '隐藏' : '显示' }}
+          </button>
+        </div>
+        <div class="validation-error" *ngIf="f['password'].touched && f['password'].invalid">
+          <span *ngIf="f['password'].errors?.['required']">密码不能为空</span>
+          <span *ngIf="f['password'].errors?.['minlength']">密码至少6位</span>
+          <span *ngIf="f['password'].errors?.['pattern']">密码必须包含大小写字母和数字</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="confirmPassword">确认密码</label>
+        <div class="password-input">
+          <input 
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            id="confirmPassword"
+            formControlName="confirmPassword"
+            placeholder="请再次输入密码"
+            [class.error]="f['confirmPassword'].touched && f['confirmPassword'].invalid"
+          >
+          <button type="button" class="toggle-password" (click)="toggleConfirmPassword()">
+            {{ showConfirmPassword ? '隐藏' : '显示' }}
+          </button>
+        </div>
+        <div class="validation-error" *ngIf="f['confirmPassword'].touched && f['confirmPassword'].invalid">
+          <span *ngIf="f['confirmPassword'].errors?.['required']">请确认密码</span>
+          <span *ngIf="f['confirmPassword'].errors?.['passwordMismatch']">两次输入的密码不一致</span>
+        </div>
+      </div>
+      <button type="submit" class="register-btn" [disabled]="isLoading">
+        <span *ngIf="!isLoading">注册</span>
+        <span *ngIf="isLoading">注册中...</span>
+      </button>
+    </form>
+    <div class="login-link">
+      已有账号？<a routerLink="/auth/login">立即登录</a>
+    </div>
+  </div>
+</div>

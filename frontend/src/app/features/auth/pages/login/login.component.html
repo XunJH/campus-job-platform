@@ -1,0 +1,58 @@
+<div class="login-container">
+  <div class="login-card">
+    <h2 class="login-title">校园兼职平台</h2>
+    <p class="login-subtitle">欢迎回来，请登录</p>
+    <div class="error-message" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      
+      <div class="form-group">
+        <label for="username">用户名/邮箱</label>
+        <input 
+          type="text" 
+          id="username"
+          formControlName="username"
+          placeholder="请输入用户名或邮箱"
+          [class.error]="f['username'].touched && f['username'].invalid"
+        >
+        <div class="validation-error" *ngIf="f['username'].touched && f['username'].invalid">
+          <span *ngIf="f['username'].errors?.['required']">用户名不能为空</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="password">密码</label>
+        <div class="password-input">
+          <input 
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            placeholder="请输入密码"
+            [class.error]="f['password'].touched && f['password'].invalid"
+          >
+          <button type="button" class="toggle-password" (click)="togglePassword()">
+            {{ showPassword ? '隐藏' : '显示' }}
+          </button>
+        </div>
+        <div class="validation-error" *ngIf="f['password'].touched && f['password'].invalid">
+          <span *ngIf="f['password'].errors?.['required']">密码不能为空</span>
+          <span *ngIf="f['password'].errors?.['minlength']">密码至少6位</span>
+        </div>
+      </div>
+      <div class="form-group remember">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="remember">
+          <span>记住我</span>
+        </label>
+        <a routerLink="/forgot-password" class="forgot-password">忘记密码？</a>
+      </div>
+      <button type="submit" class="login-btn" [disabled]="isLoading">
+        <span *ngIf="!isLoading">登录</span>
+        <span *ngIf="isLoading">登录中...</span>
+      </button>
+    </form>
+    <div class="register-link">
+      还没有账号？<a routerLink="/auth/register">立即注册</a>
+    </div>
+  </div>
+</div>
