@@ -12,6 +12,8 @@ const { sequelize, testConnection } = require('./config/database');
 
 // 路由导入
 const authRoutes = require('./routes/authRoutes');
+const jobRoutes = require('./routes/jobRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 // 创建Express应用
 const app = express();
@@ -82,6 +84,18 @@ app.use(morgan('combined', {
   skip: (req, res) => process.env.NODE_ENV === 'test'
 }));
 
+// 根路径路由
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: '校园兼职平台 API 服务',
+    version: '1.0.0',
+    docs: 'http://localhost:3001/api-docs',
+    health: 'http://localhost:3001/health',
+    api: 'http://localhost:3001/api/v1'
+  });
+});
+
 // 健康检查路由
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -105,6 +119,8 @@ app.get('/api-docs.json', (req, res) => {
 
 // 注册路由
 app.use(`${apiPrefix}/auth`, authRoutes);
+app.use(`${apiPrefix}/jobs`, jobRoutes);
+app.use(`${apiPrefix}/users`, userRoutes);
 
 // 404处理
 app.use('*', (req, res) => {
