@@ -9,6 +9,7 @@ export class AuthService {
   
   private readonly API_URL = 'http://localhost:3001/api/v1/auth';
   private tokenKey = 'campus_job_token';
+  private rememberKey = 'campus_job_remember';
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   
   public currentUser$ = this.currentUserSubject.asObservable();
@@ -22,6 +23,11 @@ export class AuthService {
       tap(response => {
         if (response.success && response.data?.token) {
           this.setToken(response.data.token);
+          if (credentials.remember) {
+            this.setRememberCredentials(credentials.username, credentials.password);
+          } else {
+            this.clearRememberCredentials();
+          }
         }
       }),
       map(response => {
@@ -66,8 +72,21 @@ export class AuthService {
     return localStorage.getItem(this.tokenKey);
   }
 
+  getRememberCredentials(): { username: string; password: string } | null {
+    const data = localStorage.getItem(this.rememberKey);
+    return data ? JSON.parse(data) : null;
+  }
+
   private setToken(token: string): void {
     localStorage.setItem(this.tokenKey, token);
+  }
+
+  private setRememberCredentials(username: string, password: string): void {
+    localStorage.setItem(this.rememberKey, JSON.stringify({ username, password }));
+  }
+
+  private clearRememberCredentials(): void {
+    localStorage.removeItem(this.rememberKey);
   }
 
   private mapUser(backendUser: any): User {

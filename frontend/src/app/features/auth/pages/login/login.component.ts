@@ -32,6 +32,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
+    this.loadRememberedCredentials();
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
     
     if (this.authService.isAuthenticated()) {
@@ -48,6 +49,17 @@ export class LoginComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6)]],
       remember: [false]
     });
+  }
+
+  private loadRememberedCredentials(): void {
+    const remembered = this.authService.getRememberCredentials();
+    if (remembered) {
+      this.loginForm.patchValue({
+        username: remembered.username,
+        password: remembered.password,
+        remember: true
+      });
+    }
   }
 
   onSubmit(): void {

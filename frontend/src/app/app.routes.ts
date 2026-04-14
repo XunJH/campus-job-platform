@@ -15,6 +15,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/student/pages/jobs/jobs.component').then(c => c.JobsComponent)
   },
   {
+    path: 'student/profile',
+    loadComponent: () => import('./features/student/pages/profile/profile.component').then(c => c.ProfileComponent)
+  },
+  {
+  path: 'student/verification',
+  loadComponent: () => import('./features/student/pages/verification/verification.component').then(c => c.VerificationComponent)
+  },
+  {
     path: 'auth',
     loadChildren: () => import('./features/auth/auth/auth.module').then(m => m.AuthModule)
   },

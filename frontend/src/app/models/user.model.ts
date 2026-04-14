@@ -22,10 +22,12 @@ export enum AuthStatus {
  */
 export interface User {
   id: string;
+  username?: string;
   email: string;
   phone?: string;
   nickname: string;
   avatar?: string;
+  bio?: string;
   role: UserRole;
   status: AuthStatus;
   createdAt: string;
