@@ -100,16 +100,6 @@ POST /verification/fraud-check    虚假岗位检测
 POST /verification/credit-score   信用分计算
 ```
 
-### 薪资托管 `/salary`
-```
-POST /salary/audit                资金安全审核
-POST /salary/escrow               创建托管记录
-POST /salary/freeze               冻结资金（企业操作）
-POST /salary/release              发放工资
-POST /salary/dispute              发起申诉
-GET  /salary/escrow/{id}          查询托管记录详情
-GET  /salary/list/{user_id}       查询用户所有记录
-GET  /salary/account/{user_id}    查询账户余额
 ```
 
 ---
