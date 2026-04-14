@@ -1,0 +1,26 @@
+<div class="roles-container">
+  <mat-card class="roles-card">
+    <mat-card-header>
+      <mat-card-title>角色管理</mat-card-title>
+      <mat-card-subtitle>管理用户角色和权限</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="roles-list">
+        <div class="role-card" *ngFor="let role of roles">
+          <div class="role-header">
+            <h3>{{ role.name }}</h3>
+            <span class="role-description">{{ role.description }}</span>
+          </div>
+          <div class="role-permissions">
+            <h4>权限列表</h4>
+            <div class="permissions-grid">
+              <div class="permission-item" *ngFor="let permission of role.permissions">
+                <mat-checkbox [checked]="true" disabled>{{ permission }}</mat-checkbox>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
