@@ -1,1 +1,18 @@
-/campus_job_api
+# 忽略 campus_job_api 目录中的配置文件
+/campus_job_api/.env
+/campus_job_api/node_modules
+/campus_job_api/logs
+/campus_job_api/uploads
+
+# 忽略测试文件
+/campus_job_api/tests
+/campus_job_api/test
+
+# 但保留 API 文件和控制器
+!campus_job_api/
+!campus_job_api/controllers/
+!campus_job_api/models/
+!campus_job_api/middlewares/
+!campus_job_api/config/
+!campus_job_api/routes/
+!campus_job_api/README.md
