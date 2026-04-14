@@ -1,0 +1,94 @@
+<div class="verification-page">
+  <h1>企业认证</h1>
+
+  <div *ngIf="isLoading" class="loading">加载中...</div>
+
+  <div *ngIf="!isLoading && status" class="status-section">
+    <div class="status-badge" [class]="statusClass">
+      {{ statusText }}
+    </div>
+
+    <div *ngIf="status.status === 'pending'" class="info-message">
+      <p>您的认证申请正在审核中，请耐心等待。</p>
+      <p *ngIf="status.submittedAt">提交时间: {{ status.submittedAt | date:'yyyy-MM-dd HH:mm' }}</p>
+    </div>
+
+    <div *ngIf="status.status === 'approved'" class="info-message success">
+      <p>恭喜！您的企业已通过认证。</p>
+      <p *ngIf="status.companyName">企业名称: {{ status.companyName }}</p>
+      <p *ngIf="status.reviewedAt">审核时间: {{ status.reviewedAt | date:'yyyy-MM-dd HH:mm' }}</p>
+    </div>
+
+    <div *ngIf="status.status === 'rejected'" class="info-message error">
+      <p>您的认证申请被拒绝。</p>
+      <p *ngIf="status.rejectionReason">原因: {{ status.rejectionReason }}</p>
+      <p *ngIf="status.submittedAt">提交时间: {{ status.submittedAt | date:'yyyy-MM-dd HH:mm' }}</p>
+      <p>请修改信息后重新提交。</p>
+    </div>
+  </div>
+
+  <div *ngIf="message" class="message" [class.error]="status?.status === 'rejected'">
+    {{ message }}
+  </div>
+
+  <form *ngIf="canApply" [formGroup]="applyForm" (ngSubmit)="onSubmit()" class="apply-form">
+    <h2>认证申请</h2>
+
+    <div class="form-group">
+      <label>企业名称 *</label>
+      <input type="text" formControlName="companyName" placeholder="请输入企业全称" />
+      <div *ngIf="applyForm.get('companyName')?.invalid && applyForm.get('companyName')?.touched" class="error-text">
+        请输入企业名称
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>营业执照号 *</label>
+      <input type="text" formControlName="licenseNumber" placeholder="请输入营业执照号" />
+      <div *ngIf="applyForm.get('licenseNumber')?.invalid && applyForm.get('licenseNumber')?.touched" class="error-text">
+        请输入营业执照号
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>联系人姓名 *</label>
+      <input type="text" formControlName="contactName" placeholder="请输入联系人姓名" />
+      <div *ngIf="applyForm.get('contactName')?.invalid && applyForm.get('contactName')?.touched" class="error-text">
+        请输入联系人姓名
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>联系人电话 *</label>
+      <input type="text" formControlName="contactPhone" placeholder="请输入11位手机号" />
+      <div *ngIf="applyForm.get('contactPhone')?.invalid && applyForm.get('contactPhone')?.touched" class="error-text">
+        请输入有效的手机号码
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>营业执照图片URL *</label>
+      <input type="text" formControlName="licenseImage" placeholder="请输入营业执照图片URL" />
+      <img *ngIf="applyForm.value.licenseImage" [src]="applyForm.value.licenseImage" alt="营业执照预览" class="license-preview" />
+      <div *ngIf="applyForm.get('licenseImage')?.invalid && applyForm.get('licenseImage')?.touched" class="error-text">
+        请输入营业执照图片URL
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>企业地址</label>
+      <input type="text" formControlName="address" placeholder="请输入企业地址（选填）" />
+    </div>
+
+    <div class="actions">
+      <button type="submit" [disabled]="isSubmitting || applyForm.invalid">
+        {{ isSubmitting ? '提交中...' : '提交认证申请' }}
+      </button>
+    </div>
+  </form>
+
+  <div class="actions">
+    <button type="button" (click)="refresh()">刷新状态</button>
+    <a routerLink="/student/jobs">返回首页</a>
+  </div>
+</div>

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { auth, roleGuard } = require('../middleware/auth');
+const { authenticateToken: auth } = require('../middlewares/auth');
+const { roleGuard } = require('../middlewares/roleGuard');
 const verificationController = require('../controllers/verificationController');
 
 // 获取当前认证状态 - 所有登录用户均可访问

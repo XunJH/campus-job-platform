@@ -19,8 +19,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/student/pages/profile/profile.component').then(c => c.ProfileComponent)
   },
   {
-  path: 'student/verification',
-  loadComponent: () => import('./features/student/pages/verification/verification.component').then(c => c.VerificationComponent)
+    path: 'student/verification',
+    loadComponent: () => import('./features/certification/pages/verification/verification.component').then(c => c.VerificationComponent)
+  },
+  {
+    path: 'employer/dashboard',
+    loadComponent: () => import('./features/employer/pages/dashboard/dashboard.component').then(c => c.EmployerDashboardComponent)
   },
   {
     path: 'auth',

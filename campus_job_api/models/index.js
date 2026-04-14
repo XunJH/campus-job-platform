@@ -3,6 +3,7 @@ const User = require('./User');
 const Job = require('./Job');
 const Application = require('./Application');
 const Bookmark = require('./Bookmark');
+const Verification = require('./Verification');
 
 // 定义模型关联关系
 
@@ -72,5 +73,6 @@ module.exports = {
   User,
   Job,
   Application,
-  Bookmark
+  Bookmark,
+  Verification
 };

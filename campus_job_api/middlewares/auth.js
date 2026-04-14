@@ -24,7 +24,7 @@ const authenticateToken = async (req, res, next) => {
     // 查找用户，确保用户存在且状态为active
     const user = await User.findOne({
       where: {
-        id: decoded.userId,
+        id: decoded.id,
         status: 'active'
       },
       attributes: { exclude: ['password'] } // 不返回密码字段
@@ -74,7 +74,7 @@ const optionalAuth = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findOne({
         where: {
-          id: decoded.userId,
+          id: decoded.id,
           status: 'active'
         },
         attributes: { exclude: ['password'] }

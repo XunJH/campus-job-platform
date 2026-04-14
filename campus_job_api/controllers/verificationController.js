@@ -1,4 +1,6 @@
-const { Verification } = require('../models');
+const { sequelize } = require('../config/database');
+const { DataTypes } = require('sequelize');
+const Verification = require('../models/Verification')(sequelize, DataTypes);
 
 /**
  * @swagger
@@ -46,7 +48,7 @@ const { Verification } = require('../models');
  */
 exports.getStatus = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = parseInt(req.user.id, 10);
 
     const verification = await Verification.findOne({
       where: { userId }
@@ -165,7 +167,7 @@ exports.getStatus = async (req, res) => {
  */
 exports.applyVerification = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = parseInt(req.user.id, 10);
     const {
       companyName,
       licenseNumber,
