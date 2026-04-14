@@ -20,13 +20,14 @@ exports.createJob = async (req, res) => {
       requirements,
       salary,
       location,
-      category,
-      workType,
-      applicationDeadline
+      jobType,
+      salaryType,
+      workingHours,
+      deadline
     } = req.body;
 
     // 验证必填字段
-    if (!title || !description || !requirements || !salary || !location || !category || !applicationDeadline) {
+    if (!title || !description || !requirements || !salary || !location || !jobType) {
       return res.status(400).json({
         success: false,
         message: '请填写所有必填字段'
@@ -40,9 +41,10 @@ exports.createJob = async (req, res) => {
       requirements,
       salary,
       location,
-      category,
-      workType: workType || 'full-time',
-      applicationDeadline: new Date(applicationDeadline),
+      jobType,
+      salaryType: salaryType || 'monthly',
+      workingHours,
+      deadline: deadline ? new Date(deadline) : null,
       employerId: req.user.id
     });
 
@@ -161,9 +163,10 @@ exports.updateJob = async (req, res) => {
       requirements,
       salary,
       location,
-      category,
-      workType,
-      applicationDeadline,
+      jobType,
+      salaryType,
+      workingHours,
+      deadline,
       status
     } = req.body;
 
@@ -192,9 +195,10 @@ exports.updateJob = async (req, res) => {
       requirements,
       salary,
       location,
-      category,
-      workType,
-      applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : job.applicationDeadline,
+      jobType,
+      salaryType,
+      workingHours,
+      deadline: deadline ? new Date(deadline) : job.deadline,
       status: status !== undefined ? status : job.status
     });
 

@@ -17,7 +17,27 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  role?: 'student' | 'employer' | 'admin';
+}
+
 export interface LoginResponse {
-  access_token: string;
-  user: User;
+  success: boolean;
+  message: string;
+  data: {
+    token: string;
+    user: User;
+  };
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  message: string;
+  data: {
+    token: string;
+    user: User;
+  };
 }

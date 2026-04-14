@@ -16,6 +16,19 @@ mat-card-header {
   border-bottom: 1px solid #e0e0e0;
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.header-content button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 mat-card-title {
   font-size: 20px;
   font-weight: 600;

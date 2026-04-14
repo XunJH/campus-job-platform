@@ -1,8 +1,16 @@
 <div class="users-container">
   <mat-card class="users-card">
     <mat-card-header>
-      <mat-card-title>用户管理</mat-card-title>
-      <mat-card-subtitle>管理平台用户账号</mat-card-subtitle>
+      <div class="header-content">
+        <div>
+          <mat-card-title>用户管理</mat-card-title>
+          <mat-card-subtitle>管理平台用户账号</mat-card-subtitle>
+        </div>
+        <button mat-raised-button color="warn" (click)="logout()">
+          <mat-icon>exit_to_app</mat-icon>
+          登出
+        </button>
+      </div>
     </mat-card-header>
     <mat-card-content>
       <div class="users-table-container">

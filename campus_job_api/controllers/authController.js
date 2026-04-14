@@ -392,15 +392,6 @@ exports.createAdmin = async (req, res) => {
   try {
     const { username, password, email } = req.body;
 
-    // 检查是否已存在管理员
-    const existingAdmin = await User.findOne({ where: { role: 'admin' } });
-    if (existingAdmin) {
-      return res.status(400).json({
-        success: false,
-        message: '管理员账号已存在'
-      });
-    }
-
     // 检查用户名是否已存在
     const existingUser = await User.findOne({ where: { username } });
     if (existingUser) {

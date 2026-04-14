@@ -60,3 +60,27 @@ button {
   padding: 12px;
   font-size: 16px;
 }
+
+mat-card-footer {
+  padding: 20px;
+  text-align: center;
+  background-color: #f9f9f9;
+  border-top: 1px solid #e0e0e0;
+}
+
+.register-link {
+  font-size: 14px;
+  color: #666;
+}
+
+.register-link a {
+  color: #1976d2;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.register-link a:hover {
+  color: #1565c0;
+  text-decoration: underline;
+}

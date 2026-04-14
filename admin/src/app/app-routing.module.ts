@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { LoginComponent } from './features/auth/login.component';
+import { RegisterComponent } from './features/auth/register.component';
 import { UsersComponent } from './features/users/users.component';
 import { RolesComponent } from './features/roles/roles.component';
 import { AuthGuard } from './core/guards/auth.guard';
@@ -10,6 +11,11 @@ const routes: Routes = [
     path: 'login',
     component: LoginComponent,
     title: '管理员登录'
+  },
+  {
+    path: 'register',
+    component: RegisterComponent,
+    title: '管理员注册'
   },
   {
     path: 'users',

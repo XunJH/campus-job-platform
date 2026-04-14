@@ -3,7 +3,9 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { UserService } from '../../core/services/user.service';
+import { AuthService } from '../../core/services/auth.service';
 import { User } from '../../models/user.model';
 
 @Component({
@@ -17,7 +19,7 @@ export class UsersComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  constructor(private userService: UserService, private snackBar: MatSnackBar) {
+  constructor(private userService: UserService, private authService: AuthService, private router: Router, private snackBar: MatSnackBar) {
     this.dataSource = new MatTableDataSource<User>();
   }
 
@@ -72,5 +74,10 @@ export class UsersComponent implements OnInit {
         }
       );
     }
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 }

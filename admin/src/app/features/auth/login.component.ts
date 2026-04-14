@@ -41,8 +41,8 @@ export class LoginComponent implements OnInit {
     const credentials = this.loginForm.value;
     this.authService.login(credentials).subscribe(
       (response) => {
-        localStorage.setItem('token', response.access_token);
-        localStorage.setItem('user', JSON.stringify(response.user));
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
         this.router.navigate(['/users']);
       },
       (error) => {
