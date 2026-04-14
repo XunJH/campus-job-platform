@@ -54,6 +54,7 @@ copy .env.example .env
 
 # 编辑 .env，填入你的 API Key
 # 如果暂时没有 Key，保持 USE_MOCK=true 即可直接运行
+#接入的deepseek
 ```
 
 ### 3. 启动服务
