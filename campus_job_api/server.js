@@ -12,6 +12,7 @@ const { sequelize, testConnection } = require('./config/database');
 
 // 路由导入
 const authRoutes = require('./routes/authRoutes');
+const jobRoutes = require('./routes/jobRoutes');
 
 // 创建Express应用
 const app = express();
@@ -105,6 +106,7 @@ app.get('/api-docs.json', (req, res) => {
 
 // 注册路由
 app.use(`${apiPrefix}/auth`, authRoutes);
+app.use(`${apiPrefix}/jobs`, jobRoutes);
 
 // 404处理
 app.use('*', (req, res) => {

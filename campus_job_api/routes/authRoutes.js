@@ -172,6 +172,54 @@ router.post('/login',
 
 /**
  * @swagger
+ * /api/auth/admin-login:
+ *   post:
+ *     summary: 管理员登录
+ *     tags: [认证]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: 管理员用户名
+ *               password:
+ *                 type: string
+ *                 description: 管理员密码
+ *     responses:
+ *       200:
+ *         description: 管理员登录成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/LoginResponse'
+ *       401:
+ *         description: 认证失败
+ *       403:
+ *         description: 非管理员账号
+ */
+router.post('/admin-login',
+  [
+    body('username')
+      .notEmpty()
+      .withMessage('管理员用户名不能为空'),
+
+    body('password')
+      .notEmpty()
+      .withMessage('管理员密码不能为空')
+  ],
+  authController.adminLogin
+);
+
+/**
+ * @swagger
  * /api/auth/profile:
  *   get:
  *     summary: 获取当前用户信息
@@ -308,6 +356,59 @@ router.put('/change-password',
 router.post('/logout',
   authenticateToken,
   authController.logout
+);
+
+/**
+ * @swagger
+ * /api/auth/create-admin:
+ *   post:
+ *     summary: 创建管理员账号（首次使用）
+ *     tags: [认证]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *               - email
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 minLength: 3
+ *                 description: 管理员用户名
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 description: 管理员密码
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: 管理员邮箱
+ *     responses:
+ *       201:
+ *         description: 管理员账号创建成功
+ *       400:
+ *         description: 请求参数错误或管理员已存在
+ */
+router.post('/create-admin',
+  [
+    body('username')
+      .trim()
+      .isLength({ min: 3, max: 50 })
+      .withMessage('管理员用户名长度必须在3-50个字符之间'),
+
+    body('password')
+      .isLength({ min: 6 })
+      .withMessage('密码至少需要6个字符'),
+
+    body('email')
+      .isEmail()
+      .withMessage('请输入有效的邮箱地址')
+  ],
+  authController.createAdmin
 );
 
 module.exports = router;

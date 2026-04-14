@@ -1,44 +1,52 @@
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const { User } = require('../models');
-const { Sequelize } = require('sequelize');
-const Op = Sequelize.Op;
-const { validationResult } = require('express-validator');
+
+// JWT Secret - 实际项目中应该从环境变量中读取
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+
+/**
+ * 生成 JWT token
+ */
+const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user.id,
+      username: user.username,
+      role: user.role
+    },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+};
 
 /**
  * 用户注册
- * @param {Object} req - Express请求对象
- * @param {Object} res - Express响应对象
  */
 exports.register = async (req, res) => {
   try {
-    // 验证输入
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: '输入数据验证失败',
-        errors: errors.array()
-      });
-    }
-
-    const { username, password, email, role } = req.body;
+    const { username, password, email, role = 'student' } = req.body;
 
     // 检查用户名是否已存在
-    const existingUser = await User.findOne({
-      where: {
-        [Op.or]: [{ username }, { email }]
-      }
-    });
-
-    if (existingUser) {
+    const existingUserByUsername = await User.findOne({ where: { username } });
+    if (existingUserByUsername) {
       return res.status(400).json({
         success: false,
-        message: '用户名或邮箱已存在'
+        message: '用户名已存在'
       });
     }
 
-    // 密码加密
+    // 检查邮箱是否已存在
+    const existingUserByEmail = await User.findOne({ where: { email } });
+    if (existingUserByEmail) {
+      return res.status(400).json({
+        success: false,
+        message: '邮箱已被注册'
+      });
+    }
+
+    // 加密密码
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -47,84 +55,72 @@ exports.register = async (req, res) => {
       username,
       password: hashedPassword,
       email,
-      role: role || 'student'
+      role,
+      status: 'active'
     });
 
-    // 返回用户信息（不包含密码）
-    const userResponse = user.toJSON();
+    // 生成 token
+    const token = generateToken(user);
 
-    // 生成JWT Token（注册后自动登录）
-    const token = jwt.sign(
-      {
-        userId: userResponse.id,
-        username: userResponse.username,
-        role: userResponse.role
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: process.env.JWT_EXPIRES_IN || '24h'
-      }
-    );
+    // 返回用户信息（不包含密码）
+    const { password: _, ...userWithoutPassword } = user.toJSON();
 
     res.status(201).json({
       success: true,
       message: '注册成功',
       data: {
         token,
-        user: {
-          id: userResponse.id,
-          username: userResponse.username,
-          email: userResponse.email,
-          role: userResponse.role,
-          avatar: userResponse.avatar,
-          status: userResponse.status
-        }
+        user: userWithoutPassword
       }
     });
-
   } catch (error) {
     console.error('注册错误:', error);
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({
+        success: false,
+        message: '数据验证失败',
+        errors: error.errors.map(err => ({
+          field: err.path,
+          message: err.message
+        }))
+      });
+    }
     res.status(500).json({
       success: false,
-      message: '服务器错误',
-      error: error.message
+      message: '服务器内部错误'
     });
   }
 };
 
 /**
  * 用户登录
- * @param {Object} req - Express请求对象
- * @param {Object} res - Express响应对象
  */
 exports.login = async (req, res) => {
   try {
-    // 验证输入
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: '输入数据验证失败',
-        errors: errors.array()
-      });
-    }
-
     const { username, password } = req.body;
 
-    // 查找用户
+    // 查找用户（用户名或邮箱）
     const user = await User.findOne({
       where: {
-        [Op.or]: [
+        [require('sequelize').Op.or]: [
           { username: username },
           { email: username }
         ]
       }
     });
 
-    if (!user || user.status !== 'active') {
+    if (!user) {
       return res.status(401).json({
         success: false,
-        message: '用户不存在或账户已被禁用'
+        message: '用户名或密码错误'
+      });
+    }
+
+    // 检查用户状态
+    if (user.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        message: '账号已被禁用，请联系管理员'
       });
     }
 
@@ -133,148 +129,211 @@ exports.login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: '密码错误'
+        message: '用户名或密码错误'
       });
     }
 
-    // 更新最后登录时间
-    await user.update({ lastLoginAt: new Date() });
+    // 生成 token
+    const token = generateToken(user);
 
-    // 生成JWT Token
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        username: user.username,
-        role: user.role
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: process.env.JWT_EXPIRES_IN || '24h'
-      }
-    );
+    // 返回用户信息（不包含密码）
+    const { password: _, ...userWithoutPassword } = user.toJSON();
 
-    // 返回登录结果
-    const userResponse = user.toJSON();
-
-    res.status(200).json({
+    res.json({
       success: true,
       message: '登录成功',
       data: {
         token,
-        user: {
-          id: userResponse.id,
-          username: userResponse.username,
-          email: userResponse.email,
-          role: userResponse.role,
-          avatar: userResponse.avatar,
-          status: userResponse.status
-        }
+        user: userWithoutPassword
       }
     });
-
   } catch (error) {
     console.error('登录错误:', error);
     res.status(500).json({
       success: false,
-      message: '服务器错误',
-      error: error.message
+      message: '服务器内部错误'
+    });
+  }
+};
+
+/**
+ * 管理员登录
+ */
+exports.adminLogin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // 查找用户（用户名或邮箱）
+    const user = await User.findOne({
+      where: {
+        [require('sequelize').Op.or]: [
+          { username: username },
+          { email: username }
+        ]
+      }
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: '管理员用户名或密码错误'
+      });
+    }
+
+    // 检查是否为管理员
+    if (user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: '非管理员账号，无权访问'
+      });
+    }
+
+    // 检查用户状态
+    if (user.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        message: '管理员账号已被禁用'
+      });
+    }
+
+    // 验证密码
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: '管理员用户名或密码错误'
+      });
+    }
+
+    // 生成 token
+    const token = generateToken(user);
+
+    // 返回用户信息（不包含密码）
+    const { password: _, ...userWithoutPassword } = user.toJSON();
+
+    res.json({
+      success: true,
+      message: '管理员登录成功',
+      data: {
+        token,
+        user: userWithoutPassword
+      }
+    });
+  } catch (error) {
+    console.error('管理员登录错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
     });
   }
 };
 
 /**
  * 获取当前用户信息
- * @param {Object} req - Express请求对象
- * @param {Object} res - Express响应对象
  */
 exports.getCurrentUser = async (req, res) => {
   try {
-    const user = req.user;
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password'] }
+    });
 
-    res.status(200).json({
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在'
+      });
+    }
+
+    res.json({
       success: true,
-      data: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar,
-        phone: user.phone,
-        bio: user.bio,
-        lastLoginAt: user.lastLoginAt,
-        status: user.status,
-        createdAt: user.createdAt
-      }
+      data: user
     });
   } catch (error) {
     console.error('获取用户信息错误:', error);
     res.status(500).json({
       success: false,
-      message: '服务器错误'
+      message: '服务器内部错误'
     });
   }
 };
 
 /**
  * 更新用户信息
- * @param {Object} req - Express请求对象
- * @param {Object} res - Express响应对象
  */
 exports.updateUser = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
+    const { email, phone, bio, avatar } = req.body;
+    const userId = req.user.id;
+
+    // 检查用户是否存在
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        message: '输入数据验证失败',
-        errors: errors.array()
+        message: '用户不存在'
       });
     }
 
-    const { email, phone, bio, avatar } = req.body;
-    const user = req.user;
+    // 检查邮箱是否被其他用户使用
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: '邮箱已被使用'
+        });
+      }
+    }
 
     // 更新用户信息
-    const updatedUser = await user.update({
-      ...(email && { email }),
-      ...(phone && { phone }),
-      ...(bio !== undefined && { bio }),
-      ...(avatar && { avatar })
+    const updateData = { email, phone, bio, avatar };
+    await user.update(updateData);
+
+    // 获取更新后的用户信息（不包含密码）
+    const updatedUser = await User.findByPk(userId, {
+      attributes: { exclude: ['password'] }
     });
 
-    res.status(200).json({
+    res.json({
       success: true,
-      message: '用户信息更新成功',
-      data: updatedUser.toJSON()
+      message: '信息更新成功',
+      data: updatedUser
     });
   } catch (error) {
     console.error('更新用户信息错误:', error);
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({
+        success: false,
+        message: '数据验证失败',
+        errors: error.errors.map(err => ({
+          field: err.path,
+          message: err.message
+        }))
+      });
+    }
     res.status(500).json({
       success: false,
-      message: '服务器错误',
-      error: error.message
+      message: '服务器内部错误'
     });
   }
 };
 
 /**
  * 修改密码
- * @param {Object} req - Express请求对象
- * @param {Object} res - Express响应对象
  */
 exports.changePassword = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    // 查找用户
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        message: '输入数据验证失败',
-        errors: errors.array()
+        message: '用户不存在'
       });
     }
-
-    const { currentPassword, newPassword } = req.body;
-    const user = req.user;
 
     // 验证当前密码
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
@@ -292,7 +351,7 @@ exports.changePassword = async (req, res) => {
     // 更新密码
     await user.update({ password: hashedNewPassword });
 
-    res.status(200).json({
+    res.json({
       success: true,
       message: '密码修改成功'
     });
@@ -300,21 +359,19 @@ exports.changePassword = async (req, res) => {
     console.error('修改密码错误:', error);
     res.status(500).json({
       success: false,
-      message: '服务器错误',
-      error: error.message
+      message: '服务器内部错误'
     });
   }
 };
 
 /**
- * 登出（客户端删除Token即可）
- * @param {Object} req - Express请求对象
- * @param {Object} res - Express响应对象
+ * 用户登出
  */
 exports.logout = async (req, res) => {
   try {
-    // 服务器端可以添加Token黑名单，这里简单返回成功
-    res.status(200).json({
+    // JWT 是无状态的，登出主要是客户端删除 token
+    // 在实际项目中，如果使用 Redis 存储 token，可以在这里将 token 加入黑名单
+    res.json({
       success: true,
       message: '登出成功'
     });
@@ -322,7 +379,69 @@ exports.logout = async (req, res) => {
     console.error('登出错误:', error);
     res.status(500).json({
       success: false,
-      message: '服务器错误'
+      message: '服务器内部错误'
+    });
+  }
+};
+
+/**
+ * 初始化管理员账号
+ * 用于创建第一个管理员账号
+ */
+exports.createAdmin = async (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+
+    // 检查是否已存在管理员
+    const existingAdmin = await User.findOne({ where: { role: 'admin' } });
+    if (existingAdmin) {
+      return res.status(400).json({
+        success: false,
+        message: '管理员账号已存在'
+      });
+    }
+
+    // 检查用户名是否已存在
+    const existingUser = await User.findOne({ where: { username } });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: '用户名已存在'
+      });
+    }
+
+    // 加密密码
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // 创建管理员账号
+    const admin = await User.create({
+      username,
+      password: hashedPassword,
+      email,
+      role: 'admin',
+      status: 'active'
+    });
+
+    // 生成 token
+    const token = generateToken(admin);
+
+    // 返回用户信息（不包含密码）
+    const { password: _, ...adminWithoutPassword } = admin.toJSON();
+
+    res.status(201).json({
+      success: true,
+      message: '管理员账号创建成功',
+      data: {
+        token,
+        user: adminWithoutPassword
+      }
+    });
+  } catch (error) {
+    console.error('创建管理员账号错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
     });
   }
 };
