@@ -1,11 +1,154 @@
-<div class="student-home">
-  <header class="student-header">
-    <h1>学生端首页</h1>
-    <button class="logout-btn" (click)="logout()">退出登录</button>
-  </header>
-  <p>欢迎登录校园兼职平台！</p>
-  <p>岗位浏览功能开发中...</p>
-  <nav>
-    <a routerLink="/student/profile">个人中心</a>
-  </nav>
+<div class="page-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L4 7v10l8 5 8-5V7L12 2z" fill="currentColor" />
+        </svg>
+        <span>CampusJob</span>
+      </div>
+    </div>
+
+    <div class="sidebar-content">
+      <nav class="nav-section">
+        <a routerLink="/student/jobs" class="nav-item active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="7" height="9" x="3" y="3" rx="1"/>
+            <rect width="7" height="5" x="14" y="3" rx="1"/>
+            <rect width="7" height="9" x="14" y="12" rx="1"/>
+            <rect width="7" height="5" x="3" y="16" rx="1"/>
+          </svg>
+          <span>岗位浏览</span>
+          <span class="badge badge-beta">BETA</span>
+        </a>
+        <a routerLink="/student/applications" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" x2="8" y1="13" y2="13"/>
+            <line x1="16" x2="8" y1="17" y2="17"/>
+            <line x1="10" x2="8" y1="9" y2="9"/>
+          </svg>
+          <span>我的申请</span>
+        </a>
+        <a routerLink="/student/favorites" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+          </svg>
+          <span>收藏岗位</span>
+        </a>
+      </nav>
+
+      <div class="nav-divider"></div>
+
+      <nav class="nav-section">
+        <p class="nav-label">个人中心</p>
+        <a routerLink="/student/profile" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span>个人资料</span>
+        </a>
+        <a routerLink="/student/resume" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span>简历管理</span>
+        </a>
+        <a routerLink="/student/wallet" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+          </svg>
+          <span>我的钱包</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" (click)="logout()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" x2="9" y1="12" y2="12"/>
+        </svg>
+        <span>退出登录</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-left">
+        <h1>岗位浏览</h1>
+        <span class="badge badge-beta">BETA</span>
+      </div>
+      <div class="header-right">
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input type="text" placeholder="搜索岗位...">
+        </div>
+        <button class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+          </svg>
+          筛选
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div class="content-area">
+      <!-- Welcome Card -->
+      <div class="welcome-card">
+        <div class="welcome-content">
+          <h2>欢迎回来！👋</h2>
+          <p>今天有 24 个新岗位等你来发现</p>
+        </div>
+        <div class="welcome-stats">
+          <div class="stat">
+            <span class="stat-value">12</span>
+            <span class="stat-label">已申请</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">5</span>
+            <span class="stat-label">待面试</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">3</span>
+            <span class="stat-label">新消息</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Job List Placeholder -->
+      <div class="jobs-section">
+        <div class="section-header">
+          <h3>推荐岗位</h3>
+          <a href="#" class="link">查看全部</a>
+        </div>
+        
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+          </div>
+          <h3>岗位列表开发中</h3>
+          <p>我们正在为你准备更多优质岗位，敬请期待！</p>
+          <button class="btn btn-outline">浏览全部岗位</button>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>

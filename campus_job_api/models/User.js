@@ -57,6 +57,12 @@ const User = sequelize.define('User', {
     allowNull: true,
     comment: '个人简介'
   },
+  creditScore: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 100,
+    comment: '信用评分'
+  },
   lastLoginAt: {
     type: DataTypes.DATE,
     allowNull: true,

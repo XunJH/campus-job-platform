@@ -5,14 +5,14 @@ import { Router } from '@angular/router';
 import { inject } from '@angular/core';
 
 /**
- * @功能 Token 拦截器
- * @说明 自动为需要认证的请求附加 Authorization Header，处理 401 跳转登录
+ * Token 拦截器：只为同域 /api 请求附加 Authorization Header，并统一处理 401 跳转
  */
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const token = localStorage.getItem('campus_job_token');
   
-  if (token) {
+  // 仅对 /api 开头的请求附加 Token
+  if (token && req.url.startsWith('/api')) {
     req = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
@@ -24,7 +24,9 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
     catchError(error => {
       if (error.status === 401) {
         localStorage.removeItem('campus_job_token');
-        router.navigate(['/auth/login']);
+        router.navigate(['/auth/login'], {
+          queryParams: { returnUrl: router.url }
+        });
       }
       return throwError(() => error);
     })

@@ -1,0 +1,1 @@
+import{n as e,q as r,ta as s}from"./chunk-FAARH5FV.js";var n=class t{constructor(i){this.http=i}API_URL="/api/v1/verification";getStatus(){return this.http.get(`${this.API_URL}/status`)}apply(i){return this.http.post(`${this.API_URL}/apply`,i)}static \u0275fac=function(a){return new(a||t)(r(s))};static \u0275prov=e({token:t,factory:t.\u0275fac,providedIn:"root"})};export{n as a};

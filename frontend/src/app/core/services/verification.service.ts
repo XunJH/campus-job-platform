@@ -5,6 +5,16 @@ import { Observable } from 'rxjs';
 export interface VerificationStatus {
   status: 'unsubmitted' | 'pending' | 'approved' | 'rejected';
   companyName?: string;
+  licenseNumber?: string;
+  contactName?: string;
+  contactPhone?: string;
+  licenseImage?: string;
+  address?: string;
+  city?: string;
+  industry?: string;
+  scale?: string;
+  website?: string;
+  otherQualifications?: string;
   rejectionReason?: string;
   submittedAt?: string;
   reviewedAt?: string;
@@ -17,11 +27,16 @@ export interface VerificationApplyData {
   contactPhone: string;
   licenseImage: string;
   address?: string;
+  city?: string;
+  industry?: string;
+  scale?: string;
+  website?: string;
+  otherQualifications?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class VerificationService {
-  private readonly API_URL = 'http://localhost:3001/api/v1/verification';
+  private readonly API_URL = '/api/v1/verification';
 
   constructor(private http: HttpClient) {}
 

@@ -1,36 +1,390 @@
-.employer-dashboard {
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 20px;
+/**
+ * Employer Dashboard - Contra Design System
+ */
 
-  .dashboard-header {
+// Reuse sidebar styles
+@use '../../../student/pages/jobs/jobs.component.scss';
+
+// ============================================
+// Dashboard Specific Styles
+// ============================================
+.dashboard-content {
+  max-width: 1200px;
+}
+
+// ============================================
+// Welcome Banner
+// ============================================
+.welcome-banner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: linear-gradient(135deg, #111827 0%, #374151 100%);
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  color: white;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem;
+  }
+  
+  &.approved {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  }
+  
+  &.pending {
+    background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  }
+  
+  &.rejected {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  }
+  
+  .banner-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.2);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-
-    h1 {
-      margin: 0;
-    }
-
-    .actions {
-      a, button {
-        margin-left: 10px;
-        padding: 8px 16px;
-        cursor: pointer;
-      }
+    justify-content: center;
+    flex-shrink: 0;
+    
+    svg {
+      color: white;
     }
   }
-
-  nav {
-    margin-top: 20px;
-
-    a {
-      padding: 10px 20px;
-      background: #007bff;
+  
+  .banner-content {
+    flex: 1;
+    
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
       color: white;
-      text-decoration: none;
-      border-radius: 4px;
+      margin-bottom: 0.5rem;
     }
+    
+    p {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.9);
+      max-width: 500px;
+    }
+  }
+  
+  .btn-white {
+    background: white;
+    color: #111827;
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s ease-in-out;
+    flex-shrink: 0;
+    
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+// ============================================
+// Loading State
+// ============================================
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 1rem;
+  }
+  
+  p {
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ============================================
+// Stats Grid
+// ============================================
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  
+  &.blue {
+    background: #eff6ff;
+    color: #3b82f6;
+  }
+  
+  &.green {
+    background: #f0fdf4;
+    color: #22c55e;
+  }
+  
+  &.yellow {
+    background: #fffbeb;
+    color: #f59e0b;
+  }
+  
+  &.purple {
+    background: #faf5ff;
+    color: #a855f7;
+  }
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+// ============================================
+// Quick Actions
+// ============================================
+.quick-actions {
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 1rem;
+  }
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border: 1px solid #f3f4f6;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  transition: all 0.15s ease-in-out;
+  
+  &:hover {
+    border-color: #e5e7eb;
+    background: #f9fafb;
+    transform: translateY(-2px);
+  }
+}
+
+.action-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &.blue {
+    background: #eff6ff;
+    color: #3b82f6;
+  }
+  
+  &.green {
+    background: #f0fdf4;
+    color: #22c55e;
+  }
+  
+  &.yellow {
+    background: #fffbeb;
+    color: #f59e0b;
+  }
+  
+  &.purple {
+    background: #faf5ff;
+    color: #a855f7;
+  }
+}
+
+.action-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+// ============================================
+// Empty State Card
+// ============================================
+.empty-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 1rem;
+  padding: 3rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  
+  .empty-icon {
+    color: #e5e7eb;
+    margin-bottom: 1.5rem;
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.75rem;
+  }
+  
+  p {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  
+  li {
+    font-size: 0.875rem;
+    color: #374151;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+// ============================================
+// Buttons
+// ============================================
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  text-decoration: none;
+  
+  &-primary {
+    background: #111827;
+    color: white;
+    
+    &:hover {
+      background: #374151;
+    }
+  }
+}
+
+// ============================================
+// Badges
+// ============================================
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  
+  &-beta {
+    background: #dbeafe;
+    color: #3b82f6;
   }
 }

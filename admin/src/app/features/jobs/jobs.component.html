@@ -1,0 +1,123 @@
+<h1 class="text-xl font-semibold text-gray-900 mb-5">职位管理</h1>
+
+<div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+  <div class="flex items-center gap-2 mb-5 border-b border-gray-100">
+    <button
+      (click)="switchTab('all')"
+      class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
+      [ngClass]="activeTab === 'all' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'"
+    >
+      全部职位
+    </button>
+    <button
+      (click)="switchTab('pending')"
+      class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
+      [ngClass]="activeTab === 'pending' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'"
+    >
+      待审核
+    </button>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-3 mb-5" *ngIf="activeTab === 'all'">
+    <input
+      type="text"
+      [(ngModel)]="searchText"
+      (keyup.enter)="onSearch()"
+      placeholder="搜索职位名称/公司"
+      class="w-full sm:w-64 h-10 px-4 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 transition-colors"
+    />
+    <button
+      (click)="onSearch()"
+      class="inline-flex items-center justify-center h-10 px-5 rounded-full bg-gray-900 text-white text-sm font-medium hover:bg-black transition-colors"
+    >
+      搜索
+    </button>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table mat-table [dataSource]="jobs" class="w-full">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef>ID</th>
+        <td mat-cell *matCellDef="let job">{{ job.id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="title">
+        <th mat-header-cell *matHeaderCellDef>职位名称</th>
+        <td mat-cell *matCellDef="let job">{{ job.title }}</td>
+      </ng-container>
+      <ng-container matColumnDef="company">
+        <th mat-header-cell *matHeaderCellDef>发布企业</th>
+        <td mat-cell *matCellDef="let job">{{ job.employer?.username || '-' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="location">
+        <th mat-header-cell *matHeaderCellDef>地点</th>
+        <td mat-cell *matCellDef="let job">{{ job.location || '-' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="salary">
+        <th mat-header-cell *matHeaderCellDef>薪资</th>
+        <td mat-cell *matCellDef="let job">{{ job.salary || '-' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="auditStatus">
+        <th mat-header-cell *matHeaderCellDef>审核状态</th>
+        <td mat-cell *matCellDef="let job">
+          <span [ngClass]="getAuditStatusClass(job.auditStatus)">{{ getAuditStatusText(job.auditStatus) }}</span>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>招聘状态</th>
+        <td mat-cell *matCellDef="let job">
+          <span
+            [ngClass]="job.status === 'active'
+              ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700'
+              : 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700'"
+          >
+            {{ job.status === 'active' ? '招聘中' : '已关闭' }}
+          </span>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>操作</th>
+        <td mat-cell *matCellDef="let job">
+          <div class="flex items-center gap-2">
+            <ng-container *ngIf="job.auditStatus === 'pending'">
+              <button
+                (click)="approveJob(job)"
+                class="inline-flex items-center justify-center h-8 px-3 rounded-lg text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+              >
+                通过
+              </button>
+              <button
+                (click)="rejectJob(job)"
+                class="inline-flex items-center justify-center h-8 px-3 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+              >
+                拒绝
+              </button>
+            </ng-container>
+            <ng-container *ngIf="job.auditStatus !== 'pending'">
+              <button
+                (click)="toggleStatus(job)"
+                class="inline-flex items-center justify-center h-8 px-3 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                {{ job.status === 'active' ? '关闭' : '开启' }}
+              </button>
+              <button
+                (click)="deleteJob(job.id, job.title)"
+                class="inline-flex items-center justify-center h-8 px-3 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+              >
+                删除
+              </button>
+            </ng-container>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <div *ngIf="jobs.length === 0 && !isLoading" class="text-center py-12 text-gray-400 text-sm">
+      暂无职位数据
+    </div>
+  </div>
+
+  <mat-paginator [length]="total" [pageSize]="limit" [pageSizeOptions]="[5,10,20,50]" (page)="onPageChange($event)" showFirstLastButtons></mat-paginator>
+</div>

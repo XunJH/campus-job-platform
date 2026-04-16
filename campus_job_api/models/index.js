@@ -1,9 +1,10 @@
 const { sequelize } = require('../config/database');
+const { DataTypes } = require('sequelize');
 const User = require('./User');
 const Job = require('./Job');
 const Application = require('./Application');
 const Bookmark = require('./Bookmark');
-const Verification = require('./Verification');
+const Verification = require('./Verification')(sequelize, DataTypes);
 
 // 定义模型关联关系
 
@@ -65,6 +66,16 @@ Job.hasMany(Bookmark, {
 Bookmark.belongsTo(Job, {
   foreignKey: 'jobId',
   as: 'job'
+});
+
+// User 和 Verification 的关系：一个用户对应一条认证记录
+User.hasOne(Verification, {
+  foreignKey: 'userId',
+  as: 'verification'
+});
+Verification.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
 });
 
 // 导出所有模型和数据库连接

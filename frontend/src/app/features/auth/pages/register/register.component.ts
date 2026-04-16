@@ -5,10 +5,6 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { UserRole } from '../../../../models/user.model';
 
-/**
- * @功能 注册页面组件
- * @说明 处理用户注册表单提交
- */
 @Component({
   selector: 'app-register',
   standalone: true,
@@ -44,7 +40,8 @@ export class RegisterComponent implements OnInit {
       username: ['', [
         Validators.required,
         Validators.minLength(3),
-        Validators.maxLength(50)
+        Validators.maxLength(50),
+        Validators.pattern(/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/)
       ]],
       email: ['', [
         Validators.required,
@@ -69,10 +66,18 @@ export class RegisterComponent implements OnInit {
   private passwordMatchValidator(form: FormGroup): null | { passwordMismatch: boolean } {
     const password = form.get('password')?.value;
     const confirmPassword = form.get('confirmPassword')?.value;
+    const ctrl = form.get('confirmPassword');
     
     if (password !== confirmPassword) {
-      form.get('confirmPassword')?.setErrors({ passwordMismatch: true });
+      const errors = { ...(ctrl?.errors || {}), passwordMismatch: true };
+      ctrl?.setErrors(errors);
       return { passwordMismatch: true };
+    }
+    
+    if (ctrl?.errors) {
+      const errors = { ...ctrl.errors };
+      delete (errors as any).passwordMismatch;
+      ctrl.setErrors(Object.keys(errors).length ? errors : null);
     }
     
     return null;
@@ -91,15 +96,21 @@ export class RegisterComponent implements OnInit {
     const { confirmPassword, ...registerData } = this.registerForm.value;
 
     this.authService.register(registerData).subscribe({
-      next: () => {
+      next: (user) => {
         this.isLoading = false;
-        this.router.navigate(['/auth/login']);
+        // 注册成功后根据角色跳转到对应首页
+        const target = user.role === 'employer' ? '/employer/dashboard' : '/student/jobs';
+        this.router.navigate([target]);
       },
       error: (error) => {
         this.isLoading = false;
         this.errorMessage = error.message || '注册失败，请稍后重试';
       }
     });
+  }
+
+  selectRole(role: string): void {
+    this.registerForm.patchValue({ role });
   }
 
   togglePassword(): void {

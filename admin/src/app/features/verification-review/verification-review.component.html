@@ -1,0 +1,87 @@
+<h1 class="text-xl font-semibold text-gray-900 mb-5">认证审核</h1>
+
+<div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+  <div class="flex flex-wrap items-center gap-3 mb-5">
+    <input
+      type="text"
+      [(ngModel)]="searchText"
+      (keyup.enter)="onSearch()"
+      placeholder="搜索用户名/真实姓名"
+      class="w-full sm:w-56 h-10 px-4 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 transition-colors"
+    />
+    <select
+      [(ngModel)]="statusFilter"
+      (change)="onFilterChange()"
+      class="h-10 px-3 border border-gray-200 rounded-xl text-sm text-gray-900 bg-white focus:outline-none focus:border-gray-400 transition-colors"
+    >
+      <option value="">全部状态</option>
+      <option value="pending">待审核</option>
+      <option value="approved">已通过</option>
+      <option value="rejected">已拒绝</option>
+    </select>
+    <button
+      (click)="onSearch()"
+      class="inline-flex items-center justify-center h-10 px-5 rounded-full bg-gray-900 text-white text-sm font-medium hover:bg-black transition-colors"
+    >
+      搜索
+    </button>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table mat-table [dataSource]="list" class="w-full">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef>ID</th>
+        <td mat-cell *matCellDef="let item">{{ item.id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="username">
+        <th mat-header-cell *matHeaderCellDef>用户名</th>
+        <td mat-cell *matCellDef="let item">{{ item.user?.username || '-' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="realName">
+        <th mat-header-cell *matHeaderCellDef>真实姓名</th>
+        <td mat-cell *matCellDef="let item">{{ item.realName || '-' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="idNumber">
+        <th mat-header-cell *matHeaderCellDef>身份证号</th>
+        <td mat-cell *matCellDef="let item">{{ item.idNumber || '-' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>状态</th>
+        <td mat-cell *matCellDef="let item">
+          <span [ngClass]="getStatusClass(item.status)">{{ getStatusText(item.status) }}</span>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>操作</th>
+        <td mat-cell *matCellDef="let item">
+          <div class="flex items-center gap-2">
+            <ng-container *ngIf="item.status === 'pending'">
+              <button
+                (click)="approve(item)"
+                class="inline-flex items-center justify-center h-8 px-3 rounded-lg text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+              >
+                通过
+              </button>
+              <button
+                (click)="reject(item)"
+                class="inline-flex items-center justify-center h-8 px-3 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+              >
+                拒绝
+              </button>
+            </ng-container>
+            <span *ngIf="item.status !== 'pending'" class="text-sm text-gray-400">-</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <div *ngIf="list.length === 0 && !isLoading" class="text-center py-12 text-gray-400 text-sm">
+      暂无认证数据
+    </div>
+  </div>
+
+  <mat-paginator [length]="total" [pageSize]="limit" [pageSizeOptions]="[5,10,20,50]" (page)="onPageChange($event)" showFirstLastButtons></mat-paginator>
+</div>

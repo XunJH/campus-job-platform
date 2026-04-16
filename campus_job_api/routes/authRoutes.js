@@ -120,8 +120,8 @@ router.post('/register',
 
     body('role')
       .optional()
-      .isIn(['student', 'employer', 'admin'])
-      .withMessage('角色必须是student、employer或admin')
+      .isIn(['student', 'employer'])
+      .withMessage('角色必须是student或employer')
   ],
   authController.register
 );
@@ -394,6 +394,8 @@ router.post('/logout',
  *         description: 请求参数错误或管理员已存在
  */
 router.post('/create-admin',
+  authenticateToken,
+  roleGuard('admin'),
   [
     body('username')
       .trim()

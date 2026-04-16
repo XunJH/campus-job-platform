@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -10,45 +11,43 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup;
-  errorMessage: string = '';
-  isLoading: boolean = false;
+  isLoading = false;
+  hidePassword = true;
 
   constructor(
-    private formBuilder: FormBuilder,
+    private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private snackBar: MatSnackBar
   ) {
-    this.loginForm = this.formBuilder.group({
+    this.loginForm = this.fb.group({
       username: ['', Validators.required],
-      password: ['', Validators.required]
+      password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 
   ngOnInit(): void {
-    if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/users']);
+    if (this.authService.isAuthenticated() && this.authService.isAdmin()) {
+      this.router.navigate(['/dashboard']);
     }
   }
 
   onSubmit(): void {
     if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
       return;
     }
-
     this.isLoading = true;
-    this.errorMessage = '';
-
-    const credentials = this.loginForm.value;
-    this.authService.login(credentials).subscribe(
-      (response) => {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        this.router.navigate(['/users']);
-      },
-      (error) => {
-        this.errorMessage = error.error?.message || '登录失败，请检查用户名和密码';
+    this.authService.login(this.loginForm.value).subscribe({
+      next: () => {
         this.isLoading = false;
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        const msg = err.error?.message || '登录失败，请检查用户名和密码';
+        this.snackBar.open(msg, '关闭', { duration: 4000 });
       }
-    );
+    });
   }
 }

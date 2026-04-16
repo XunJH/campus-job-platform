@@ -1,6 +1,6 @@
 const { sequelize } = require('../config/database');
-const { DataTypes } = require('sequelize');
-const Verification = require('../models/Verification')(sequelize, DataTypes);
+const { Op } = require('sequelize');
+const { Verification, User } = require('../models');
 
 /**
  * @swagger
@@ -70,6 +70,16 @@ exports.getStatus = async (req, res) => {
       data: {
         status: verification.status,
         companyName: verification.companyName,
+        licenseNumber: verification.licenseNumber,
+        contactName: verification.contactName,
+        contactPhone: verification.contactPhone,
+        licenseImage: verification.licenseImage,
+        address: verification.address,
+        city: verification.city,
+        industry: verification.industry,
+        scale: verification.scale,
+        website: verification.website,
+        otherQualifications: verification.otherQualifications,
         rejectionReason: verification.rejectionReason,
         submittedAt: verification.submittedAt,
         reviewedAt: verification.reviewedAt
@@ -174,7 +184,12 @@ exports.applyVerification = async (req, res) => {
       contactName,
       contactPhone,
       licenseImage,
-      address
+      address,
+      city,
+      industry,
+      scale,
+      website,
+      otherQualifications
     } = req.body;
 
     // 校验必填字段
@@ -194,6 +209,15 @@ exports.applyVerification = async (req, res) => {
           data: null
         });
       }
+    }
+
+    // 校验营业执照图片URL格式
+    if (!/^https?:\/\//i.test(licenseImage)) {
+      return res.status(400).json({
+        success: false,
+        message: '营业执照图片URL格式不正确，必须是 http 或 https 链接',
+        data: null
+      });
     }
 
     // 检查是否已提交过申请
@@ -229,6 +253,11 @@ exports.applyVerification = async (req, res) => {
           contactPhone,
           licenseImage,
           address,
+          city,
+          industry,
+          scale,
+          website,
+          otherQualifications,
           status: 'pending',
           rejectionReason: null,
           submittedAt: new Date()
@@ -254,6 +283,11 @@ exports.applyVerification = async (req, res) => {
       contactPhone,
       licenseImage,
       address,
+      city,
+      industry,
+      scale,
+      website,
+      otherQualifications,
       status: 'pending',
       submittedAt: new Date()
     });
@@ -282,6 +316,242 @@ exports.applyVerification = async (req, res) => {
       success: false,
       message: '提交认证申请失败',
       data: null
+    });
+  }
+};
+
+
+// ==================== 管理员接口 ====================
+
+// 获取认证统计
+exports.getAdminStats = async (req, res) => {
+  try {
+    const counts = await Verification.findAll({
+      attributes: [
+        'status',
+        [sequelize.fn('COUNT', sequelize.col('status')), 'count']
+      ],
+      group: ['status']
+    });
+
+    const stats = { pending: 0, approved: 0, rejected: 0, total: 0 };
+    counts.forEach(item => {
+      const status = item.get('status');
+      const count = parseInt(item.get('count'), 10);
+      stats[status] = count;
+      stats.total += count;
+    });
+
+    return res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('获取认证统计失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: '获取认证统计失败'
+    });
+  }
+};
+
+// 获取待审核列表
+exports.getPendingList = async (req, res) => {
+  try {
+    let { page = 1, limit = 100 } = req.query;
+    limit = Math.min(parseInt(limit) || 100, 100);
+    page = parseInt(page) || 1;
+    const offset = (page - 1) * limit;
+
+    const { rows: list, count } = await Verification.findAndCountAll({
+      where: { status: 'pending' },
+      offset,
+      limit: parseInt(limit),
+      order: [['submittedAt', 'DESC']],
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['id', 'username', 'email', 'phone']
+      }]
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        list,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count,
+          totalPages: Math.ceil(count / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('获取待审核列表失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: '获取待审核列表失败'
+    });
+  }
+};
+
+// 获取全部认证列表（支持分页、状态筛选）
+exports.getAllVerifications = async (req, res) => {
+  try {
+    let { page = 1, limit = 10, status } = req.query;
+    limit = Math.min(parseInt(limit) || 10, 100);
+    page = parseInt(page) || 1;
+    const offset = (page - 1) * limit;
+
+    const where = {};
+    if (status) {
+      where.status = status;
+    }
+
+    const { rows: list, count } = await Verification.findAndCountAll({
+      where,
+      offset,
+      limit: parseInt(limit),
+      order: [['submittedAt', 'DESC']],
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['id', 'username', 'email', 'phone']
+      }]
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        list,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count,
+          totalPages: Math.ceil(count / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('获取认证列表失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: '获取认证列表失败'
+    });
+  }
+};
+
+// 获取认证详情
+exports.getVerificationById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const verification = await Verification.findByPk(id, {
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['id', 'username', 'email', 'phone']
+      }]
+    });
+
+    if (!verification) {
+      return res.status(404).json({
+        success: false,
+        message: '认证记录不存在'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: verification
+    });
+  } catch (error) {
+    console.error('获取认证详情失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: '获取认证详情失败'
+    });
+  }
+};
+
+// 通过认证
+exports.approveVerification = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const verification = await Verification.findByPk(id);
+
+    if (!verification) {
+      return res.status(404).json({
+        success: false,
+        message: '认证记录不存在'
+      });
+    }
+
+    if (verification.status === 'approved') {
+      return res.status(400).json({
+        success: false,
+        message: '该认证已通过，请勿重复操作'
+      });
+    }
+
+    await verification.update({
+      status: 'approved',
+      rejectionReason: null,
+      reviewedAt: new Date()
+    });
+
+    return res.json({
+      success: true,
+      message: '认证已通过'
+    });
+  } catch (error) {
+    console.error('通过认证失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: '通过认证失败'
+    });
+  }
+};
+
+// 拒绝认证
+exports.rejectVerification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const verification = await Verification.findByPk(id);
+
+    if (!verification) {
+      return res.status(404).json({
+        success: false,
+        message: '认证记录不存在'
+      });
+    }
+
+    if (verification.status === 'rejected') {
+      return res.status(400).json({
+        success: false,
+        message: '该认证已拒绝，请勿重复操作'
+      });
+    }
+
+    await verification.update({
+      status: 'rejected',
+      rejectionReason: reason || '不符合认证要求',
+      reviewedAt: new Date()
+    });
+
+    return res.json({
+      success: true,
+      message: '认证已拒绝'
+    });
+  } catch (error) {
+    console.error('拒绝认证失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: '拒绝认证失败'
     });
   }
 };

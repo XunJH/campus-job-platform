@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const Job = require('../models/Job');
 const User = require('../models/User');
+const { Verification } = require('../models');
 
 // 发布岗位
 exports.createJob = async (req, res) => {
@@ -10,6 +11,17 @@ exports.createJob = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: '只有企业用户可以发布岗位'
+      });
+    }
+
+    // 检查企业是否已完成认证
+    const verification = await Verification.findOne({
+      where: { userId: req.user.id, status: 'approved' }
+    });
+    if (!verification) {
+      return res.status(403).json({
+        success: false,
+        message: '请先完成企业认证后再发布岗位'
       });
     }
 
@@ -34,7 +46,7 @@ exports.createJob = async (req, res) => {
       });
     }
 
-    // 创建岗位
+    // 创建岗位（默认待审核）
     const job = await Job.create({
       title,
       description,
@@ -45,7 +57,8 @@ exports.createJob = async (req, res) => {
       salaryType: salaryType || 'monthly',
       workingHours,
       deadline: deadline ? new Date(deadline) : null,
-      employerId: req.user.id
+      employerId: req.user.id,
+      auditStatus: 'pending'
     });
 
     res.status(201).json({
@@ -65,13 +78,23 @@ exports.createJob = async (req, res) => {
 // 获取岗位列表
 exports.getJobs = async (req, res) => {
   try {
-    const { page = 1, limit = 10, title } = req.query;
+    let { page = 1, limit = 10, title } = req.query;
+    limit = Math.min(parseInt(limit) || 10, 100);
+    page = parseInt(page) || 1;
     const offset = (page - 1) * limit;
 
     // 构建查询条件
     const where = {};
     if (title) {
       where.title = { [Op.like]: `%${title}%` };
+    }
+
+    // 非管理员只能看到审核通过的岗位
+    const isAdmin = req.user && req.user.role === 'admin';
+    if (!isAdmin || req.query.auditStatus === undefined) {
+      where.auditStatus = 'approved';
+    } else if (req.query.auditStatus) {
+      where.auditStatus = req.query.auditStatus;
     }
 
     // 查询岗位列表（分页）
@@ -275,6 +298,185 @@ exports.deleteJob = async (req, res) => {
     });
   } catch (error) {
     console.error('删除岗位错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+// 获取我发布的岗位（企业端）
+exports.getMyJobs = async (req, res) => {
+  try {
+    let { page = 1, limit = 10 } = req.query;
+    limit = Math.min(parseInt(limit) || 10, 100);
+    page = parseInt(page) || 1;
+    const offset = (page - 1) * limit;
+
+    const { rows: jobs, count } = await Job.findAndCountAll({
+      where: { employerId: req.user.id },
+      offset,
+      limit: parseInt(limit),
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: {
+        jobs,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count,
+          totalPages: Math.ceil(count / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('获取我的岗位错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+// 获取待审核岗位列表（管理员）
+exports.getPendingJobs = async (req, res) => {
+  try {
+    let { page = 1, limit = 10 } = req.query;
+    limit = Math.min(parseInt(limit) || 10, 100);
+    page = parseInt(page) || 1;
+    const offset = (page - 1) * limit;
+
+    const { rows: jobs, count } = await Job.findAndCountAll({
+      where: { auditStatus: 'pending' },
+      offset,
+      limit: parseInt(limit),
+      order: [['createdAt', 'DESC']],
+      include: [{
+        model: User,
+        as: 'employer',
+        attributes: ['id', 'username', 'email', 'avatar', 'bio']
+      }]
+    });
+
+    res.json({
+      success: true,
+      data: {
+        jobs,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count,
+          totalPages: Math.ceil(count / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('获取待审核岗位错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+// 审核通过岗位
+exports.approveJob = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const job = await Job.findByPk(id);
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: '岗位不存在'
+      });
+    }
+
+    await job.update({
+      auditStatus: 'approved',
+      rejectionReason: null,
+      status: 'active'
+    });
+
+    res.json({
+      success: true,
+      message: '岗位审核通过',
+      data: job
+    });
+  } catch (error) {
+    console.error('审核通过岗位错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+// 审核拒绝岗位
+exports.rejectJob = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const job = await Job.findByPk(id);
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: '岗位不存在'
+      });
+    }
+
+    await job.update({
+      auditStatus: 'rejected',
+      rejectionReason: reason || '不符合发布要求',
+      status: 'closed'
+    });
+
+    res.json({
+      success: true,
+      message: '岗位审核已拒绝',
+      data: job
+    });
+  } catch (error) {
+    console.error('审核拒绝岗位错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+// 获取企业统计数据（岗位数、招聘列表等）
+exports.getEmployerStats = async (req, res) => {
+  try {
+    const employerId = parseInt(req.user.id, 10);
+
+    const activeJobsCount = await Job.count({
+      where: { employerId, status: 'active', auditStatus: 'approved' }
+    });
+
+    const totalJobsCount = await Job.count({
+      where: { employerId }
+    });
+
+    const recentJobs = await Job.findAll({
+      where: { employerId },
+      order: [['createdAt', 'DESC']],
+      limit: 5,
+      attributes: ['id', 'title', 'location', 'salary', 'status', 'auditStatus', 'createdAt', 'views', 'applicationsCount']
+    });
+
+    res.json({
+      success: true,
+      data: {
+        activeJobsCount,
+        totalJobsCount,
+        recentJobs
+      }
+    });
+  } catch (error) {
+    console.error('获取企业统计错误:', error);
     res.status(500).json({
       success: false,
       message: '服务器内部错误'

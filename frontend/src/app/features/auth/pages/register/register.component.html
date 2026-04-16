@@ -1,96 +1,154 @@
-<div class="register-container">
-  <div class="register-card">
-    <h2 class="register-title">校园兼职平台</h2>
-    <p class="register-subtitle">创建新账号</p>
-    <div class="error-message" *ngIf="errorMessage">
-      {{ errorMessage }}
+<div class="auth-page">
+  <!-- Subtle background dots -->
+  <div class="auth-bg"></div>
+
+  <!-- Nav -->
+  <nav class="auth-nav">
+    <a routerLink="/" class="auth-logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L4 7v10l8 5 8-5V7L12 2z" fill="currentColor" />
+      </svg>
+      <span>CampusJob</span>
+    </a>
+  </nav>
+
+  <!-- Main -->
+  <main class="auth-main">
+    <div class="auth-card" style="max-width: 460px;">
+      <div class="form-header">
+        <h2>创建账号</h2>
+        <p>加入我们，发现无限可能</p>
+      </div>
+
+      <div class="message message-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
+        <!-- Role Selection -->
+        <div class="form-group">
+          <label>用户类型</label>
+          <div class="role-tabs">
+            <button
+              type="button"
+              class="role-tab"
+              [class.active]="registerForm.value.role === 'student'"
+              (click)="selectRole('student')"
+            >
+              学生
+            </button>
+            <button
+              type="button"
+              class="role-tab"
+              [class.active]="registerForm.value.role === 'employer'"
+              (click)="selectRole('employer')"
+            >
+              企业
+            </button>
+          </div>
+          <!-- Hidden input to keep form control synced -->
+          <input type="hidden" formControlName="role" />
+        </div>
+
+        <div class="form-group">
+          <label for="username">用户名</label>
+          <input
+            type="text"
+            id="username"
+            formControlName="username"
+            placeholder="请输入用户名（3-50个字符）"
+            [class.error]="f['username'].touched && f['username'].invalid"
+          />
+          <div class="error-text" *ngIf="f['username'].touched && f['username'].invalid">
+            <span *ngIf="f['username'].errors?.['required']">用户名不能为空</span>
+            <span *ngIf="f['username'].errors?.['minlength']">用户名至少3个字符</span>
+            <span *ngIf="f['username'].errors?.['maxlength']">用户名最多50个字符</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">邮箱</label>
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            placeholder="请输入邮箱"
+            [class.error]="f['email'].touched && f['email'].invalid"
+          />
+          <div class="error-text" *ngIf="f['email'].touched && f['email'].invalid">
+            <span *ngIf="f['email'].errors?.['required']">邮箱不能为空</span>
+            <span *ngIf="f['email'].errors?.['email']">请输入有效的邮箱地址</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">密码</label>
+          <div class="password-input">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              id="password"
+              formControlName="password"
+              placeholder="至少6位，含大小写字母和数字"
+              [class.error]="f['password'].touched && f['password'].invalid"
+            />
+            <button type="button" class="toggle-password" (click)="togglePassword()">
+              <svg *ngIf="!showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg *ngIf="showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                <line x1="2" x2="22" y1="2" y2="22"/>
+              </svg>
+            </button>
+          </div>
+          <div class="error-text" *ngIf="f['password'].touched && f['password'].invalid">
+            <span *ngIf="f['password'].errors?.['required']">密码不能为空</span>
+            <span *ngIf="f['password'].errors?.['minlength']">密码至少6位</span>
+            <span *ngIf="f['password'].errors?.['pattern']">密码必须包含大小写字母和数字</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">确认密码</label>
+          <div class="password-input">
+            <input
+              [type]="showConfirmPassword ? 'text' : 'password'"
+              id="confirmPassword"
+              formControlName="confirmPassword"
+              placeholder="请再次输入密码"
+              [class.error]="f['confirmPassword'].touched && f['confirmPassword'].invalid"
+            />
+            <button type="button" class="toggle-password" (click)="toggleConfirmPassword()">
+              <svg *ngIf="!showConfirmPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg *ngIf="showConfirmPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                <line x1="2" x2="22" y1="2" y2="22"/>
+              </svg>
+            </button>
+          </div>
+          <div class="error-text" *ngIf="f['confirmPassword'].touched && f['confirmPassword'].invalid">
+            <span *ngIf="f['confirmPassword'].errors?.['required']">请确认密码</span>
+            <span *ngIf="f['confirmPassword'].errors?.['passwordMismatch']">两次输入的密码不一致</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" [disabled]="isLoading">
+          <span *ngIf="!isLoading">注册</span>
+          <span *ngIf="isLoading">注册中...</span>
+        </button>
+      </form>
+
+      <div class="form-footer">
+        <p>已有账号？<a routerLink="/auth/login" class="link">立即登录</a></p>
+      </div>
     </div>
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
-      
-      <div class="form-group">
-        <label>用户类型</label>
-        <div class="role-selector">
-          <label class="role-option" *ngFor="let role of userRoles">
-            <input type="radio" [value]="role.value" formControlName="role">
-            <span>{{ role.label }}</span>
-          </label>
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="username">用户名</label>
-        <input 
-          type="text" 
-          id="username"
-          formControlName="username"
-          placeholder="请输入用户名（3-50个字符）"
-          [class.error]="f['username'].touched && f['username'].invalid"
-        >
-        <div class="validation-error" *ngIf="f['username'].touched && f['username'].invalid">
-          <span *ngIf="f['username'].errors?.['required']">用户名不能为空</span>
-          <span *ngIf="f['username'].errors?.['minlength']">用户名至少3个字符</span>
-          <span *ngIf="f['username'].errors?.['maxlength']">用户名最多50个字符</span>
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="email">邮箱</label>
-        <input 
-          type="email" 
-          id="email"
-          formControlName="email"
-          placeholder="请输入邮箱"
-          [class.error]="f['email'].touched && f['email'].invalid"
-        >
-        <div class="validation-error" *ngIf="f['email'].touched && f['email'].invalid">
-          <span *ngIf="f['email'].errors?.['required']">邮箱不能为空</span>
-          <span *ngIf="f['email'].errors?.['email']">请输入有效的邮箱地址</span>
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="password">密码</label>
-        <div class="password-input">
-          <input 
-            [type]="showPassword ? 'text' : 'password'"
-            id="password"
-            formControlName="password"
-            placeholder="请输入密码（至少6位，含大小写字母和数字）"
-            [class.error]="f['password'].touched && f['password'].invalid"
-          >
-          <button type="button" class="toggle-password" (click)="togglePassword()">
-            {{ showPassword ? '隐藏' : '显示' }}
-          </button>
-        </div>
-        <div class="validation-error" *ngIf="f['password'].touched && f['password'].invalid">
-          <span *ngIf="f['password'].errors?.['required']">密码不能为空</span>
-          <span *ngIf="f['password'].errors?.['minlength']">密码至少6位</span>
-          <span *ngIf="f['password'].errors?.['pattern']">密码必须包含大小写字母和数字</span>
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="confirmPassword">确认密码</label>
-        <div class="password-input">
-          <input 
-            [type]="showConfirmPassword ? 'text' : 'password'"
-            id="confirmPassword"
-            formControlName="confirmPassword"
-            placeholder="请再次输入密码"
-            [class.error]="f['confirmPassword'].touched && f['confirmPassword'].invalid"
-          >
-          <button type="button" class="toggle-password" (click)="toggleConfirmPassword()">
-            {{ showConfirmPassword ? '隐藏' : '显示' }}
-          </button>
-        </div>
-        <div class="validation-error" *ngIf="f['confirmPassword'].touched && f['confirmPassword'].invalid">
-          <span *ngIf="f['confirmPassword'].errors?.['required']">请确认密码</span>
-          <span *ngIf="f['confirmPassword'].errors?.['passwordMismatch']">两次输入的密码不一致</span>
-        </div>
-      </div>
-      <button type="submit" class="register-btn" [disabled]="isLoading">
-        <span *ngIf="!isLoading">注册</span>
-        <span *ngIf="isLoading">注册中...</span>
-      </button>
-    </form>
-    <div class="login-link">
-      已有账号？<a routerLink="/auth/login">立即登录</a>
-    </div>
-  </div>
+  </main>
 </div>

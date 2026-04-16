@@ -8,8 +8,8 @@ export interface User {
   phone?: string;
   bio?: string;
   last_login_at?: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface LoginRequest {

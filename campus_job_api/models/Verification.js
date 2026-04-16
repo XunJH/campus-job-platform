@@ -58,10 +58,35 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       comment: '营业执照图片URL'
     },
+    city: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: '所在城市'
+    },
     address: {
       type: DataTypes.STRING,
       allowNull: true,
       comment: '企业地址'
+    },
+    industry: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: '所属行业'
+    },
+    scale: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: '企业规模'
+    },
+    website: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: '企业官网'
+    },
+    otherQualifications: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: '其他资质'
     },
     status: {
       type: DataTypes.ENUM('pending', 'approved', 'rejected'),

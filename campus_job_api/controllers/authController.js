@@ -3,7 +3,10 @@ const bcrypt = require('bcryptjs');
 const { User } = require('../models');
 
 // JWT Secret - 实际项目中应该从环境变量中读取
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 /**
@@ -26,7 +29,11 @@ const generateToken = (user) => {
  */
 exports.register = async (req, res) => {
   try {
-    const { username, password, email, role = 'student' } = req.body;
+    let { username, password, email, role = 'student' } = req.body;
+    // 禁止通过注册接口创建管理员账号
+    if (role === 'admin') {
+      role = 'student';
+    }
 
     // 检查用户名是否已存在
     const existingUserByUsername = await User.findOne({ where: { username } });
@@ -286,7 +293,16 @@ exports.updateUser = async (req, res) => {
     }
 
     // 更新用户信息
-    const updateData = { email, phone, bio, avatar };
+    const updateData = { email, phone, bio };
+    if (avatar) {
+      if (!/^https?:\/\//i.test(avatar)) {
+        return res.status(400).json({
+          success: false,
+          message: '头像URL格式不正确'
+        });
+      }
+      updateData.avatar = avatar;
+    }
     await user.update(updateData);
 
     // 获取更新后的用户信息（不包含密码）
@@ -341,6 +357,29 @@ exports.changePassword = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: '当前密码错误'
+      });
+    }
+
+    // 验证新密码长度
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: '新密码至少需要6个字符'
+      });
+    }
+    // 新密码必须包含大小写字母和数字
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: '新密码必须包含大小写字母和数字'
+      });
+    }
+    // 禁止新密码与旧密码相同
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        message: '新密码不能与旧密码相同'
       });
     }
 

@@ -4,10 +4,6 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 
-/**
- * @功能 登录页面组件
- * @说明 处理用户登录表单提交及登录成功后的角色跳转
- */
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -32,7 +28,6 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
-    this.loadRememberedCredentials();
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
     
     if (this.authService.isAuthenticated()) {
@@ -51,17 +46,6 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  private loadRememberedCredentials(): void {
-    const remembered = this.authService.getRememberCredentials();
-    if (remembered) {
-      this.loginForm.patchValue({
-        username: remembered.username,
-        password: remembered.password,
-        remember: true
-      });
-    }
-  }
-
   onSubmit(): void {
     this.loginForm.markAllAsTouched();
     
@@ -76,7 +60,6 @@ export class LoginComponent implements OnInit {
 
     this.authService.login(credentials).subscribe({
       next: (user) => {
-        console.log('登录成功，user:', user);
         this.isLoading = false;
         this.redirectByRole(user.role as string);
       },
@@ -88,19 +71,25 @@ export class LoginComponent implements OnInit {
   }
 
   private redirectByRole(role: string | undefined): void {
-    console.log('role:', role);
     if (!role) {
       this.router.navigate([this.returnUrl]);
       return;
     }
     
+    const normalizedRole = role.toLowerCase().trim();
+    
     const routes: Record<string, string> = {
       'student': '/student/jobs',
-      'employer': '/employer/dashboard',
-      'admin': '/admin/users'
+      'employer': '/employer/dashboard'
     };
     
-    this.router.navigate([routes[role] || this.returnUrl]);
+    const targetRoute = routes[normalizedRole];
+    
+    if (targetRoute) {
+      this.router.navigate([targetRoute]);
+    } else {
+      this.router.navigate([this.returnUrl]);
+    }
   }
 
   togglePassword(): void {

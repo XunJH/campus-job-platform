@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { VerificationService, VerificationStatus, VerificationApplyData } from '../../../../core/services/verification.service';
+import { AuthService } from '../../../../core/services/auth.service';
+
 @Component({
   selector: 'app-verification',
   standalone: true,
@@ -16,14 +18,25 @@ export class VerificationComponent implements OnInit {
   isSubmitting = false;
   message = '';
   applyForm!: FormGroup;
+  homeLink = '/student/jobs';
+
   constructor(
     private fb: FormBuilder,
-    private verificationService: VerificationService
+    private verificationService: VerificationService,
+    private authService: AuthService
   ) {}
+
   ngOnInit(): void {
+    this.setHomeLink();
     this.initForm();
     this.loadStatus();
   }
+
+  private setHomeLink(): void {
+    const user = this.authService.getCurrentUser();
+    this.homeLink = user?.role === 'employer' ? '/employer/dashboard' : '/student/jobs';
+  }
+
   private loadStatus(): void {
     this.isLoading = true;
     this.verificationService.getStatus().subscribe({
@@ -40,6 +53,7 @@ export class VerificationComponent implements OnInit {
       }
     });
   }
+
   private initForm(): void {
     const existingData = this.status?.status === 'rejected' ? this.status : null;
     this.applyForm = this.fb.group({
@@ -51,9 +65,11 @@ export class VerificationComponent implements OnInit {
       address: ['']
     });
   }
+
   get canApply(): boolean {
     return !this.status || this.status.status === 'unsubmitted' || this.status.status === 'rejected';
   }
+
   get statusText(): string {
     const map: Record<string, string> = {
       'unsubmitted': '未提交认证',
@@ -63,9 +79,11 @@ export class VerificationComponent implements OnInit {
     };
     return map[this.status?.status || 'unsubmitted'];
   }
+
   get statusClass(): string {
     return `status-${this.status?.status || 'unsubmitted'}`;
   }
+
   onSubmit(): void {
     if (this.applyForm.invalid) {
       this.applyForm.markAllAsTouched();
@@ -86,6 +104,7 @@ export class VerificationComponent implements OnInit {
       }
     });
   }
+
   refresh(): void {
     this.loadStatus();
   }

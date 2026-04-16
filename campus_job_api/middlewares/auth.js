@@ -19,7 +19,7 @@ const authenticateToken = async (req, res, next) => {
     }
 
     // 验证JWT Token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
     // 查找用户，确保用户存在且状态为active
     const user = await User.findOne({
@@ -53,11 +53,10 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // 其他错误
+    // 其他错误（生产环境不暴露原始错误信息）
     return res.status(500).json({
       success: false,
-      message: '服务器错误',
-      error: error.message
+      message: '服务器错误，请稍后重试'
     });
   }
 };
@@ -71,7 +70,7 @@ const optionalAuth = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
       const user = await User.findOne({
         where: {
           id: decoded.id,

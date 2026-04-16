@@ -7,9 +7,8 @@ import { User, LoginCredentials, RegisterData } from '../../models/user.model';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   
-  private readonly API_URL = 'http://localhost:3001/api/v1/auth';
+  private readonly API_URL = '/api/v1/auth';
   private tokenKey = 'campus_job_token';
-  private rememberKey = 'campus_job_remember';
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   
   public currentUser$ = this.currentUserSubject.asObservable();
@@ -23,16 +22,13 @@ export class AuthService {
       tap(response => {
         if (response.success && response.data?.token) {
           this.setToken(response.data.token);
-          if (credentials.remember) {
-            this.setRememberCredentials(credentials.username, credentials.password);
-          } else {
-            this.clearRememberCredentials();
-          }
         }
       }),
       map(response => {
         if (response.success && response.data?.user) {
-          return this.mapUser(response.data.user);
+          const user = this.mapUser(response.data.user);
+          this.currentUserSubject.next(user);
+          return user;
         }
         throw new Error(response.message || '登录失败');
       })
@@ -48,7 +44,9 @@ export class AuthService {
       }),
       map(response => {
         if (response.success && response.data?.user) {
-          return this.mapUser(response.data.user);
+          const user = this.mapUser(response.data.user);
+          this.currentUserSubject.next(user);
+          return user;
         }
         throw new Error(response.message || '注册失败');
       })
@@ -72,21 +70,8 @@ export class AuthService {
     return localStorage.getItem(this.tokenKey);
   }
 
-  getRememberCredentials(): { username: string; password: string } | null {
-    const data = localStorage.getItem(this.rememberKey);
-    return data ? JSON.parse(data) : null;
-  }
-
   private setToken(token: string): void {
     localStorage.setItem(this.tokenKey, token);
-  }
-
-  private setRememberCredentials(username: string, password: string): void {
-    localStorage.setItem(this.rememberKey, JSON.stringify({ username, password }));
-  }
-
-  private clearRememberCredentials(): void {
-    localStorage.removeItem(this.rememberKey);
   }
 
   private mapUser(backendUser: any): User {
@@ -106,7 +91,16 @@ export class AuthService {
   private loadStoredAuth(): void {
     const token = this.getToken();
     if (token) {
-      // TODO: 验证 token 有效性
+      this.http.get<any>(`${this.API_URL}/profile`).subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.currentUserSubject.next(this.mapUser(res.data));
+          }
+        },
+        error: () => {
+          this.logout();
+        }
+      });
     }
   }
 }

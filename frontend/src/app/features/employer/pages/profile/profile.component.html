@@ -1,0 +1,345 @@
+<div class="page-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L4 7v10l8 5 8-5V7L12 2z" fill="currentColor" />
+        </svg>
+        <span>CampusJob</span>
+      </div>
+    </div>
+
+    <div class="sidebar-content">
+      <nav class="nav-section">
+        <a routerLink="/employer/dashboard" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="7" height="9" x="3" y="3" rx="1"/>
+            <rect width="7" height="5" x="14" y="3" rx="1"/>
+            <rect width="7" height="9" x="14" y="12" rx="1"/>
+            <rect width="7" height="5" x="3" y="16" rx="1"/>
+          </svg>
+          <span>企业首页</span>
+        </a>
+        <a routerLink="/employer/jobs/post" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          <span>发布岗位</span>
+        </a>
+        <a routerLink="/employer/jobs" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          <span>岗位管理</span>
+        </a>
+        <a routerLink="/employer/applications" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span>申请管理</span>
+          <span class="badge badge-beta">NEW</span>
+        </a>
+      </nav>
+
+      <div class="nav-divider"></div>
+
+      <nav class="nav-section">
+        <p class="nav-label">企业中心</p>
+        <a routerLink="/student/verification" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>企业认证</span>
+        </a>
+        <a routerLink="/employer/profile" class="nav-item active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span>企业资料</span>
+        </a>
+        <a routerLink="/employer/wallet" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+          </svg>
+          <span>资金管理</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" (click)="logout()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" x2="9" y1="12" y2="12"/>
+        </svg>
+        <span>退出登录</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="page-header">
+      <h1>企业资料</h1>
+      <div class="header-actions">
+        <button class="btn btn-outline" (click)="toggleEdit()" *ngIf="!isEditing">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+          </svg>
+          编辑资料
+        </button>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <!-- Messages -->
+      <div class="message message-success" *ngIf="message && !error">{{ message }}</div>
+      <div class="message message-error" *ngIf="message && error">{{ message }}</div>
+
+      <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+        <!-- 1. 基础信息区 -->
+        <div class="profile-card hero-card">
+          <div class="hero-layout">
+            <div class="avatar-section-large">
+              <div class="avatar-wrapper-large">
+                <img *ngIf="profileForm.value.avatar" [src]="profileForm.value.avatar" alt="企业Logo" class="avatar-image-large" />
+                <div class="avatar-placeholder-large" *ngIf="!profileForm.value.avatar">
+                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
+                <button type="button" class="avatar-edit-btn" *ngIf="isEditing">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" x2="12" y1="3" y2="15"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="hero-info">
+              <div class="name-row">
+                <h2 class="company-name">{{ verification?.companyName || profileForm.value.companyName || '企业名称未填写' }}</h2>
+                <span class="verify-badge approved" *ngIf="isApproved">已认证</span>
+                <span class="verify-badge pending" *ngIf="verification?.status === 'pending'">审核中</span>
+                <span class="verify-badge rejected" *ngIf="verification?.status === 'rejected'">未通过</span>
+                <span class="verify-badge unsubmitted" *ngIf="verification?.status === 'unsubmitted' || !verification?.status">未认证</span>
+              </div>
+              <p class="company-brief">{{ profileForm.value.bio || '暂无企业简介' }}</p>
+              <div class="meta-tags">
+                <span class="meta-tag">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                  </svg>
+                  {{ profileForm.value.industry || defaultIndustry }}
+                </span>
+                <span class="meta-tag">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                  {{ profileForm.value.scale || defaultScale }}
+                </span>
+                <span class="meta-tag" *ngIf="profileForm.value.website">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" x2="22" y1="12" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                  {{ profileForm.value.website }}
+                </span>
+              </div>
+              <div class="hero-edit-fields" *ngIf="isEditing">
+                <div class="field-row">
+                  <input type="text" formControlName="companyName" placeholder="企业名称" />
+                  <input type="text" formControlName="industry" placeholder="所属行业" />
+                  <input type="text" formControlName="scale" placeholder="企业规模" />
+                </div>
+                <textarea formControlName="bio" placeholder="一句话介绍企业…" rows="2"></textarea>
+                <input type="text" formControlName="website" placeholder="企业官网" />
+                <input type="text" formControlName="avatar" placeholder="Logo 图片 URL" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 联系与地址 + 3. 平台数据 -->
+        <div class="two-col-grid">
+          <!-- 联系与地址 -->
+          <div class="profile-card">
+            <h3 class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              联系与地址
+            </h3>
+            <div class="info-list">
+              <div class="info-item">
+                <span class="info-label">所在城市</span>
+                <span class="info-value" *ngIf="!isEditing">{{ profileForm.value.city || '--' }}</span>
+                <input type="text" formControlName="city" placeholder="请输入城市" *ngIf="isEditing" />
+              </div>
+              <div class="info-item">
+                <span class="info-label">详细地址</span>
+                <span class="info-value" *ngIf="!isEditing">{{ profileForm.value.address || '--' }}</span>
+                <input type="text" formControlName="address" placeholder="请输入地址" *ngIf="isEditing" />
+              </div>
+              <div class="info-item">
+                <span class="info-label">联系邮箱</span>
+                <span class="info-value" *ngIf="!isEditing">{{ profileForm.value.email || '--' }}</span>
+                <input type="email" formControlName="email" placeholder="请输入邮箱" *ngIf="isEditing" />
+              </div>
+              <div class="info-item">
+                <span class="info-label">联系电话</span>
+                <span class="info-value" *ngIf="!isEditing">{{ profileForm.value.phone || '--' }}</span>
+                <input type="text" formControlName="phone" placeholder="请输入电话" *ngIf="isEditing" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 平台数据 -->
+          <div class="profile-card">
+            <h3 class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3v18h18"/>
+                <path d="M18 17V9"/>
+                <path d="M13 17V5"/>
+                <path d="M8 17v-3"/>
+              </svg>
+              平台数据
+            </h3>
+            <div class="stats-mini">
+              <div class="stat-item">
+                <span class="stat-num">{{ user?.creditScore || 100 }}</span>
+                <span class="stat-label">信用评分</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num">{{ stats.activeJobsCount }}</span>
+                <span class="stat-label">在招岗位</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num">{{ stats.totalJobsCount }}</span>
+                <span class="stat-label">历史发布</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num">{{ defaultRating }}</span>
+                <span class="stat-label">学生评分</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num">{{ defaultReviews }}</span>
+                <span class="stat-label">收到评价</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-num">{{ joinedAt }}</span>
+                <span class="stat-label">加入时间</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 资质证明 -->
+        <div class="profile-card" *ngIf="isApproved">
+          <h3 class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            资质证明
+          </h3>
+          <div class="qualifications">
+            <div class="qual-item">
+              <div class="qual-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+              <div class="qual-info">
+                <p class="qual-name">营业执照</p>
+                <p class="qual-meta">已上传 · 已审核</p>
+              </div>
+              <a *ngIf="verification?.licenseImage" [href]="verification?.licenseImage" target="_blank" class="qual-link">查看</a>
+            </div>
+            <div class="qual-item" *ngIf="verification?.otherQualifications">
+              <div class="qual-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+              </div>
+              <div class="qual-info">
+                <p class="qual-name">其他资质</p>
+                <p class="qual-meta">{{ verification?.otherQualifications }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit actions -->
+        <div class="form-actions" *ngIf="isEditing">
+          <button type="button" class="btn btn-outline" (click)="toggleEdit()">取消</button>
+          <button type="submit" class="btn btn-primary" [disabled]="isLoading">
+            <span *ngIf="!isLoading">保存修改</span>
+            <span *ngIf="isLoading">保存中...</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- 5. 动态内容：招聘列表 -->
+      <div class="profile-card">
+        <div class="section-header">
+          <h3 class="card-title">正在招聘的岗位</h3>
+          <a routerLink="/employer/jobs/post" class="link-primary">发布新岗位</a>
+        </div>
+
+        <div class="job-list" *ngIf="stats.recentJobs.length > 0; else emptyJobs">
+          <div class="job-item" *ngFor="let job of stats.recentJobs; trackBy: trackByJobId">
+            <div class="job-main">
+              <p class="job-title">{{ job.title }}</p>
+              <div class="job-meta">
+                <span>{{ job.location }}</span>
+                <span class="dot"></span>
+                <span>¥{{ job.salary }}/月</span>
+                <span class="dot"></span>
+                <span>{{ job.views || 0 }} 浏览</span>
+                <span class="dot"></span>
+                <span>{{ job.applicationsCount || 0 }} 申请</span>
+              </div>
+            </div>
+            <div class="job-side">
+              <span class="job-status" [class.active]="job.status === 'active' && job.auditStatus === 'approved'">
+                {{ job.status === 'active' && job.auditStatus === 'approved' ? '招聘中' : '已关闭/待审' }}
+              </span>
+              <a [routerLink]="['/employer/jobs']" class="job-link">管理</a>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #emptyJobs>
+          <div class="empty-state">
+            <p>暂无在招岗位</p>
+            <a routerLink="/employer/jobs/post" class="btn btn-primary">立即发布</a>
+          </div>
+        </ng-template>
+
+        <div class="activity-bar">
+          <span>最近活跃：{{ lastActiveAt }}</span>
+          <span>历史发布岗位：{{ stats.totalJobsCount }} 个</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

@@ -74,6 +74,17 @@ const Job = sequelize.define('Job', {
     type: DataTypes.INTEGER,
     defaultValue: 0,
     comment: '申请人数'
+  },
+  auditStatus: {
+    type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+    allowNull: false,
+    defaultValue: 'pending',
+    comment: '审核状态'
+  },
+  rejectionReason: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    comment: '审核拒绝原因'
   }
 }, {
   tableName: 'jobs',

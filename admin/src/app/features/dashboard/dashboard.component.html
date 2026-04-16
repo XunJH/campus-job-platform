@@ -1,0 +1,70 @@
+<h1 class="text-xl font-semibold text-gray-900 mb-5">数据概览</h1>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+  <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex items-center gap-4">
+    <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
+      <mat-icon class="text-[26px] w-[26px] h-[26px]">people</mat-icon>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-gray-900 leading-tight">{{ stats.totalUsers }}</div>
+      <div class="text-xs text-gray-500 mt-0.5">总用户数</div>
+    </div>
+  </div>
+
+  <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex items-center gap-4">
+    <div class="w-12 h-12 rounded-xl bg-green-500/10 text-green-600 flex items-center justify-center">
+      <mat-icon class="text-[26px] w-[26px] h-[26px]">work</mat-icon>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-gray-900 leading-tight">{{ stats.totalJobs }}</div>
+      <div class="text-xs text-gray-500 mt-0.5">总职位数</div>
+    </div>
+  </div>
+
+  <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex items-center gap-4">
+    <div class="w-12 h-12 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center">
+      <mat-icon class="text-[26px] w-[26px] h-[26px]">pending_actions</mat-icon>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-gray-900 leading-tight">{{ stats.pendingVerifications }}</div>
+      <div class="text-xs text-gray-500 mt-0.5">待审核认证</div>
+    </div>
+  </div>
+
+  <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex items-center gap-4">
+    <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
+      <mat-icon class="text-[26px] w-[26px] h-[26px]">verified</mat-icon>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-gray-900 leading-tight">{{ stats.totalVerifications }}</div>
+      <div class="text-xs text-gray-500 mt-0.5">总认证数</div>
+    </div>
+  </div>
+</div>
+
+<div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+  <h2 class="text-base font-semibold text-gray-900 mb-4">快捷入口</h2>
+  <div class="flex flex-wrap gap-3">
+    <a
+      routerLink="/users"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+    >
+      <mat-icon class="text-[18px] w-[18px] h-[18px]">people</mat-icon>
+      <span>用户管理</span>
+    </a>
+    <a
+      routerLink="/verification-review"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+    >
+      <mat-icon class="text-[18px] w-[18px] h-[18px]">verified</mat-icon>
+      <span>认证审核</span>
+    </a>
+    <a
+      routerLink="/jobs"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+    >
+      <mat-icon class="text-[18px] w-[18px] h-[18px]">work</mat-icon>
+      <span>职位管理</span>
+    </a>
+  </div>
+</div>

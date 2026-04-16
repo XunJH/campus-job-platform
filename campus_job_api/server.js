@@ -62,8 +62,11 @@ app.use(helmet({
 }));
 
 // CORS配置
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:3000', 'http://localhost:4200', 'http://localhost:4201', 'http://localhost:4202'];
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:4200'],
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -72,10 +75,10 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // 解析JSON请求体
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
 
 // 解析URL编码的请求体
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // 压缩响应
 app.use(compression());
@@ -102,8 +105,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
+    uptime: process.uptime()
   });
 });
 
@@ -111,12 +113,14 @@ app.get('/health', (req, res) => {
 const apiVersion = 'v1';
 const apiPrefix = `/api/${apiVersion}`;
 
-// Swagger 文档路由
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.get('/api-docs.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
+// Swagger 文档路由（生产环境禁用）
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.get('/api-docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+}
 
 // 注册路由
 app.use(`${apiPrefix}/auth`, authRoutes);
@@ -191,9 +195,9 @@ const startServer = async () => {
     // 测试数据库连接
     await testConnection();
 
-    // 同步数据库模型（仅开发环境）
+    // 同步数据库模型（仅开发环境，且不使用 alter 以防止数据丢失）
     if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ force: false, alter: true });
+      await sequelize.sync({ force: false, alter: false });
       console.log('数据库模型同步完成');
     }
 

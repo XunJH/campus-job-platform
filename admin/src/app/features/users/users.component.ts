@@ -1,11 +1,7 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
-import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
+import { Component, OnInit } from '@angular/core';
+import { PageEvent } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
 import { UserService } from '../../core/services/user.service';
-import { AuthService } from '../../core/services/auth.service';
 import { User } from '../../models/user.model';
 
 @Component({
@@ -15,69 +11,92 @@ import { User } from '../../models/user.model';
 })
 export class UsersComponent implements OnInit {
   displayedColumns: string[] = ['id', 'username', 'email', 'role', 'status', 'actions'];
-  dataSource: MatTableDataSource<User>;
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+  users: User[] = [];
+  total = 0;
+  page = 1;
+  limit = 10;
+  isLoading = false;
+  searchText = '';
 
-  constructor(private userService: UserService, private authService: AuthService, private router: Router, private snackBar: MatSnackBar) {
-    this.dataSource = new MatTableDataSource<User>();
-  }
+  constructor(private userService: UserService, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     this.loadUsers();
   }
 
   loadUsers(): void {
-    this.userService.getUsers().subscribe(
-      (response) => {
-        this.dataSource.data = response.users;
-        this.dataSource.paginator = this.paginator;
-        this.dataSource.sort = this.sort;
+    this.isLoading = true;
+    this.userService.getUsers(this.page, this.limit, this.searchText || undefined).subscribe({
+      next: (res) => {
+        this.users = res.users;
+        this.total = res.total;
+        this.isLoading = false;
       },
-      (error) => {
+      error: () => {
+        this.isLoading = false;
         this.snackBar.open('获取用户列表失败', '关闭', { duration: 3000 });
       }
-    );
+    });
   }
 
-  viewUser(user: User): void {
-    // 可以实现查看用户详情的功能
-    console.log('View user:', user);
+  onPageChange(event: PageEvent): void {
+    this.page = event.pageIndex + 1;
+    this.limit = event.pageSize;
+    this.loadUsers();
+  }
+
+  onSearch(): void {
+    this.page = 1;
+    this.loadUsers();
   }
 
   toggleStatus(user: User): void {
     const newStatus = user.status === 'active' ? 'inactive' : 'active';
-    this.userService.updateUserStatus(user.id, newStatus).subscribe(
-      (updatedUser) => {
-        const index = this.dataSource.data.findIndex(u => u.id === user.id);
+    this.userService.updateUserStatus(user.id, newStatus).subscribe({
+      next: (res) => {
+        const index = this.users.findIndex(u => u.id === user.id);
         if (index !== -1) {
-          this.dataSource.data[index] = updatedUser;
-          this.dataSource.data = [...this.dataSource.data];
+          this.users[index] = res.user;
+          this.users = [...this.users];
         }
-        this.snackBar.open(`用户 ${user.username} 状态已更新为 ${newStatus === 'active' ? '活跃' : '非活跃'}`, '关闭', { duration: 3000 });
+        this.snackBar.open(`用户状态已更新`, '关闭', { duration: 3000 });
       },
-      (error) => {
+      error: () => {
         this.snackBar.open('更新用户状态失败', '关闭', { duration: 3000 });
       }
-    );
+    });
   }
 
-  deleteUser(userId: number): void {
-    if (confirm('确定要删除这个用户吗？')) {
-      this.userService.deleteUser(userId).subscribe(
-        () => {
-          this.dataSource.data = this.dataSource.data.filter(user => user.id !== userId);
+  deleteUser(userId: number, username: string): void {
+    if (confirm(`确定要删除用户 "${username}" 吗？`)) {
+      this.userService.deleteUser(userId).subscribe({
+        next: () => {
           this.snackBar.open('用户已删除', '关闭', { duration: 3000 });
+          this.loadUsers();
         },
-        (error) => {
+        error: () => {
           this.snackBar.open('删除用户失败', '关闭', { duration: 3000 });
         }
-      );
+      });
     }
   }
 
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+  getRoleText(role: string): string {
+    const map: Record<string, string> = { student: '学生', employer: '企业', admin: '管理员' };
+    return map[role] || role;
+  }
+
+  getStatusClass(status: string): string {
+    const map: Record<string, string> = {
+      active: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700',
+      inactive: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700',
+      banned: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700',
+    };
+    return map[status] || 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700';
+  }
+
+  getStatusText(status: string): string {
+    const map: Record<string, string> = { active: '正常', inactive: '禁用', banned: '封禁' };
+    return map[status] || status;
   }
 }

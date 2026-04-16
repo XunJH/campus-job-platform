@@ -28,6 +28,7 @@ export interface User {
   nickname: string;
   avatar?: string;
   bio?: string;
+  creditScore?: number;
   role: UserRole;
   status: AuthStatus;
   createdAt: string;

@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { UserService } from '../../../../core/services/user.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { User } from '../../../../models/user.model';
 
 @Component({
@@ -18,10 +19,13 @@ export class ProfileComponent implements OnInit {
   isEditing = false;
   user: User | null = null;
   message = '';
+  error = false;
 
   constructor(
     private fb: FormBuilder,
-    private userService: UserService
+    private userService: UserService,
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -39,6 +43,7 @@ export class ProfileComponent implements OnInit {
       this.initForm(mappedUser);
     },
     error: () => {
+      this.error = true;
       this.message = '加载用户信息失败';
     }
   });
@@ -61,6 +66,11 @@ export class ProfileComponent implements OnInit {
     }
   }
 
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/auth/login']);
+  }
+
   onSubmit(): void {
   if (this.profileForm.invalid) return;
 
@@ -78,6 +88,7 @@ export class ProfileComponent implements OnInit {
   this.userService.updateProfile(updateData).subscribe({
     next: (res) => {
       this.isLoading = false;
+      this.error = false;
       this.message = '保存成功';
       this.isEditing = false;
       this.user = res.data;
@@ -85,6 +96,7 @@ export class ProfileComponent implements OnInit {
     },
     error: () => {
       this.isLoading = false;
+      this.error = true;
       this.message = '保存失败';
     }
   });

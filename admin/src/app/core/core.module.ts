@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthService } from './services/auth.service';
 import { UserService } from './services/user.service';
+import { AdminVerificationService } from './services/admin-verification.service';
+import { JobService } from './services/job.service';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
-import { AuthGuard } from './guards/auth.guard';
 
 @NgModule({
   declarations: [],
@@ -14,7 +15,8 @@ import { AuthGuard } from './guards/auth.guard';
   providers: [
     AuthService,
     UserService,
-    AuthGuard,
+    AdminVerificationService,
+    JobService,
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
