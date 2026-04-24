@@ -1,0 +1,202 @@
+<div class="flex min-h-screen bg-background">
+  <!-- Sidebar Navigation -->
+  <aside class="fixed left-0 top-0 h-screen w-64 border-r border-gray-100 bg-white shadow-[4px_0_6px_-1px_rgba(26,54,93,0.05)] flex flex-col p-4 gap-2 z-50">
+    <div class="flex items-center gap-3 px-2 py-4 mb-4">
+      <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
+        <span class="material-symbols-outlined">domain</span>
+      </div>
+      <div>
+        <h1 class="text-lg font-black text-primary">企业招聘端</h1>
+        <p class="text-[10px] uppercase tracking-wider font-bold text-gray-400">机构认证入口</p>
+      </div>
+    </div>
+    <nav class="flex-1 flex flex-col gap-1">
+      <a routerLink="/employer/dashboard" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+        <span class="material-symbols-outlined">dashboard</span>
+        仪表盘
+      </a>
+      <a routerLink="/employer/jobs/post" class="flex items-center gap-3 px-3 py-2.5 bg-blue-50 text-primary rounded-lg font-semibold text-sm transition-all no-underline">
+        <span class="material-symbols-outlined">add_circle</span>
+        发布岗位
+      </a>
+      <a routerLink="/employer/jobs" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+        <span class="material-symbols-outlined">work</span>
+        岗位管理
+      </a>
+      <a routerLink="/employer/applications" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+        <span class="material-symbols-outlined">group</span>
+        申请管理
+      </a>
+      <a routerLink="/employer/profile" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+        <span class="material-symbols-outlined">domain</span>
+        企业资料
+      </a>
+    </nav>
+    <div class="pt-4 border-t border-gray-50 flex flex-col gap-1">
+      <a routerLink="/student/verification" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 transition-all rounded-lg font-semibold text-sm no-underline">
+        <span class="material-symbols-outlined">verified</span>
+        企业认证
+      </a>
+      <button (click)="logout()" class="flex items-center gap-3 px-3 py-2.5 text-error hover:bg-red-50 transition-all rounded-lg font-semibold text-sm w-full text-left !border-0 outline-none">
+        <span class="material-symbols-outlined">logout</span>
+        退出登录
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="ml-64 min-h-screen p-8 max-w-[1400px] flex-1">
+    <div class="max-w-[800px] mx-auto">
+      <!-- Header -->
+      <div class="flex items-center gap-2 mb-8">
+        <a routerLink="/employer/jobs" class="text-slate-400 hover:text-primary transition-colors">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <div>
+          <h1 class="font-h1 text-h1 text-primary">{{ isEditMode ? '编辑岗位' : '发布新岗位' }}</h1>
+          <p class="text-slate-500 font-body-md text-body-md">{{ isEditMode ? '修改岗位信息并保存。' : '创建一个吸引优秀学生的招聘岗位。' }}</p>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="flex flex-col items-center justify-center py-24">
+        <span class="material-symbols-outlined animate-spin text-primary text-4xl mb-4">progress_activity</span>
+        <p class="text-gray-500 font-body-md">加载中...</p>
+      </div>
+
+      <!-- Message -->
+      <div *ngIf="message" class="mb-6 p-4 rounded-lg font-body-md"
+        [class.bg-green-50]="!error"
+        [class.text-green-700]="!error"
+        [class.bg-red-50]="error"
+        [class.text-red-700]="error">
+        {{ message }}
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="postForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <!-- Basic Information -->
+        <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100 p-8">
+          <h2 class="font-h2 text-h2 text-primary mb-6 border-b border-slate-100 pb-4">基本信息</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-slate-700 mb-2">岗位标题 <span class="text-error">*</span></label>
+              <input type="text" formControlName="title"
+                class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all"
+                [class.border-error]="postForm.get('title')?.invalid && postForm.get('title')?.touched"
+                placeholder="例如：校园推广专员" />
+              <div *ngIf="postForm.get('title')?.invalid && postForm.get('title')?.touched" class="mt-1 text-error text-xs">请输入岗位标题</div>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">工作类型 <span class="text-error">*</span></label>
+              <select formControlName="jobType"
+                class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all bg-white">
+                <option value="part_time">兼职</option>
+                <option value="full_time">全职</option>
+                <option value="internship">实习</option>
+                <option value="temporary">临时</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">工作地点类型</label>
+              <select formControlName="workLocation"
+                class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all bg-white">
+                <option *ngFor="let loc of workLocations" [value]="loc.value">{{ loc.label }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">岗位类别</label>
+              <select formControlName="category"
+                class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all bg-white">
+                <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-slate-700 mb-2">工作地点 <span class="text-error">*</span></label>
+              <input type="text" formControlName="location"
+                class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all"
+                [class.border-error]="postForm.get('location')?.invalid && postForm.get('location')?.touched"
+                placeholder="例如：北京市海淀区" />
+              <div *ngIf="postForm.get('location')?.invalid && postForm.get('location')?.touched" class="mt-1 text-error text-xs">请输入工作地点</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compensation & Logistics -->
+        <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100 p-8">
+          <h2 class="font-h2 text-h2 text-primary mb-6 border-b border-slate-100 pb-4">薪资与后勤</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">薪资数额 <span class="text-error">*</span></label>
+              <div class="flex">
+                <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-200 bg-slate-50 text-slate-500 text-sm">¥</span>
+                <input type="number" formControlName="salary"
+                  class="flex-1 rounded-r-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all"
+                  [class.border-error]="postForm.get('salary')?.invalid && postForm.get('salary')?.touched"
+                  placeholder="0.00" />
+              </div>
+              <div *ngIf="postForm.get('salary')?.invalid && postForm.get('salary')?.touched" class="mt-1 text-error text-xs">请输入有效薪资</div>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">薪资类型 <span class="text-error">*</span></label>
+              <select formControlName="salaryType"
+                class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all bg-white">
+                <option value="hourly">时薪</option>
+                <option value="daily">日薪</option>
+                <option value="weekly">周薪</option>
+                <option value="monthly">月薪</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">工作时间</label>
+              <input type="text" formControlName="workingHours"
+                class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all"
+                placeholder="例如：周一至周五 9:00-18:00" />
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">截止日期</label>
+              <input type="date" formControlName="deadline"
+                class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Description -->
+        <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100 p-8">
+          <h2 class="font-h2 text-h2 text-primary mb-6 border-b border-slate-100 pb-4">详细描述</h2>
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">岗位要求 <span class="text-error">*</span></label>
+              <textarea formControlName="requirements" rows="4"
+                class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all resize-y"
+                [class.border-error]="postForm.get('requirements')?.invalid && postForm.get('requirements')?.touched"
+                placeholder="列出关键资格、技能和条件..."></textarea>
+              <div *ngIf="postForm.get('requirements')?.invalid && postForm.get('requirements')?.touched" class="mt-1 text-error text-xs">请输入岗位要求</div>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 mb-2">岗位描述 <span class="text-error">*</span></label>
+              <textarea formControlName="description" rows="6"
+                class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all resize-y"
+                [class.border-error]="postForm.get('description')?.invalid && postForm.get('description')?.touched"
+                placeholder="描述岗位职责、团队环境和发展空间..."></textarea>
+              <div *ngIf="postForm.get('description')?.invalid && postForm.get('description')?.touched" class="mt-1 text-error text-xs">请输入岗位描述</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-4 pt-4">
+          <button type="button" routerLink="/employer/dashboard"
+            class="px-6 py-3 border border-slate-200 text-slate-600 rounded-lg font-button text-button hover:bg-slate-50 transition-colors">
+            取消
+          </button>
+          <button type="submit" [disabled]="isSubmitting || loading"
+            class="px-8 py-3 bg-primary text-white rounded-lg font-button text-button shadow-md hover:bg-primary-container active:scale-[0.98] transition-all disabled:opacity-50">
+            <span *ngIf="!isSubmitting">{{ isEditMode ? '保存修改' : '发布岗位' }}</span>
+            <span *ngIf="isSubmitting">{{ isEditMode ? '保存中...' : '发布中...' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>

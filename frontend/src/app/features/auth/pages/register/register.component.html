@@ -1,0 +1,190 @@
+<div class="min-h-screen w-full relative flex items-center justify-end">
+  <!-- Full-screen Background Image -->
+  <div class="absolute inset-0">
+    <img
+      src="assets/images/login-bg.jpg"
+      class="w-full h-full object-cover object-center"
+      alt="校园招聘平台"
+    />
+  </div>
+
+  <!-- Right-side Register Card -->
+  <div class="relative z-10 w-full max-w-[460px] mr-4 sm:mr-8 lg:mr-16 xl:mr-24 my-6 px-4">
+    <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-8">
+      <!-- Header -->
+      <div class="flex flex-col items-center mb-6">
+        <div class="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mb-3 shadow-lg">
+          <span class="material-symbols-outlined text-white text-2xl">person_add</span>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">创建新账号</h1>
+        <p class="text-sm text-gray-500 mt-1">加入我们，开启校园招聘之旅</p>
+      </div>
+
+      <!-- Error Message -->
+      <div
+        *ngIf="errorMessage"
+        class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium flex items-center gap-2"
+      >
+        <span class="material-symbols-outlined text-base">error</span>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Register Form -->
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-4">
+        <!-- Role Selection -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-medium text-gray-600">选择账号类型</label>
+          <div class="grid grid-cols-2 gap-3 p-1 bg-gray-100 rounded-xl">
+            <button
+              type="button"
+              (click)="selectRole('student')"
+              class="flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all !border-0 outline-none"
+              [class.bg-white]="registerForm.value.role === 'student'"
+              [class.shadow-sm]="registerForm.value.role === 'student'"
+              [class.text-primary]="registerForm.value.role === 'student'"
+              [class.text-gray-500]="registerForm.value.role !== 'student'"
+              [class.hover:bg-white]="registerForm.value.role !== 'student'"
+            >
+              <span class="material-symbols-outlined text-[18px]">school</span>
+              学生
+            </button>
+            <button
+              type="button"
+              (click)="selectRole('employer')"
+              class="flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all !border-0 outline-none"
+              [class.bg-white]="registerForm.value.role === 'employer'"
+              [class.shadow-sm]="registerForm.value.role === 'employer'"
+              [class.text-primary]="registerForm.value.role === 'employer'"
+              [class.text-gray-500]="registerForm.value.role !== 'employer'"
+              [class.hover:bg-white]="registerForm.value.role !== 'employer'"
+            >
+              <span class="material-symbols-outlined text-[18px]">corporate_fare</span>
+              企业
+            </button>
+          </div>
+          <input type="hidden" formControlName="role" />
+        </div>
+
+        <!-- Username -->
+        <div class="space-y-1">
+          <label class="text-xs font-medium text-gray-600">用户名</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">person</span>
+            <input
+              type="text"
+              formControlName="username"
+              class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all outline-none bg-gray-50/50 text-sm"
+              placeholder="3-50个字符"
+              [class.border-red-400]="f['username'].touched && f['username'].invalid"
+            />
+          </div>
+          <div *ngIf="f['username'].touched && f['username'].invalid" class="text-red-500 text-xs">
+            <span *ngIf="f['username'].errors?.['required']">用户名不能为空</span>
+            <span *ngIf="f['username'].errors?.['minlength']">至少3个字符</span>
+            <span *ngIf="f['username'].errors?.['maxlength']">最多50个字符</span>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="space-y-1">
+          <label class="text-xs font-medium text-gray-600">邮箱</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">mail</span>
+            <input
+              type="email"
+              formControlName="email"
+              class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all outline-none bg-gray-50/50 text-sm"
+              placeholder="请输入邮箱"
+              [class.border-red-400]="f['email'].touched && f['email'].invalid"
+            />
+          </div>
+          <div *ngIf="f['email'].touched && f['email'].invalid" class="text-red-500 text-xs">
+            <span *ngIf="f['email'].errors?.['required']">邮箱不能为空</span>
+            <span *ngIf="f['email'].errors?.['email']">请输入有效的邮箱</span>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="space-y-1">
+          <label class="text-xs font-medium text-gray-600">密码</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">lock</span>
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              formControlName="password"
+              class="w-full pl-10 pr-10 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all outline-none bg-gray-50/50 text-sm"
+              placeholder="至少6位，含大小写字母和数字"
+              [class.border-red-400]="f['password'].touched && f['password'].invalid"
+            />
+            <button
+              type="button"
+              (click)="togglePassword()"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors !border-0 outline-none"
+            >
+              <span class="material-symbols-outlined text-[18px]">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
+          <div *ngIf="f['password'].touched && f['password'].invalid" class="text-red-500 text-xs">
+            <span *ngIf="f['password'].errors?.['required']">密码不能为空</span>
+            <span *ngIf="f['password'].errors?.['minlength']">至少6位</span>
+            <span *ngIf="f['password'].errors?.['pattern']">需包含大小写字母和数字</span>
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="space-y-1">
+          <label class="text-xs font-medium text-gray-600">确认密码</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">lock_outline</span>
+            <input
+              [type]="showConfirmPassword ? 'text' : 'password'"
+              formControlName="confirmPassword"
+              class="w-full pl-10 pr-10 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all outline-none bg-gray-50/50 text-sm"
+              placeholder="请再次输入密码"
+              [class.border-red-400]="f['confirmPassword'].touched && f['confirmPassword'].invalid"
+            />
+            <button
+              type="button"
+              (click)="toggleConfirmPassword()"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors !border-0 outline-none"
+            >
+              <span class="material-symbols-outlined text-[18px]">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
+          <div *ngIf="f['confirmPassword'].touched && f['confirmPassword'].invalid" class="text-red-500 text-xs">
+            <span *ngIf="f['confirmPassword'].errors?.['required']">请确认密码</span>
+            <span *ngIf="f['confirmPassword'].errors?.['passwordMismatch']">两次密码不一致</span>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button
+          type="submit"
+          class="w-full bg-primary text-white py-3 rounded-lg font-semibold text-sm hover:bg-[#1A365D] active:scale-[0.98] transition-all shadow-md !border-0"
+          [disabled]="isLoading"
+        >
+          <span *ngIf="!isLoading">注册</span>
+          <span *ngIf="isLoading" class="flex items-center justify-center gap-2">
+            <span class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            注册中...
+          </span>
+        </button>
+      </form>
+
+      <!-- Footer -->
+      <div class="mt-6 pt-5 border-t border-gray-100 text-center space-y-3">
+        <p class="text-sm text-gray-500">
+          已有账号？
+          <a routerLink="/auth/login" class="text-primary font-semibold hover:underline">立即登录</a>
+        </p>
+        <div class="flex justify-center gap-4 text-xs text-gray-400">
+          <a href="#" class="hover:text-gray-600 transition-colors">隐私政策</a>
+          <span class="text-gray-300">|</span>
+          <a href="#" class="hover:text-gray-600 transition-colors">服务条款</a>
+          <span class="text-gray-300">|</span>
+          <a href="#" class="hover:text-gray-600 transition-colors">帮助中心</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

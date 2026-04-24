@@ -1,0 +1,318 @@
+/* ============================================
+   Auth Pages - Contra Design System
+   ============================================ */
+
+.auth-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+/* Background dots (HeroSection style) */
+.auth-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.25;
+}
+
+.auth-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(219, 234, 254, 0.45) 0%, transparent 70%);
+}
+
+/* Nav */
+.auth-nav {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 1.5rem;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #111827;
+  text-decoration: none;
+}
+
+/* Main */
+.auth-main {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border: 1px solid #f3f4f6;
+  border-radius: 1.25rem;
+  padding: 2.5rem;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 4px 8px rgba(0, 0, 0, 0.02),
+    0 8px 16px rgba(0, 0, 0, 0.02),
+    0 16px 32px rgba(0, 0, 0, 0.03);
+
+  @media (max-width: 480px) {
+    padding: 1.75rem;
+    border-radius: 1rem;
+  }
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 1.75rem;
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.375rem;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+}
+
+/* Messages */
+.message {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+
+  &-error {
+    background: rgba(239, 68, 68, 0.06);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.12);
+  }
+
+  &-success {
+    background: rgba(34, 197, 94, 0.06);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.12);
+  }
+}
+
+/* Form elements */
+.auth-form {
+  .form-group {
+    margin-bottom: 1.125rem;
+
+    label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.375rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      font-size: 0.875rem;
+      color: #111827;
+      background: #ffffff;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+      &::placeholder {
+        color: #9ca3af;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: #9ca3af;
+        box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.04);
+      }
+
+      &.error {
+        border-color: #ef4444;
+
+        &:focus {
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.05);
+        }
+      }
+    }
+
+    .error-text {
+      font-size: 0.75rem;
+      color: #dc2626;
+      margin-top: 0.375rem;
+    }
+  }
+
+  .password-input {
+    position: relative;
+
+    input {
+      padding-right: 2.75rem;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 0.625rem;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      background: transparent;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      border-radius: 0.375rem;
+      transition: color 0.15s ease, background 0.15s ease;
+
+      &:hover {
+        color: #6b7280;
+        background: #f9fafb;
+      }
+    }
+  }
+
+  .form-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+      color: #4b5563;
+      cursor: pointer;
+
+      input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.25rem;
+        accent-color: #111827;
+        cursor: pointer;
+      }
+    }
+
+    .link {
+      font-size: 0.8125rem;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .btn {
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: 9999px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &-primary {
+      background: #111827;
+      color: #ffffff;
+
+      &:hover:not(:disabled) {
+        background: #000000;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+/* Form footer */
+.form-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f3f4f6;
+
+  p {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .link {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+/* ============================================
+   Register specific overrides
+   ============================================ */
+
+.role-tabs {
+  display: inline-flex;
+  align-items: center;
+  background: #f3f4f6;
+  border-radius: 9999px;
+  padding: 0.25rem;
+  margin-bottom: 0.25rem;
+
+  .role-tab {
+    appearance: none;
+    border: none;
+    background: transparent;
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6b7280;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+      color: #374151;
+    }
+
+    &.active {
+      background: #ffffff;
+      color: #111827;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+  }
+}

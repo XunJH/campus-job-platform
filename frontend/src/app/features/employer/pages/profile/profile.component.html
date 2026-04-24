@@ -1,0 +1,276 @@
+<div class="flex min-h-screen bg-background">
+  <!-- Sidebar Navigation -->
+  <aside class="fixed left-0 top-0 h-screen w-64 border-r border-gray-100 bg-white shadow-[4px_0_6px_-1px_rgba(26,54,93,0.05)] flex flex-col p-4 gap-2 z-50">
+    <div class="flex items-center gap-3 px-2 py-4 mb-4">
+      <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
+        <span class="material-symbols-outlined">domain</span>
+      </div>
+      <div>
+        <h1 class="text-lg font-black text-primary">企业招聘端</h1>
+        <p class="text-[10px] uppercase tracking-wider font-bold text-gray-400">机构认证入口</p>
+      </div>
+    </div>
+    <nav class="flex-1 flex flex-col gap-1">
+      <a routerLink="/employer/dashboard" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+        <span class="material-symbols-outlined">dashboard</span>
+        仪表盘
+      </a>
+      <a routerLink="/employer/jobs/post" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+        <span class="material-symbols-outlined">add_circle</span>
+        发布岗位
+      </a>
+      <a routerLink="/employer/jobs" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+        <span class="material-symbols-outlined">work</span>
+        岗位管理
+      </a>
+      <a routerLink="/employer/applications" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+        <span class="material-symbols-outlined">group</span>
+        申请管理
+      </a>
+      <a routerLink="/employer/profile" class="flex items-center gap-3 px-3 py-2.5 bg-blue-50 text-primary rounded-lg font-semibold text-sm transition-all no-underline">
+        <span class="material-symbols-outlined">domain</span>
+        企业资料
+      </a>
+    </nav>
+    <div class="pt-4 border-t border-gray-50 flex flex-col gap-1">
+      <a routerLink="/student/verification" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 transition-all rounded-lg font-semibold text-sm no-underline">
+        <span class="material-symbols-outlined">verified</span>
+        企业认证
+      </a>
+      <button (click)="logout()" class="flex items-center gap-3 px-3 py-2.5 text-error hover:bg-red-50 transition-all rounded-lg font-semibold text-sm w-full text-left !border-0 outline-none">
+        <span class="material-symbols-outlined">logout</span>
+        退出登录
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="ml-64 min-h-screen p-8 max-w-[1400px] flex-1">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex flex-col items-center justify-center py-24">
+      <span class="material-symbols-outlined animate-spin text-primary text-4xl mb-4">progress_activity</span>
+      <p class="text-gray-500 font-body-md">Loading...</p>
+    </div>
+
+    <ng-container *ngIf="!isLoading">
+      <!-- Header -->
+      <header class="flex justify-between items-center mb-8">
+        <div>
+          <div class="flex items-center gap-3 mb-1">
+            <h2 class="font-h1 text-h1 text-primary">企业资料</h2>
+            <span *ngIf="isApproved" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+              <span class="material-symbols-outlined text-[14px] mr-1" style="font-variation-settings: 'FILL' 1;">verified</span>
+              已认证
+            </span>
+            <span *ngIf="verification?.status === 'pending'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+              <span class="material-symbols-outlined text-[14px] mr-1">pending</span>
+              审核中
+            </span>
+            <span *ngIf="verification?.status === 'rejected'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+              <span class="material-symbols-outlined text-[14px] mr-1">cancel</span>
+              已拒绝
+            </span>
+          </div>
+          <p class="font-body-md text-body-md text-secondary">管理您的企业信息和认证状态</p>
+        </div>
+        <button *ngIf="!isEditing" (click)="toggleEdit()" class="bg-primary hover:bg-primary-container text-white px-6 py-3 rounded-xl font-button text-button flex items-center gap-2 shadow-lg shadow-blue-900/10 transition-all active:scale-95">
+          <span class="material-symbols-outlined">edit</span>
+          编辑资料
+        </button>
+      </header>
+
+      <!-- Messages -->
+      <div *ngIf="message && !error" class="mb-6 p-4 rounded-lg bg-green-50 text-green-700 font-body-md border border-green-100">
+        {{ message }}
+      </div>
+      <div *ngIf="message && error" class="mb-6 p-4 rounded-lg bg-red-50 text-red-700 font-body-md border border-red-100">
+        {{ message }}
+      </div>
+
+      <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+        <!-- Hero Card -->
+        <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-8 mb-6">
+          <div class="flex flex-col md:flex-row gap-8 items-start">
+            <div class="relative">
+              <div class="w-24 h-24 rounded-2xl bg-primary-container flex items-center justify-center overflow-hidden border-2 border-gray-100">
+                <img *ngIf="profileForm.value.avatar" [src]="profileForm.value.avatar" alt="Company Logo" class="w-full h-full object-cover" />
+                <span *ngIf="!profileForm.value.avatar" class="material-symbols-outlined text-4xl text-white">domain</span>
+              </div>
+              <button *ngIf="isEditing" type="button" class="absolute -bottom-2 -right-2 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center shadow-md hover:bg-primary-container transition-colors">
+                <span class="material-symbols-outlined text-sm">edit</span>
+              </button>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-2">
+                <h3 class="font-h1 text-h1 text-primary">{{ verification?.companyName || profileForm.value.companyName || '企业名称' }}</h3>
+              </div>
+              <p class="text-secondary font-body-md mb-4">{{ profileForm.value.bio || 'No company description yet.' }}</p>
+              <div class="flex flex-wrap gap-3">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-primary rounded-lg text-sm font-medium border border-gray-100">
+                  <span class="material-symbols-outlined text-[16px]">business</span>
+                  {{ profileForm.value.industry || '互联网 / 科技' }}
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-primary rounded-lg text-sm font-medium border border-gray-100">
+                  <span class="material-symbols-outlined text-[16px]">groups</span>
+                  {{ profileForm.value.scale || '50-200人' }}
+                </span>
+                <span *ngIf="profileForm.value.website" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-primary rounded-lg text-sm font-medium border border-gray-100">
+                  <span class="material-symbols-outlined text-[16px]">language</span>
+                  {{ profileForm.value.website }}
+                </span>
+              </div>
+              <div *ngIf="isEditing" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" formControlName="companyName" placeholder="企业名称" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                <input type="text" formControlName="industry" placeholder="所属行业" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                <input type="text" formControlName="scale" placeholder="企业规模" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                <input type="text" formControlName="website" placeholder="企业官网" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                <input type="text" formControlName="avatar" placeholder="Logo 链接" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                <textarea formControlName="bio" placeholder="企业简介..." rows="2" class="md:col-span-2 w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 resize-y"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two Column Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <!-- Contact Info -->
+          <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-6">
+            <h3 class="font-h2 text-h2 text-primary mb-6 flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">location_on</span>
+              联系与地址
+            </h3>
+            <div class="space-y-4">
+              <div class="flex justify-between items-center py-3 border-b border-gray-50">
+                <span class="text-secondary text-sm">所在城市</span>
+                <span *ngIf="!isEditing" class="text-primary font-medium">{{ profileForm.value.city || '--' }}</span>
+                <input *ngIf="isEditing" type="text" formControlName="city" placeholder="城市" class="w-48 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary" />
+              </div>
+              <div class="flex justify-between items-center py-3 border-b border-gray-50">
+                <span class="text-secondary text-sm">详细地址</span>
+                <span *ngIf="!isEditing" class="text-primary font-medium">{{ profileForm.value.address || '--' }}</span>
+                <input *ngIf="isEditing" type="text" formControlName="address" placeholder="地址" class="w-48 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary" />
+              </div>
+              <div class="flex justify-between items-center py-3 border-b border-gray-50">
+                <span class="text-secondary text-sm">联系邮箱</span>
+                <span *ngIf="!isEditing" class="text-primary font-medium">{{ profileForm.value.email || '--' }}</span>
+                <input *ngIf="isEditing" type="email" formControlName="email" placeholder="邮箱" class="w-48 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary" />
+              </div>
+              <div class="flex justify-between items-center py-3">
+                <span class="text-secondary text-sm">联系电话</span>
+                <span *ngIf="!isEditing" class="text-primary font-medium">{{ profileForm.value.phone || '--' }}</span>
+                <input *ngIf="isEditing" type="text" formControlName="phone" placeholder="电话" class="w-48 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Platform Stats -->
+          <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-6">
+            <h3 class="font-h2 text-h2 text-primary mb-6 flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">bar_chart</span>
+              平台数据
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="p-4 bg-slate-50 rounded-xl border border-gray-100">
+                <p class="text-caption text-secondary mb-1">信用评分</p>
+                <p class="text-h1 font-h1 text-primary">{{ user?.creditScore || 100 }}</p>
+              </div>
+              <div class="p-4 bg-slate-50 rounded-xl border border-gray-100">
+                <p class="text-caption text-secondary mb-1">在招岗位</p>
+                <p class="text-h1 font-h1 text-primary">{{ stats.activeJobsCount }}</p>
+              </div>
+              <div class="p-4 bg-slate-50 rounded-xl border border-gray-100">
+                <p class="text-caption text-secondary mb-1">历史发布</p>
+                <p class="text-h1 font-h1 text-primary">{{ stats.totalJobsCount }}</p>
+              </div>
+              <div class="p-4 bg-slate-50 rounded-xl border border-gray-100">
+                <p class="text-caption text-secondary mb-1">学生评分</p>
+                <p class="text-h1 font-h1 text-primary">{{ defaultRating }}</p>
+              </div>
+              <div class="p-4 bg-slate-50 rounded-xl border border-gray-100">
+                <p class="text-caption text-secondary mb-1">收到评价</p>
+                <p class="text-h1 font-h1 text-primary">{{ defaultReviews }}</p>
+              </div>
+              <div class="p-4 bg-slate-50 rounded-xl border border-gray-100">
+                <p class="text-caption text-secondary mb-1">加入时间</p>
+                <p class="text-h1 font-h1 text-primary">{{ joinedAt }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 资质证明 -->
+        <div *ngIf="isApproved" class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-6 mb-6">
+          <h3 class="font-h2 text-h2 text-primary mb-6 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">verified</span>
+            资质证明
+          </h3>
+          <div class="space-y-4">
+            <div class="flex items-center gap-4 p-4 bg-green-50 rounded-xl border border-green-100">
+              <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-700">
+                <span class="material-symbols-outlined">check_circle</span>
+              </div>
+              <div class="flex-1">
+                <p class="text-primary font-semibold">营业执照</p>
+                <p class="text-secondary text-sm">已上传 · 已审核</p>
+              </div>
+              <a *ngIf="verification?.licenseImage" [href]="verification?.licenseImage" target="_blank" class="text-primary font-medium text-sm hover:underline">查看</a>
+            </div>
+            <div *ngIf="verification?.otherQualifications" class="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-gray-100">
+              <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-700">
+                <span class="material-symbols-outlined">description</span>
+              </div>
+              <div class="flex-1">
+                <p class="text-primary font-semibold">其他资质</p>
+                <p class="text-secondary text-sm">{{ verification?.otherQualifications }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Actions -->
+        <div *ngIf="isEditing" class="flex justify-end gap-3">
+          <button type="button" (click)="toggleEdit()" class="px-6 py-3 border border-gray-200 rounded-xl font-button text-gray-700 hover:bg-gray-50 transition-colors">
+            取消
+          </button>
+          <button type="submit" [disabled]="isLoading" class="px-6 py-3 bg-primary text-white rounded-xl font-button hover:bg-primary-container transition-all disabled:opacity-50 shadow-lg shadow-blue-900/10">
+            <span *ngIf="!isLoading">保存修改</span>
+            <span *ngIf="isLoading">保存中...</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- 正在招聘的岗位 -->
+      <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-6 mt-6">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="font-h2 text-h2 text-primary">正在招聘的岗位</h3>
+          <a routerLink="/employer/jobs/post" class="text-primary font-button text-sm hover:underline">发布新岗位</a>
+        </div>
+        <div *ngIf="stats.recentJobs.length > 0; else emptyJobs" class="divide-y divide-gray-50">
+          <div *ngFor="let job of stats.recentJobs; trackBy: trackByJobId" class="py-4 flex items-center justify-between hover:bg-gray-50 transition-colors px-4 -mx-4 rounded-lg">
+            <div>
+              <p class="text-primary font-semibold">{{ job.title }}</p>
+              <p class="text-secondary text-sm">{{ job.location }} · ¥{{ job.salary }} · {{ job.views || 0 }} views · {{ job.applicationsCount || 0 }} applications</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="px-3 py-1 rounded-full text-xs font-bold" [class.bg-green-100]="job.status === 'active' && job.auditStatus === 'approved'" [class.text-green-700]="job.status === 'active' && job.auditStatus === 'approved'" [class.bg-gray-100]="job.status !== 'active' || job.auditStatus !== 'approved'" [class.text-gray-500]="job.status !== 'active' || job.auditStatus !== 'approved'">
+                {{ job.status === 'active' && job.auditStatus === 'approved' ? '招聘中' : '已关闭/待审' }}
+              </span>
+              <a [routerLink]="['/employer/jobs']" class="text-primary text-sm hover:underline">管理</a>
+            </div>
+          </div>
+        </div>
+        <ng-template #emptyJobs>
+          <div class="text-center py-12">
+            <span class="material-symbols-outlined text-4xl text-gray-300 mb-3">work_off</span>
+            <p class="text-secondary mb-4">暂无在招岗位</p>
+            <a routerLink="/employer/jobs/post" class="inline-block px-6 py-3 bg-primary text-white rounded-xl font-button hover:bg-primary-container transition-all">立即发布</a>
+          </div>
+        </ng-template>
+        <div class="mt-4 pt-4 border-t border-gray-50 flex justify-between text-sm text-secondary">
+          <span>最近活跃：{{ lastActiveAt }}</span>
+          <span>历史发布岗位：{{ stats.totalJobsCount }} 个</span>
+        </div>
+      </div>
+    </ng-container>
+  </main>
+</div>

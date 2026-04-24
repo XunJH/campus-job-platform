@@ -1,0 +1,6 @@
+// Register component uses the same styles as login
+// Import from login.component.scss or duplicate styles
+// Using @import would be ideal but for simplicity we'll reference the same structure
+
+// Re-export styles from login
+@use '../login/login.component.scss';

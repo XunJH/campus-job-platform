@@ -1,0 +1,256 @@
+<ng-container *ngIf="isEmployer; else studentLayout">
+  <!-- Employer Layout with Sidebar -->
+  <div class="flex min-h-screen bg-background">
+    <!-- Sidebar Navigation -->
+    <aside class="fixed left-0 top-0 h-screen w-64 border-r border-gray-100 bg-white shadow-[4px_0_6px_-1px_rgba(26,54,93,0.05)] flex flex-col p-4 gap-2 z-50">
+      <div class="flex items-center gap-3 px-2 py-4 mb-4">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
+          <span class="material-symbols-outlined">domain</span>
+        </div>
+        <div>
+          <h1 class="text-lg font-black text-primary">企业招聘端</h1>
+          <p class="text-[10px] uppercase tracking-wider font-bold text-gray-400">机构认证入口</p>
+        </div>
+      </div>
+      <nav class="flex-1 flex flex-col gap-1">
+        <a routerLink="/employer/dashboard" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+          <span class="material-symbols-outlined">dashboard</span>
+          仪表盘
+        </a>
+        <a routerLink="/employer/jobs/post" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+          <span class="material-symbols-outlined">add_circle</span>
+          发布岗位
+        </a>
+        <a routerLink="/employer/jobs" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+          <span class="material-symbols-outlined">work</span>
+          岗位管理
+        </a>
+        <a routerLink="/employer/applications" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+          <span class="material-symbols-outlined">group</span>
+          申请管理
+        </a>
+        <a routerLink="/employer/profile" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
+          <span class="material-symbols-outlined">domain</span>
+          企业资料
+        </a>
+      </nav>
+      <div class="pt-4 border-t border-gray-50 flex flex-col gap-1">
+        <a routerLink="/student/verification" class="flex items-center gap-3 px-3 py-2.5 bg-blue-50 text-primary rounded-lg font-semibold text-sm transition-all no-underline">
+          <span class="material-symbols-outlined">verified</span>
+          企业认证
+        </a>
+        <button (click)="logout()" class="flex items-center gap-3 px-3 py-2.5 text-error hover:bg-red-50 transition-all rounded-lg font-semibold text-sm w-full text-left !border-0 outline-none">
+          <span class="material-symbols-outlined">logout</span>
+          退出登录
+        </button>
+      </div>
+    </aside>
+
+    <main class="ml-64 min-h-screen p-8 max-w-[1400px] flex-1">
+      <ng-container *ngTemplateOutlet="verificationContent"></ng-container>
+    </main>
+  </div>
+</ng-container>
+
+<!-- Student Layout with Top Navigation -->
+<ng-template #studentLayout>
+  <div class="min-h-screen bg-background">
+    <!-- Top Navigation Bar -->
+    <header class="bg-white dark:bg-slate-900 shadow-sm dark:shadow-none border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
+      <div class="flex justify-between items-center w-full px-6 py-3 max-w-7xl mx-auto">
+        <div class="flex items-center gap-8">
+          <span class="text-xl font-bold text-[#1A365D] dark:text-blue-400">校园招聘</span>
+          <nav class="hidden md:flex items-center gap-6">
+            <a routerLink="/student/jobs" class="text-slate-600 dark:text-slate-400 hover:text-[#1A365D] transition-colors duration-200 no-underline">岗位</a>
+            <a routerLink="/student/applications" class="text-slate-600 dark:text-slate-400 hover:text-[#1A365D] transition-colors duration-200 no-underline">我的投递</a>
+            <a routerLink="/student/profile" class="text-slate-600 dark:text-slate-400 hover:text-[#1A365D] transition-colors duration-200 no-underline">个人资料</a>
+          </nav>
+        </div>
+        <div class="flex items-center gap-4">
+          <button (click)="logout()" class="p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors active:scale-95 duration-200" title="退出登录">
+            <span class="material-symbols-outlined">logout</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+      <ng-container *ngTemplateOutlet="verificationContent"></ng-container>
+    </main>
+  </div>
+</ng-template>
+
+<!-- Shared Verification Content -->
+<ng-template #verificationContent>
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="flex flex-col items-center justify-center py-24">
+    <span class="material-symbols-outlined animate-spin text-primary text-4xl mb-4">progress_activity</span>
+    <p class="text-gray-500 font-body-md">加载认证状态...</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <!-- Header -->
+    <header class="mb-8">
+      <h2 class="font-h1 text-h1 text-primary mb-1">企业认证</h2>
+      <p class="font-body-md text-body-md text-secondary">完成认证后即可发布岗位、查看求职者简历</p>
+    </header>
+
+    <!-- Status Cards -->
+    <div *ngIf="status" class="mb-8">
+      <!-- Pending Status -->
+      <div *ngIf="status.status === 'pending'" class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-8">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center">
+            <span class="material-symbols-outlined text-3xl text-orange-500">hourglass_top</span>
+          </div>
+          <div>
+            <h3 class="font-h1 text-h1 text-primary">审核中</h3>
+            <p class="text-secondary">您的认证申请正在审核中，通常需要 1-3 个工作日</p>
+          </div>
+        </div>
+        <div *ngIf="status.submittedAt" class="text-sm text-secondary mb-4">
+          提交时间： {{ status.submittedAt | date:'yyyy-MM-dd HH:mm' }}
+        </div>
+        <!-- AI Audit Panel -->
+        <div *ngIf="status.aiAuditResult" class="bg-blue-50 rounded-xl p-6 border border-blue-100">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="px-2 py-1 bg-primary text-white text-xs font-bold rounded">AI 预审</span>
+            <span class="px-2 py-1 rounded text-xs font-bold" [class.bg-green-100]="status.aiAuditResult.risk_level === 'low'" [class.text-green-700]="status.aiAuditResult.risk_level === 'low'" [class.bg-orange-100]="status.aiAuditResult.risk_level === 'medium'" [class.text-orange-700]="status.aiAuditResult.risk_level === 'medium'" [class.bg-red-100]="status.aiAuditResult.risk_level === 'high'" [class.text-red-700]="status.aiAuditResult.risk_level === 'high'">
+              {{ status.aiAuditResult.risk_level === 'high' ? '高风险' : status.aiAuditResult.risk_level === 'medium' ? '中风险' : '低风险' }}
+            </span>
+          </div>
+          <ul *ngIf="status.aiAuditResult.details?.length" class="space-y-2 text-sm text-primary">
+            <li *ngFor="let detail of status.aiAuditResult.details" class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-primary text-sm mt-0.5">check_circle</span>
+              {{ detail }}
+            </li>
+          </ul>
+          <p *ngIf="!status.aiAuditResult.details?.length" class="text-sm text-primary">
+            {{ status.aiAuditResult.is_valid ? '初审通过，等待人工复核' : '初审发现异常，等待人工复核' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Approved Status -->
+      <div *ngIf="status.status === 'approved'" class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-8">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
+            <span class="material-symbols-outlined text-3xl text-green-500">verified</span>
+          </div>
+          <div>
+            <h3 class="font-h1 text-h1 text-primary">已通过认证！</h3>
+            <p class="text-secondary">您的企业已成功通过认证</p>
+          </div>
+        </div>
+        <div *ngIf="status.companyName" class="text-sm text-secondary mb-2">企业名称： {{ status.companyName }}</div>
+        <div *ngIf="status.reviewedAt" class="text-sm text-secondary">审核时间： {{ status.reviewedAt | date:'yyyy-MM-dd HH:mm' }}</div>
+      </div>
+
+      <!-- Rejected Status -->
+      <div *ngIf="status.status === 'rejected'" class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-8">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+            <span class="material-symbols-outlined text-3xl text-red-500">cancel</span>
+          </div>
+          <div>
+            <h3 class="font-h1 text-h1 text-primary">认证被拒绝</h3>
+            <p class="text-secondary">您的认证申请被拒绝，请修改后重新提交</p>
+          </div>
+        </div>
+        <div *ngIf="status.rejectionReason" class="p-4 bg-red-50 rounded-xl border border-red-100 text-red-700 text-sm mb-4">
+          原因： {{ status.rejectionReason }}
+        </div>
+        <div *ngIf="status.submittedAt" class="text-sm text-secondary mb-4">
+          提交时间： {{ status.submittedAt | date:'yyyy-MM-dd HH:mm' }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert Message -->
+    <div *ngIf="message" class="mb-6 p-4 rounded-xl border" [class.bg-green-50]="status?.status !== 'rejected'" [class.border-green-100]="status?.status !== 'rejected'" [class.text-green-700]="status?.status !== 'rejected'" [class.bg-red-50]="status?.status === 'rejected'" [class.border-red-100]="status?.status === 'rejected'" [class.text-red-700]="status?.status === 'rejected'">
+      {{ message }}
+    </div>
+
+    <!-- Application Form -->
+    <div *ngIf="canApply" class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-8">
+      <h3 class="font-h2 text-h2 text-primary mb-6">提交认证</h3>
+      <form [formGroup]="applyForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">企业名称 <span class="text-error">*</span></label>
+            <input type="text" formControlName="companyName" placeholder="请输入企业全称" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+            <div *ngIf="applyForm.get('companyName')?.invalid && applyForm.get('companyName')?.touched" class="text-error text-xs mt-1">请输入企业名称</div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">营业执照号 <span class="text-error">*</span></label>
+            <input type="text" formControlName="licenseNumber" placeholder="请输入营业执照号" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+            <div *ngIf="applyForm.get('licenseNumber')?.invalid && applyForm.get('licenseNumber')?.touched" class="text-error text-xs mt-1">请输入营业执照号</div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">联系人姓名 <span class="text-error">*</span></label>
+            <input type="text" formControlName="contactName" placeholder="请输入联系人姓名" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+            <div *ngIf="applyForm.get('contactName')?.invalid && applyForm.get('contactName')?.touched" class="text-error text-xs mt-1">请输入联系人姓名</div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">联系人电话 <span class="text-error">*</span></label>
+            <input type="text" formControlName="contactPhone" placeholder="请输入11位手机号" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+            <div *ngIf="applyForm.get('contactPhone')?.invalid && applyForm.get('contactPhone')?.touched" class="text-error text-xs mt-1">请输入有效的手机号码</div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">营业执照图片 <span class="text-error">*</span></label>
+          <input type="text" formControlName="licenseImage" placeholder="请输入营业执照图片URL" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+          <img *ngIf="applyForm.value.licenseImage" [src]="applyForm.value.licenseImage" alt="营业执照预览" class="mt-3 max-w-xs rounded-xl border border-gray-200" />
+          <div *ngIf="applyForm.get('licenseImage')?.invalid && applyForm.get('licenseImage')?.touched" class="text-error text-xs mt-1">请输入营业执照图片</div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">企业地址</label>
+          <input type="text" formControlName="address" placeholder="请输入企业地址（选填）" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">所属行业</label>
+            <input type="text" formControlName="industry" placeholder="如：互联网、教育（选填）" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">企业规模</label>
+            <input type="text" formControlName="scale" placeholder="如：50-100人（选填）" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">所在城市</label>
+            <input type="text" formControlName="city" placeholder="如：北京市（选填）" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">企业官网</label>
+            <input type="text" formControlName="website" placeholder="如：https://www.example.com（选填）" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">其他资质说明</label>
+          <input type="text" formControlName="otherQualifications" placeholder="如有其他资质或荣誉可在此补充（选填）" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" [disabled]="isSubmitting || applyForm.invalid" class="px-8 py-3 bg-primary text-white rounded-xl font-button hover:bg-primary-container transition-all disabled:opacity-50 shadow-lg shadow-blue-900/10 active:scale-95">
+            <span *ngIf="isSubmitting">提交中...</span>
+            <span *ngIf="!isSubmitting">提交认证申请</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="mt-6 flex gap-3">
+      <button type="button" (click)="refresh()" class="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+        刷新状态
+      </button>
+      <a [routerLink]="homeLink" class="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+        返回首页
+      </a>
+    </div>
+  </ng-container>
+</ng-template>

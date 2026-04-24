@@ -1,0 +1,210 @@
+<main class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+  <!-- Main Content (8 Columns) -->
+  <div class="lg:col-span-8 space-y-8">
+    <!-- Hero Header Section -->
+    <section class="bg-surface-container-lowest rounded-xl p-lg shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100">
+      <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
+        <div class="flex gap-6">
+          <div class="w-20 h-20 rounded-xl bg-primary-container flex items-center justify-center shrink-0 overflow-hidden">
+            <img *ngIf="job?.employer?.avatar" [src]="job!.employer!.avatar" alt="公司Logo" class="w-12 h-12 object-contain">
+            <span *ngIf="!job?.employer?.avatar" class="material-symbols-outlined text-4xl text-on-primary-container">business</span>
+          </div>
+          <div class="space-y-1">
+            <h1 class="font-h1 text-h1 text-primary">{{ job?.title || '岗位标题' }}</h1>
+            <div class="flex flex-wrap gap-x-4 gap-y-2">
+              <span class="flex items-center gap-1 text-on-surface-variant font-body-md text-body-md">
+                <span class="material-symbols-outlined text-[18px]">business</span>
+                {{ job?.employer?.username || '企业名称' }}
+              </span>
+              <span class="flex items-center gap-1 text-on-surface-variant font-body-md text-body-md">
+                <span class="material-symbols-outlined text-[18px]">location_on</span>
+                {{ job?.location || '地点待定' }}
+              </span>
+              <span class="flex items-center gap-1 text-on-surface-variant font-body-md text-body-md">
+                <span class="material-symbols-outlined text-[18px]">schedule</span>
+                {{ job?.createdAt ? formatDate(job!.createdAt) : '刚刚发布' }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-3 shrink-0">
+          <button (click)="toggleSave()" [class.bg-yellow-100]="saved" [class.text-yellow-700]="saved"
+            class="bg-surface-container-high text-primary px-6 py-2.5 rounded-lg font-button text-button hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]" [style.font-variation-settings]="saved ? '\'FILL\' 1' : '\'FILL\' 0'">bookmark</span>
+            {{ saved ? '已收藏' : '收藏' }}
+          </button>
+          <button (click)="applyJob()"
+            class="bg-primary text-on-primary px-8 py-2.5 rounded-lg font-button text-button shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-95">
+            立即申请
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI Matching Score (Bento Style) -->
+    <section class="bg-blue-50/50 border border-blue-100 rounded-xl p-lg flex flex-col md:flex-row gap-8 items-center">
+      <div class="relative w-32 h-32 shrink-0">
+        <svg class="w-full h-full transform -rotate-90">
+          <circle class="text-blue-100" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="12"></circle>
+          <circle class="text-[#1A365D]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor"
+            stroke-dasharray="364.4" [attr.stroke-dashoffset]="364.4 - (364.4 * matchScore / 100)" stroke-width="12"></circle>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span class="text-h1 font-h1 text-primary">{{ matchScore }}%</span>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-primary/60">匹配度</span>
+        </div>
+      </div>
+      <div class="flex-1 space-y-4">
+        <div>
+          <h3 class="font-h2 text-h2 text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">psychology</span>
+            AI 职业洞察
+          </h3>
+          <p class="font-body-md text-body-md text-on-surface-variant mt-1">
+            该岗位与您的<strong>系统架构</strong>专长及<strong>沟通能力</strong>高度契合，是您近期项目的理想延续。
+          </p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="bg-white p-3 rounded-lg border border-blue-100 flex items-start gap-3">
+            <span class="material-symbols-outlined text-green-600">check_circle</span>
+            <div class="font-caption text-caption text-on-surface-variant">您的 React 技能位列前 5%</div>
+          </div>
+          <div class="bg-white p-3 rounded-lg border border-blue-100 flex items-start gap-3">
+            <span class="material-symbols-outlined text-green-600">check_circle</span>
+            <div class="font-caption text-caption text-on-surface-variant">符合您偏好的混合办公模式</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Job Details Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-surface-container-lowest p-6 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-2">
+        <span class="material-symbols-outlined text-primary">payments</span>
+        <span class="font-caption text-caption text-on-surface-variant">薪资</span>
+        <span class="font-h2 text-h2 text-primary">{{ formatSalary() }}</span>
+      </div>
+      <div class="bg-surface-container-lowest p-6 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-2">
+        <span class="material-symbols-outlined text-primary">calendar_today</span>
+        <span class="font-caption text-caption text-on-surface-variant">工作时长</span>
+        <span class="font-h2 text-h2 text-primary">{{ job?.workingHours || '面议' }}</span>
+      </div>
+      <div class="bg-surface-container-lowest p-6 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-2">
+        <span class="material-symbols-outlined text-primary">stars</span>
+        <span class="font-caption text-caption text-on-surface-variant">岗位类型</span>
+        <span class="font-h2 text-h2 text-primary">{{ formatJobType(job?.jobType) }}</span>
+      </div>
+    </div>
+
+    <!-- Detailed Description -->
+    <section class="bg-surface-container-lowest rounded-xl p-lg border border-slate-100 shadow-sm space-y-8">
+      <div>
+        <h2 class="font-h2 text-h2 text-primary mb-4">岗位描述</h2>
+        <p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed whitespace-pre-line">
+          {{ job?.description || '暂无岗位描述' }}
+        </p>
+      </div>
+      <div>
+        <h2 class="font-h2 text-h2 text-primary mb-4">岗位要求</h2>
+        <ul class="space-y-3 font-body-md text-body-md text-on-surface-variant">
+          <li *ngFor="let req of requirementsList" class="flex items-start gap-3">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
+            {{ req }}
+          </li>
+          <li *ngIf="!requirementsList.length" class="flex items-start gap-3">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
+            暂无具体要求
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="font-h2 text-h2 text-primary mb-4">福利待遇</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
+            <span class="material-symbols-outlined text-primary">health_and_safety</span>
+            <span class="font-body-md text-body-md">健康与牙科保险</span>
+          </div>
+          <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
+            <span class="material-symbols-outlined text-primary">school</span>
+            <span class="font-body-md text-body-md">年度学习津贴</span>
+          </div>
+          <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
+            <span class="material-symbols-outlined text-primary">home_work</span>
+            <span class="font-body-md text-body-md">远程办公设备补贴</span>
+          </div>
+          <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
+            <span class="material-symbols-outlined text-primary">beach_access</span>
+            <span class="font-body-md text-body-md">带薪年假</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Sidebar (4 Columns) -->
+  <aside class="lg:col-span-4 space-y-6">
+    <!-- Company Info Card -->
+    <div class="bg-white rounded-xl overflow-hidden border border-slate-100 shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)]">
+      <div class="h-32 bg-primary relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-primary to-primary-container opacity-90"></div>
+      </div>
+      <div class="p-lg -mt-10 relative">
+        <div class="bg-white p-1 rounded-xl inline-block shadow-lg border border-slate-50">
+          <div class="w-16 h-16 rounded-lg bg-primary-container flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl text-on-primary-container">business</span>
+          </div>
+        </div>
+        <div class="mt-4 space-y-4">
+          <div>
+            <h3 class="font-h2 text-h2 text-primary">{{ job?.employer?.username || '企业名称' }}</h3>
+            <p class="font-caption text-caption text-on-surface-variant">互联网 · 软件 · 500-1000人</p>
+          </div>
+          <p class="font-body-md text-body-md text-on-surface-variant">
+            通过智能管理系统和数据驱动的学生成功工具，赋能下一代学术领导力。
+          </p>
+          <hr class="border-slate-100"/>
+          <div class="space-y-3">
+            <a class="flex items-center gap-2 text-primary font-button text-button hover:underline" href="#">
+              <span class="material-symbols-outlined text-[18px]">language</span>
+              访问官网
+            </a>
+            <a class="flex items-center gap-2 text-primary font-button text-button hover:underline" href="#">
+              <span class="material-symbols-outlined text-[18px]">grid_view</span>
+              更多该企业岗位
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Job Stats -->
+    <div class="bg-surface-container-lowest p-6 rounded-xl border border-slate-100 shadow-sm space-y-4">
+      <h4 class="font-h2 text-h2 text-primary">申请情况</h4>
+      <div class="flex justify-between items-center">
+        <div class="flex flex-col">
+          <span class="font-caption text-caption text-on-surface-variant">申请人数</span>
+          <span class="font-body-md text-body-md font-bold text-primary">{{ job?.applicationsCount || 0 }} 人</span>
+        </div>
+        <div class="flex -space-x-2">
+          <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center font-caption text-[10px]">张</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center font-caption text-[10px]">李</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center font-caption text-[10px]">王</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white bg-blue-100 text-blue-600 flex items-center justify-center font-caption text-[10px] font-bold">+{{ (job?.applicationsCount || 0) > 3 ? (job?.applicationsCount || 0) - 3 : 0 }}</div>
+        </div>
+      </div>
+      <div class="flex flex-col">
+        <span class="font-caption text-caption text-on-surface-variant">截止日期</span>
+        <span class="font-body-md text-body-md font-bold text-primary">{{ job?.deadline ? formatDate(job!.deadline) : '长期有效' }}</span>
+      </div>
+    </div>
+
+    <!-- Sticky CTA -->
+    <div class="bg-primary text-on-primary p-6 rounded-xl shadow-xl shadow-primary/20 space-y-4">
+      <div class="text-h2 font-h2">准备好申请了吗？</div>
+      <p class="font-body-md text-body-md opacity-80">加入 500+ 专业人士，共同构建教育科技的未来。</p>
+      <button (click)="applyJob()" class="w-full bg-white text-primary py-3 rounded-lg font-button text-button hover:bg-blue-50 transition-all active:scale-95">
+        立即申请
+      </button>
+    </div>
+  </aside>
+</main>

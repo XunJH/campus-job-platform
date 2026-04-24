@@ -1,0 +1,10 @@
+<router-outlet></router-outlet>
+
+<app-personality-profile-modal
+  *ngIf="showModal && currentUser"
+  [userId]="currentUser.id"
+  [loading]="modalSubmitting"
+  (submitted)="onModalSubmitted($event)"
+  (dismissed)="onModalDismissed()"
+  (snoozed)="onModalSnoozed()"
+></app-personality-profile-modal>

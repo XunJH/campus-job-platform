@@ -1,0 +1,180 @@
+<div class="max-w-7xl mx-auto space-y-6">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+    <div>
+      <nav class="flex gap-2 text-caption text-on-surface-variant mb-2">
+        <span>管理后台</span>
+        <span class="material-symbols-outlined text-sm">chevron_right</span>
+        <span>职位审核</span>
+      </nav>
+      <h2 class="font-h1 text-h1 text-primary">职位审核管理</h2>
+      <p class="font-body-md text-on-surface-variant mt-1">审核和管理平台所有职位发布</p>
+    </div>
+    <div class="flex gap-3">
+      <div class="bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 flex items-center gap-2">
+        <span class="material-symbols-outlined text-on-surface-variant">search</span>
+        <input [(ngModel)]="searchText" (keyup.enter)="onSearch()"
+          class="bg-transparent border-none focus:ring-0 text-sm w-48 p-0 outline-none"
+          placeholder="搜索职位或企业..." type="text"/>
+      </div>
+      <button (click)="onSearch()"
+        class="bg-surface-container-high text-on-surface p-2 rounded-lg hover:bg-surface-variant transition-colors">
+        <span class="material-symbols-outlined">filter_list</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-2 border-b border-slate-100">
+    <button (click)="switchTab('all')"
+      class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
+      [class.border-primary]="activeTab === 'all'"
+      [class.text-primary]="activeTab === 'all'"
+      [class.border-transparent]="activeTab !== 'all'"
+      [class.text-gray-500]="activeTab !== 'all'">
+      全部职位
+    </button>
+    <button (click)="switchTab('pending')"
+      class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
+      [class.border-primary]="activeTab === 'pending'"
+      [class.text-primary]="activeTab === 'pending'"
+      [class.border-transparent]="activeTab !== 'pending'"
+      [class.text-gray-500]="activeTab !== 'pending'">
+      待审核
+      <span *ngIf="pendingCount > 0" class="ml-1.5 px-1.5 py-0.5 bg-error text-white text-xs rounded-full">{{ pendingCount }}</span>
+    </button>
+  </div>
+
+  <div class="grid grid-cols-12 gap-6">
+    <div class="col-span-12 lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-5 rounded-xl shadow-card border border-slate-50">
+        <p class="text-caption text-on-surface-variant mb-1 uppercase tracking-wider">待审核</p>
+        <p class="text-h1 font-h1 text-primary">{{ pendingCount }}</p>
+        <div class="flex items-center gap-1 text-xs text-orange-600 mt-2">
+          <span class="material-symbols-outlined text-sm">schedule</span>
+          <span>需要立即处理</span>
+        </div>
+      </div>
+      <div class="bg-white p-5 rounded-xl shadow-card border border-slate-50">
+        <p class="text-caption text-on-surface-variant mb-1 uppercase tracking-wider">已通过</p>
+        <p class="text-h1 font-h1 text-primary">{{ approvedCount }}</p>
+        <div class="flex items-center gap-1 text-xs text-green-600 mt-2">
+          <span class="material-symbols-outlined text-sm">trending_up</span>
+          <span>审核通过职位</span>
+        </div>
+      </div>
+      <div class="bg-white p-5 rounded-xl shadow-card border border-slate-50">
+        <p class="text-caption text-on-surface-variant mb-1 uppercase tracking-wider">职位总数</p>
+        <p class="text-h1 font-h1 text-primary">{{ total | number }}</p>
+        <div class="flex items-center gap-1 text-xs text-blue-600 mt-2">
+          <span class="material-symbols-outlined text-sm">bolt</span>
+          <span>平台全部职位</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-span-12 lg:col-span-4 bg-primary-container text-on-primary-container p-6 rounded-xl relative overflow-hidden flex flex-col justify-between">
+      <div class="relative z-10">
+        <p class="font-h2 text-white">审核提醒</p>
+        <p class="text-sm opacity-80 mt-1">{{ pendingCount }} 个职位等待审核，请及时处理。</p>
+      </div>
+      <button (click)="switchTab('pending')" class="mt-4 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-4 py-2 rounded-lg text-sm transition-colors z-10 w-fit">
+        查看待审核
+      </button>
+      <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-2xl"></div>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="flex items-center justify-center py-20">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+
+  <div *ngIf="!isLoading" class="bg-white rounded-xl shadow-card border border-slate-50 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low text-on-surface-variant">
+            <th class="px-6 py-4 font-button text-caption uppercase tracking-widest">职位名称</th>
+            <th class="px-6 py-4 font-button text-caption uppercase tracking-widest">发布企业</th>
+            <th class="px-6 py-4 font-button text-caption uppercase tracking-widest">提交时间</th>
+            <th class="px-6 py-4 font-button text-caption uppercase tracking-widest">审核状态</th>
+            <th class="px-6 py-4 font-button text-caption uppercase tracking-widest text-right">操作</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr *ngFor="let job of jobs" class="hover:bg-slate-50/50 transition-colors">
+            <td class="px-6 py-5">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-primary">
+                  <span class="material-symbols-outlined text-xl">{{ getJobTypeIcon(job.jobType) }}</span>
+                </div>
+                <span class="font-h2 text-base text-primary">{{ job.title }}</span>
+              </div>
+            </td>
+            <td class="px-6 py-5">
+              <div class="flex items-center gap-2">
+                <span class="font-body-md font-medium">{{ job.employer?.username || '未知企业' }}</span>
+              </div>
+            </td>
+            <td class="px-6 py-5">
+              <span class="font-body-md text-on-surface-variant">{{ formatDate(job.createdAt) }}</span>
+            </td>
+            <td class="px-6 py-5">
+              <span class="px-3 py-1 rounded-full text-xs font-bold" [ngClass]="getAuditStatusClass(job.auditStatus)">
+                {{ getAuditStatusText(job.auditStatus) }}
+              </span>
+            </td>
+            <td class="px-6 py-5 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <ng-container *ngIf="job.auditStatus === 'pending'">
+                  <button (click)="approveJob(job)" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:shadow-md active:scale-95 transition-all">
+                    通过
+                  </button>
+                  <button (click)="rejectJob(job)" class="px-4 py-2 border border-error text-error rounded-lg text-sm font-semibold hover:bg-red-50 active:scale-95 transition-all">
+                    拒绝
+                  </button>
+                </ng-container>
+                <ng-container *ngIf="job.auditStatus !== 'pending'">
+                  <button (click)="toggleStatus(job)" class="px-4 py-2 border border-primary text-primary rounded-lg text-sm font-semibold hover:bg-slate-50 active:scale-95 transition-all">
+                    {{ job.status === 'active' ? '关闭' : '开启' }}
+                  </button>
+                  <button (click)="deleteJob(job.id, job.title)" class="px-4 py-2 border border-error text-error rounded-lg text-sm font-semibold hover:bg-red-50 active:scale-95 transition-all">
+                    删除
+                  </button>
+                </ng-container>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="jobs.length === 0">
+            <td colspan="5" class="px-6 py-12 text-center font-body-md text-gray-400">
+              暂无职位数据
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="px-6 py-4 bg-surface-container-low border-t border-slate-100 flex items-center justify-between">
+      <span class="text-caption text-on-surface-variant">显示 {{ jobs.length }} 条，共 {{ total }} 条</span>
+      <div class="flex gap-2">
+        <button (click)="goToPage(page - 1)" [disabled]="page <= 1"
+          class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-white transition-colors disabled:opacity-40">
+          <span class="material-symbols-outlined text-sm">chevron_left</span>
+        </button>
+        <button *ngFor="let p of [].constructor(totalPages > 5 ? 5 : totalPages); let i = index"
+          (click)="goToPage(i + 1)"
+          class="w-8 h-8 rounded flex items-center justify-center text-sm font-bold transition-colors"
+          [class.bg-primary]="page === i + 1"
+          [class.text-white]="page === i + 1"
+          [class.border]="page !== i + 1"
+          [class.border-outline-variant]="page !== i + 1"
+          [class.text-on-surface-variant]="page !== i + 1"
+          [class.hover:bg-white]="page !== i + 1">
+          {{ i + 1 }}
+        </button>
+        <button (click)="goToPage(page + 1)" [disabled]="page >= totalPages"
+          class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-white transition-colors disabled:opacity-40">
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

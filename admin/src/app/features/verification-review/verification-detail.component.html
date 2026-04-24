@@ -1,0 +1,202 @@
+<div class="max-w-7xl mx-auto space-y-6" *ngIf="!isLoading && verification">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <nav class="flex gap-2 text-caption text-on-surface-variant mb-2">
+        <a routerLink="/verification-review" class="hover:text-primary transition-colors">认证审核</a>
+        <span class="material-symbols-outlined text-sm">chevron_right</span>
+        <span>审核详情</span>
+      </nav>
+      <h2 class="font-h1 text-h1 text-primary">企业认证审核详情</h2>
+      <p class="font-body-md text-secondary mt-1">查看企业资质详细信息并进行审核决策</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3">
+        <div class="w-2 h-2 rounded-full bg-orange-400"></div>
+        <div>
+          <p class="text-caption text-slate-500">当前状态</p>
+          <p class="font-bold text-primary">{{ verification.status === 'pending' ? '待审核' : verification.status === 'approved' ? '已通过' : '已拒绝' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bento Layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Left: Priority Queue -->
+    <div class="lg:col-span-5 flex flex-col gap-4">
+      <div class="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden flex flex-col">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+          <h3 class="font-semibold text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary-container">list_alt</span>
+            待审核队列
+          </h3>
+          <span class="text-caption px-2 py-1 bg-slate-100 rounded text-slate-600">{{ pendingList.length }} 个待处理</span>
+        </div>
+        <div class="overflow-y-auto max-h-[600px]">
+          <div class="divide-y divide-slate-50">
+            <div *ngFor="let item of pendingList"
+              (click)="selectItem(item)"
+              class="p-4 cursor-pointer transition-colors"
+              [class.bg-primary-fixed]="selectedId === item.id"
+              [class.bg-primary-fixed]="selectedId === item.id"
+              [class.border-l-4]="selectedId === item.id"
+              [class.border-primary]="selectedId === item.id"
+              [class.hover:bg-slate-50]="selectedId !== item.id">
+              <div class="flex justify-between items-start mb-1">
+                <h4 class="font-bold" [class.text-primary]="selectedId === item.id" [class.text-slate-700]="selectedId !== item.id">
+                  {{ item.companyName || '未命名企业' }}
+                </h4>
+                <span *ngIf="selectedId === item.id" class="text-xs uppercase tracking-wider font-bold text-on-tertiary-container bg-tertiary-fixed px-1.5 py-0.5 rounded">当前</span>
+              </div>
+              <div class="flex justify-between text-caption text-slate-500">
+                <span>ID: {{ item.licenseNumber || '-' }}</span>
+                <span>{{ timeAgo(item.submittedAt) }}</span>
+              </div>
+            </div>
+            <div *ngIf="pendingList.length === 0" class="p-8 text-center text-caption text-gray-400">
+              暂无待审核企业
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Detail View -->
+    <div class="lg:col-span-7 space-y-6">
+      <!-- Company Info -->
+      <div class="bg-white rounded-xl shadow-card border border-slate-100 p-6 flex items-start gap-6 relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-4">
+          <span class="inline-flex items-center rounded-full bg-secondary-container px-3 py-1 text-xs font-semibold text-on-secondary-container">
+            <span class="material-symbols-outlined text-xs mr-1">history</span>
+            提交于 {{ formatDate(verification.submittedAt) }}
+          </span>
+        </div>
+        <div class="w-24 h-24 rounded-xl bg-surface-container flex items-center justify-center border border-slate-100 shrink-0">
+          <span class="material-symbols-outlined text-4xl text-primary">corporate_fare</span>
+        </div>
+        <div class="flex-1 pt-2">
+          <h2 class="font-h1 text-h1 text-primary">{{ verification.companyName || '未命名企业' }}</h2>
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <p class="text-caption text-slate-500 uppercase tracking-tight">联系人</p>
+              <p class="font-semibold text-slate-800">{{ verification.contactName || '-' }}</p>
+            </div>
+            <div>
+              <p class="text-caption text-slate-500 uppercase tracking-tight">联系电话</p>
+              <p class="font-semibold text-slate-800">{{ verification.contactPhone || '-' }}</p>
+            </div>
+            <div>
+              <p class="text-caption text-slate-500 uppercase tracking-tight">企业地址</p>
+              <p class="font-semibold text-slate-800">{{ verification.address || '-' }}</p>
+            </div>
+            <div>
+              <p class="text-caption text-slate-500 uppercase tracking-tight">营业执照号</p>
+              <p class="font-semibold text-slate-800">{{ verification.licenseNumber || '-' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- License & AI Audit -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- License Image -->
+        <div class="bg-white rounded-xl shadow-card border border-slate-100 p-6 space-y-4">
+          <h3 class="font-semibold text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined">image</span>
+            营业执照
+          </h3>
+          <div class="relative aspect-video bg-slate-50 rounded-lg border-2 border-dashed border-slate-200 overflow-hidden group">
+            <img *ngIf="verification.licenseImage" [src]="verification.licenseImage" alt="营业执照"
+              class="w-full h-full object-contain p-2"/>
+            <div *ngIf="!verification.licenseImage" class="w-full h-full flex items-center justify-center text-slate-400">
+              <span class="material-symbols-outlined text-4xl">image_not_supported</span>
+            </div>
+          </div>
+          <p class="text-caption text-center text-slate-400">营业执照扫描件</p>
+        </div>
+
+        <!-- AI Pre-audit -->
+        <div class="flex flex-col gap-6">
+          <div class="bg-primary-container text-white rounded-xl shadow-xl p-6 relative overflow-hidden flex-1">
+            <div class="absolute -right-10 -bottom-10 opacity-10">
+              <span class="material-symbols-outlined text-9xl">psychology</span>
+            </div>
+            <h3 class="font-semibold text-on-primary-container flex items-center gap-2 mb-4">
+              <span class="material-symbols-outlined">bolt</span>
+              AI 预审引擎
+            </h3>
+            <div class="space-y-4 relative z-10">
+              <div class="flex justify-between items-center bg-white/10 p-3 rounded-lg backdrop-blur-sm">
+                <span class="text-sm font-medium">风险评估</span>
+                <span class="px-2 py-1 rounded text-xs font-bold uppercase" [ngClass]="getAiRiskClass()">
+                  {{ getAiRiskLabel() }}
+                </span>
+              </div>
+              <div class="flex justify-between items-center bg-white/10 p-3 rounded-lg backdrop-blur-sm">
+                <span class="text-sm font-medium">AI 置信度</span>
+                <span class="text-lg font-extrabold text-on-primary-container">{{ aiAuditDetail?.confidence || '-' }}</span>
+              </div>
+              <div *ngIf="aiAuditDetail?.details?.length" class="pt-2 border-t border-white/20">
+                <p class="text-xs font-bold uppercase tracking-widest text-on-primary-container mb-2">自动分析</p>
+                <ul class="space-y-2">
+                  <li *ngFor="let detail of aiAuditDetail.details" class="flex items-start gap-2 text-sm bg-white/10 p-2 rounded border border-white/20">
+                    <span class="material-symbols-outlined text-sm text-on-primary-container mt-0.5">check_circle</span>
+                    <span class="text-on-primary">{{ detail }}</span>
+                  </li>
+                </ul>
+              </div>
+              <div *ngIf="aiAuditLoading" class="text-sm text-on-primary-container">AI 分析中...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Final Determination -->
+      <div *ngIf="verification.status === 'pending'" class="bg-white rounded-xl shadow-card border border-slate-100 p-6">
+        <h3 class="font-semibold text-primary mb-4">最终审核决策</h3>
+        <div class="space-y-4">
+          <div class="flex gap-4">
+            <button (click)="reject()"
+              class="flex-1 bg-error-container text-error hover:bg-error hover:text-white transition-all font-button py-3 rounded-lg flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-lg">block</span>
+              拒绝认证
+            </button>
+            <button (click)="approve()"
+              class="flex-1 bg-primary text-white hover:bg-primary/90 transition-all font-button py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
+              <span class="material-symbols-outlined text-lg">verified</span>
+              通过认证
+            </button>
+          </div>
+          <div class="space-y-2">
+            <label class="text-caption text-slate-500 font-semibold uppercase">拒绝原因（内部记录）</label>
+            <textarea [(ngModel)]="rejectionReason"
+              class="w-full border border-slate-200 rounded-lg text-sm focus:ring-primary focus:border-primary outline-none transition-all p-3"
+              placeholder="如需拒绝，请填写具体原因..." rows="3"></textarea>
+            <p class="text-xs text-slate-400 italic">提交后系统将自动通知企业管理员。</p>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="verification.status !== 'pending'" class="bg-white rounded-xl shadow-card border border-slate-100 p-6">
+        <h3 class="font-semibold text-primary mb-2">审核结果</h3>
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-2xl"
+            [class.text-green-600]="verification.status === 'approved'"
+            [class.text-red-600]="verification.status === 'rejected'">
+            {{ verification.status === 'approved' ? 'verified' : 'cancel' }}
+          </span>
+          <div>
+            <p class="font-body-md font-medium">{{ verification.status === 'approved' ? '已通过认证' : '已拒绝认证' }}</p>
+            <p *ngIf="verification.rejectionReason" class="text-sm text-secondary">原因：{{ verification.rejectionReason }}</p>
+            <p *ngIf="verification.reviewedAt" class="text-xs text-slate-400">审核时间：{{ formatDate(verification.reviewedAt) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isLoading" class="flex items-center justify-center py-20">
+  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+</div>

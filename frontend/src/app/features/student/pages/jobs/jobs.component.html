@@ -1,0 +1,224 @@
+<!-- Top Navigation Bar -->
+<header class="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 shadow-sm sticky top-0 z-50">
+<div class="flex justify-between items-center h-16 px-6 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold text-[#1A365D] dark:text-white">校园招聘</span>
+<nav class="hidden md:flex items-center gap-6 font-manrope text-sm font-medium">
+<a class="text-[#1A365D] dark:text-blue-400 font-bold border-b-2 border-[#1A365D] pb-1 no-underline" routerLink="/student/jobs">岗位</a>
+<a class="text-gray-600 dark:text-gray-400 hover:text-[#1A365D] transition-colors no-underline" routerLink="/student/applications">我的投递</a>
+<a class="text-gray-600 dark:text-gray-400 hover:text-[#1A365D] transition-colors no-underline" routerLink="/student/verification">人格测试</a>
+<a class="text-gray-600 dark:text-gray-400 hover:text-[#1A365D] transition-colors no-underline" routerLink="/student/resume">资源</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:flex items-center bg-surface-container-low rounded-full px-4 py-1.5 border border-gray-200/30">
+<span class="material-symbols-outlined text-gray-400 text-[20px]" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 placeholder:text-gray-400" placeholder="搜索岗位名称..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-gray-500 hover:bg-gray-50 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-gray-500 hover:bg-gray-50 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+</button>
+<a routerLink="/student/profile" class="h-8 w-8 rounded-full bg-primary-fixed overflow-hidden border border-gray-200 cursor-pointer hover:scale-105 transition-transform">
+<img alt="Student Profile Avatar" class="w-full h-full object-cover" data-alt="professional headshot of a friendly young university student smiling against a neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGupVWCkSdE0K6l3H-EZgufSCl8D8a1lkFfWot89t_0BiN_3aV1qA1LAPIoReCbn_TmeakDfOFYSB5OqhJbx9eHT8d_dkcQ2FAxT-d6ktWMMbIImc1joL_yMtp-8odRy6uShw5pviXba3XZo8TkVXrY1yH5oEbBcLzN7wpyGENeHDwOPnezsJurviFhvFQyZIMsfumT9Wk4ijDSysnqanYfgn72V4gRpt7yw9_uWPjvmKyBgD-Bkw9VsOM-uoVO4LcYK84eYyKVqJG"/>
+</a>
+<button class="p-2 text-gray-500 hover:bg-gray-50 rounded-full transition-colors" (click)="logout()" title="退出登录">
+<span class="material-symbols-outlined">logout</span>
+</button>
+</div>
+<button class="hidden md:block bg-primary text-on-primary px-5 py-2 rounded-full font-button text-button hover:opacity-90 transition-all">找工作</button>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-6 py-base lg:py-xl flex flex-col md:flex-row gap-lg">
+<!-- Left Sidebar: Filter Panel -->
+<aside class="w-full md:w-64 lg:w-72 shrink-0 space-y-lg">
+<div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-gray-100 p-lg sticky top-24">
+<h2 class="font-h2 text-h2 text-primary mb-md">筛选</h2>
+<!-- Personality Match Toggle -->
+<div class="mb-lg p-md bg-primary-fixed/30 rounded-lg border border-primary-fixed">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="psychology" data-weight="fill" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<span class="font-button text-primary">AI匹配</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<p class="text-[11px] text-on-primary-fixed-variant mt-2">优先展示与你人格画像匹配的岗位</p>
+</div>
+<div class="space-y-lg">
+<!-- 岗位类型 -->
+<div>
+<h3 class="text-caption text-gray-400 uppercase mb-sm">岗位类型</h3>
+<div class="space-y-sm">
+<label *ngFor="let cat of categories" class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded border-gray-200 text-primary focus:ring-primary h-4 w-4"
+       type="checkbox"
+       [checked]="selectedCategories.includes(cat)"
+       (change)="toggleCategory(cat)"/>
+<span class="font-body-md group-hover:text-primary transition-colors">{{ cat }}</span>
+</label>
+</div>
+</div>
+<!-- 工作地点 -->
+<div>
+<h3 class="text-caption text-gray-400 uppercase mb-sm">工作地点</h3>
+<div class="flex flex-wrap gap-2">
+<button *ngFor="let loc of workLocations"
+        (click)="selectWorkLocation(loc.value)"
+        class="px-3 py-1.5 rounded-full border text-caption transition-colors"
+        [class.border-primary]="selectedWorkLocation === loc.value"
+        [class.bg-primary]="selectedWorkLocation === loc.value"
+        [class.text-on-primary]="selectedWorkLocation === loc.value"
+        [class.border-gray-200]="selectedWorkLocation !== loc.value"
+        [class.text-gray-400]="selectedWorkLocation !== loc.value"
+        [class.hover:border-primary]="selectedWorkLocation !== loc.value"
+        [class.hover:text-primary]="selectedWorkLocation !== loc.value">
+  {{ loc.label }}
+</button>
+</div>
+</div>
+<!-- 工作方式 -->
+<div>
+<h3 class="text-caption text-gray-400 uppercase mb-sm">工作方式</h3>
+<div class="flex flex-wrap gap-2">
+<button *ngFor="let jt of jobTypes"
+        (click)="selectJobType(jt.value)"
+        class="px-3 py-1.5 rounded-full border text-caption transition-colors"
+        [class.border-primary]="selectedJobType === jt.value"
+        [class.bg-primary]="selectedJobType === jt.value"
+        [class.text-on-primary]="selectedJobType === jt.value"
+        [class.border-gray-200]="selectedJobType !== jt.value"
+        [class.text-gray-400]="selectedJobType !== jt.value"
+        [class.hover:border-primary]="selectedJobType !== jt.value"
+        [class.hover:text-primary]="selectedJobType !== jt.value">
+  {{ jt.label }}
+</button>
+</div>
+</div>
+<!-- 薪资 Range -->
+<div>
+<h3 class="text-caption text-gray-400 uppercase mb-sm">薪资</h3>
+<input class="w-full h-1.5 bg-secondary-container rounded-lg appearance-none cursor-pointer accent-primary"
+       [min]="salaryConfig.min" [max]="salaryConfig.max" [step]="salaryConfig.step"
+       type="range" [(ngModel)]="minSalary" (change)="onFilterChange()"/>
+<div class="flex justify-between mt-2 text-caption text-on-surface-variant">
+<span>¥{{ salaryConfig.min }}</span>
+<span class="font-bold text-primary">最低: ¥{{ minSalary }}</span>
+<span>¥{{ salaryConfig.max }}</span>
+</div>
+</div>
+</div>
+<button (click)="resetFilters()" class="w-full mt-xl py-3 border border-gray-200 rounded-lg font-button text-primary hover:bg-surface-container transition-colors">重置所有筛选</button>
+</div>
+</aside>
+<!-- Main Content Area: Job Grid -->
+<section class="flex-1">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between mb-lg gap-md">
+<div>
+<h1 class="font-h1 text-h1 text-primary">岗位广场</h1>
+<p class="text-body-md text-on-surface-variant">找到 124 个校园岗位机会</p>
+</div>
+<div class="flex items-center gap-2 bg-white p-1 rounded-lg border border-gray-200/30">
+<button class="p-2 bg-surface-container text-primary rounded-md">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+</button>
+<button class="p-2 text-gray-400 hover:text-primary rounded-md">
+<span class="material-symbols-outlined" data-icon="list">list</span>
+</button>
+</div>
+</div>
+<!-- Grid Layout -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-lg">
+<!-- Loading -->
+<div *ngIf="loading" class="col-span-full flex justify-center py-12">
+  <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+</div>
+<!-- Error -->
+<div *ngIf="errorMessage && !loading" class="col-span-full text-center py-12">
+  <p class="text-red-500 font-body-md">{{ errorMessage }}</p>
+  <button (click)="loadJobs()" class="mt-4 px-4 py-2 bg-primary text-on-primary rounded-lg">重新加载</button>
+</div>
+<!-- Job Cards -->
+<article *ngFor="let job of jobs" [routerLink]="['/student/jobs', job.id]"
+  class="bg-white rounded-xl p-lg shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 flex flex-col justify-between hover:translate-y-[-4px] transition-all duration-300 cursor-pointer">
+<div>
+<div class="flex justify-between items-start mb-md">
+<div class="h-12 w-12 rounded-lg bg-surface-container-high flex items-center justify-center p-2">
+  <span class="material-symbols-outlined text-primary text-2xl">business</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 bg-[#F0FDF4] text-[#166534] rounded-full border border-[#DCFCE7]">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="text-caption font-bold">匹配度: {{ 80 + (job.id % 20) }}%</span>
+</div>
+</div>
+<h2 class="font-h2 text-h2 text-primary mb-1">{{ job.title }}</h2>
+<p class="text-body-md text-on-surface-variant mb-md">{{ job.employer?.username || '企业名称' }}</p>
+<div class="flex flex-wrap gap-2 mb-lg">
+<span class="px-2.5 py-1 bg-surface-container-low text-secondary font-caption rounded-lg border border-gray-200/20">{{ formatJobType(job.jobType) }}</span>
+<span class="px-2.5 py-1 bg-surface-container-low text-secondary font-caption rounded-lg border border-gray-200/20">{{ job.location || '校内' }}</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-lg border-t border-gray-100">
+<div class="flex flex-col">
+<span class="text-caption text-gray-400">薪资</span>
+<span class="font-h2 text-primary">{{ formatSalary(job) }}</span>
+</div>
+<button class="px-5 py-2.5 bg-primary text-on-primary rounded-lg font-button hover:shadow-lg transition-all">查看详情</button>
+</div>
+</article>
+<!-- Empty State -->
+<div *ngIf="!loading && !errorMessage && jobs.length === 0" class="col-span-full text-center py-12">
+  <span class="material-symbols-outlined text-6xl text-gray-400-variant">work_off</span>
+  <p class="mt-4 text-on-surface-variant font-body-md">暂无岗位信息</p>
+</div>
+</div>
+<!-- Pagination -->
+<div *ngIf="totalPages > 1" class="mt-xl flex items-center justify-center gap-2">
+<button (click)="prevPage()" [disabled]="page <= 1" class="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-surface-container transition-colors disabled:opacity-30">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button *ngFor="let p of [].constructor(totalPages); let i = index" (click)="page = i + 1; loadJobs()"
+  class="h-10 w-10 flex items-center justify-center rounded-lg font-button transition-colors"
+  [class.bg-primary]="page === i + 1"
+  [class.text-on-primary]="page === i + 1"
+  [class.border]="page !== i + 1"
+  [class.border-gray-200]="page !== i + 1"
+  [class.text-primary]="page !== i + 1"
+  [class.hover:bg-surface-container]="page !== i + 1">
+  {{ i + 1 }}
+</button>
+<button (click)="nextPage()" [disabled]="page >= totalPages" class="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-surface-container transition-colors disabled:opacity-30">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</section>
+</main>
+<!-- 小兼 AI Assistant Floating Component -->
+<div class="fixed bottom-8 right-8 z-[100] group">
+<div class="absolute bottom-full right-0 mb-4 w-72 bg-white rounded-2xl shadow-2xl border border-primary-fixed/50 p-lg scale-0 origin-bottom-right group-hover:scale-100 transition-transform duration-300">
+<div class="flex items-center gap-3 mb-md">
+<div class="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+</div>
+<div>
+<h4 class="font-button text-primary">小兼</h4>
+<p class="text-[10px] text-on-surface-variant">AI职业导师 • 在线</p>
+</div>
+</div>
+<p class="text-body-md text-on-surface italic mb-md">"找到一个适合你数学技能的Python开发岗位！需要简历帮助吗？"</p>
+<div class="flex flex-col gap-2">
+<button class="text-left px-3 py-2 text-caption bg-surface-container-low hover:bg-primary-fixed-dim rounded-lg transition-colors border border-gray-200/30 text-primary">优化简历</button>
+<button class="text-left px-3 py-2 text-caption bg-surface-container-low hover:bg-primary-fixed-dim rounded-lg transition-colors border border-gray-200/30 text-primary">面试技巧</button>
+</div>
+</div>
+<button class="h-16 w-16 bg-primary text-on-primary rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[32px]" data-icon="smart_toy">smart_toy</span>
+</button>
+</div>

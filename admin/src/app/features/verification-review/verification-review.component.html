@@ -1,0 +1,245 @@
+<div class="max-w-7xl mx-auto space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div>
+      <nav class="flex gap-2 text-caption text-on-surface-variant mb-2">
+        <span>管理后台</span>
+        <span class="material-symbols-outlined text-sm">chevron_right</span>
+        <span>认证审核</span>
+      </nav>
+      <h2 class="font-h1 text-h1 text-primary">企业认证审核</h2>
+      <p class="font-body-md text-secondary mt-1">审核和验证企业资质，确保平台安全</p>
+    </div>
+    <div class="flex gap-4">
+      <div class="bg-white p-4 rounded-xl shadow-card border border-slate-100 flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-primary">
+          <span class="material-symbols-outlined">pending_actions</span>
+        </div>
+        <div>
+          <p class="font-caption text-caption text-secondary uppercase">待审核</p>
+          <p class="font-h2 text-h2 text-primary">{{ pendingCount }}</p>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-card border border-slate-100 flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-700">
+          <span class="material-symbols-outlined">verified</span>
+        </div>
+        <div>
+          <p class="font-caption text-caption text-secondary uppercase">已通过</p>
+          <p class="font-h2 text-h2 text-primary">{{ approvedCount }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 flex items-center gap-2">
+      <span class="material-symbols-outlined text-on-surface-variant">search</span>
+      <input [(ngModel)]="searchText" (keyup.enter)="onSearch()"
+        class="bg-transparent border-none focus:ring-0 text-sm w-48 p-0 outline-none"
+        placeholder="搜索用户名或企业名称..." type="text"/>
+    </div>
+    <select [(ngModel)]="statusFilter" (change)="onFilterChange()"
+      class="h-10 px-3 border border-outline-variant rounded-lg text-sm text-on-surface bg-white focus:outline-none focus:border-primary transition-colors">
+      <option value="">全部状态</option>
+      <option value="pending">待审核</option>
+      <option value="approved">已通过</option>
+      <option value="rejected">已拒绝</option>
+    </select>
+    <button (click)="onSearch()"
+      class="inline-flex items-center justify-center h-10 px-5 rounded-lg bg-primary text-white text-sm font-medium hover:opacity-90 transition-colors">
+      搜索
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="flex items-center justify-center py-20">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+
+  <!-- Audit Table -->
+  <ng-container *ngIf="!isLoading">
+    <div class="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-surface-container-low/50">
+        <h3 class="font-h2 text-h2 text-primary text-lg">审核队列</h3>
+        <div class="flex items-center gap-2">
+          <button (click)="loadList()" class="flex items-center gap-2 px-3 py-1.5 border border-slate-200 rounded-lg text-body-md font-button hover:bg-white transition-colors">
+            <span class="material-symbols-outlined text-sm">refresh</span>
+            刷新
+          </button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="bg-surface-container-low/50 text-slate-500 font-button text-xs uppercase tracking-wider">
+              <th class="px-6 py-4 font-semibold">企业名称</th>
+              <th class="px-6 py-4 font-semibold">营业执照</th>
+              <th class="px-6 py-4 font-semibold">AI 预审</th>
+              <th class="px-6 py-4 font-semibold">拒绝原因</th>
+              <th class="px-6 py-4 font-semibold text-right">操作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr *ngFor="let item of list" class="hover:bg-slate-50/50 transition-colors">
+              <td class="px-6 py-5">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-primary border border-blue-100">
+                    <span class="material-symbols-outlined">corporate_fare</span>
+                  </div>
+                  <div>
+                    <p class="font-body-md text-primary font-bold">{{ item.companyName || '未命名企业' }}</p>
+                    <p class="text-xs text-secondary">{{ item.user?.username || '-' }} · {{ timeAgo(item.submittedAt) }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-5">
+                <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-700 font-mono">{{ item.licenseNumber || '-' }}</code>
+              </td>
+              <td class="px-6 py-5">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold" [ngClass]="getAiRiskClass(item)">
+                  {{ getAiRiskLabel(item) }}
+                </span>
+              </td>
+              <td class="px-6 py-5">
+                <input *ngIf="item.status === 'pending'" [(ngModel)]="rejectionInputs[item.id]"
+                  class="w-full bg-transparent border-b border-slate-200 text-body-md focus:ring-0 focus:border-primary placeholder:text-slate-300 italic outline-none py-1"
+                  placeholder="输入拒绝原因..." type="text"/>
+                <span *ngIf="item.status !== 'pending'" class="text-body-md text-secondary italic">
+                  {{ item.rejectionReason || '-' }}
+                </span>
+              </td>
+              <td class="px-6 py-5 text-right">
+                <div class="flex justify-end gap-2">
+                  <a [routerLink]="['/verification-review', item.id]"
+                    class="px-3 py-1.5 rounded-lg border border-primary text-primary font-button text-xs hover:bg-slate-50 transition-all inline-block">
+                    详情
+                  </a>
+                  <ng-container *ngIf="item.status === 'pending'">
+                    <button (click)="reject(item)"
+                      class="px-3 py-1.5 rounded-lg border border-error text-error font-button text-xs hover:bg-error-container/20 transition-all">
+                      拒绝
+                    </button>
+                    <button (click)="approve(item)"
+                      class="px-3 py-1.5 rounded-lg bg-primary text-white font-button text-xs hover:shadow-lg transition-all">
+                      通过
+                    </button>
+                  </ng-container>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="list.length === 0">
+              <td colspan="5" class="px-6 py-12 text-center font-body-md text-gray-400">
+                暂无认证数据
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- AI Audit Detail Panel -->
+      <div *ngIf="expandedItem" class="border-t border-slate-100 bg-surface-container-low/30 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-h2 text-h2 text-primary">AI 预审建议 - {{ expandedItem.companyName || '未命名企业' }}</h3>
+          <button (click)="expandedItem = null" class="text-sm text-secondary hover:text-primary transition-colors">关闭</button>
+        </div>
+        <div *ngIf="aiAuditLoading" class="text-sm text-secondary">AI 分析中...</div>
+        <div *ngIf="!aiAuditLoading && !aiAuditDetail" class="text-sm text-secondary">
+          暂无 AI 预审结果，可能审核任务尚未完成或 AI 服务暂时不可用。
+        </div>
+        <div *ngIf="!aiAuditLoading && aiAuditDetail" class="space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-secondary">审核结论：</span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              [ngClass]="aiAuditDetail.is_valid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+              {{ aiAuditDetail.is_valid ? '通过' : '不通过' }}
+            </span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              [ngClass]="{'bg-red-100 text-red-700': aiAuditDetail.risk_level === 'high', 'bg-orange-100 text-orange-700': aiAuditDetail.risk_level === 'medium', 'bg-green-100 text-green-700': aiAuditDetail.risk_level === 'low'}">
+              {{ aiAuditDetail.risk_level === 'high' ? '高风险' : aiAuditDetail.risk_level === 'medium' ? '中风险' : '低风险' }}
+            </span>
+          </div>
+          <div *ngIf="aiAuditDetail.details?.length" class="text-sm">
+            <p class="text-secondary font-medium mb-1">具体发现：</p>
+            <ul class="list-disc list-inside text-on-surface-variant space-y-1">
+              <li *ngFor="let detail of aiAuditDetail.details">{{ detail }}</li>
+            </ul>
+          </div>
+          <div *ngIf="aiAuditDetail.suggestions?.length" class="text-sm">
+            <p class="text-secondary font-medium mb-1">AI 建议：</p>
+            <ul class="list-disc list-inside text-on-surface-variant space-y-1">
+              <li *ngFor="let suggestion of aiAuditDetail.suggestions">{{ suggestion }}</li>
+            </ul>
+          </div>
+          <p class="text-xs text-gray-400 pt-2 border-t border-slate-100">* AI 预审结果仅供参考，最终审核决定权归管理员所有。</p>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-caption text-secondary">显示 {{ list.length }} 条，共 {{ total }} 条</span>
+        <div class="flex gap-2">
+          <button (click)="goToPage(page - 1)" [disabled]="page <= 1"
+            class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-white transition-colors disabled:opacity-40">
+            <span class="material-symbols-outlined text-sm">chevron_left</span>
+          </button>
+          <button *ngFor="let p of [].constructor(totalPages > 5 ? 5 : totalPages); let i = index"
+            (click)="goToPage(i + 1)"
+            class="w-8 h-8 rounded flex items-center justify-center text-sm font-bold transition-colors"
+            [class.bg-primary]="page === i + 1"
+            [class.text-white]="page === i + 1"
+            [class.border]="page !== i + 1"
+            [class.border-outline-variant]="page !== i + 1"
+            [class.text-on-surface-variant]="page !== i + 1"
+            [class.hover:bg-white]="page !== i + 1">
+            {{ i + 1 }}
+          </button>
+          <button (click)="goToPage(page + 1)" [disabled]="page >= totalPages"
+            class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-white transition-colors disabled:opacity-40">
+            <span class="material-symbols-outlined text-sm">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Section: Activity + AI Stats -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-card border border-slate-100">
+        <h3 class="font-h2 text-h2 text-primary mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined">history</span>
+          最近审核动态
+        </h3>
+        <div class="space-y-4">
+          <div *ngFor="let act of recentActivities" class="flex items-start gap-3 p-3 rounded-lg border border-slate-50 bg-slate-50/30">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+              [ngClass]="act.action === 'approve' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'">
+              <span class="material-symbols-outlined text-sm">{{ act.icon }}</span>
+            </div>
+            <div>
+              <p class="font-body-md text-primary font-medium">{{ act.title }}</p>
+              <p class="text-xs text-secondary">{{ act.time }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-card border border-slate-100 flex flex-col justify-between overflow-hidden relative">
+        <div class="relative z-10">
+          <h3 class="font-h2 text-h2 text-primary mb-2">AI 审核助手</h3>
+          <p class="font-body-md text-secondary">AI 预审系统帮助企业资质自动筛查，提升审核效率。</p>
+          <div class="mt-4 flex items-center gap-2 text-primary font-bold">
+            <span class="material-symbols-outlined">bolt</span>
+            智能辅助审核
+          </div>
+        </div>
+        <div class="mt-6 h-20 bg-slate-50 rounded-lg flex items-end gap-1 px-4 relative overflow-hidden">
+          <div class="w-full bg-blue-100 h-1/2 rounded-t-sm"></div>
+          <div class="w-full bg-blue-200 h-2/3 rounded-t-sm"></div>
+          <div class="w-full bg-blue-300 h-3/4 rounded-t-sm"></div>
+          <div class="w-full bg-blue-400 h-1/2 rounded-t-sm"></div>
+          <div class="w-full bg-primary h-5/6 rounded-t-sm"></div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
