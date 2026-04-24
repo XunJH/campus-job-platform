@@ -16,8 +16,8 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.apiUrl}/auth/admin-login`, credentials).pipe(
       tap(res => {
         if (res.data?.token) {
-          localStorage.setItem('token', res.data.token);
-          localStorage.setItem('user', JSON.stringify(res.data.user));
+          localStorage.setItem('campus_job_token', res.data.token);
+          localStorage.setItem('campus_job_user', JSON.stringify(res.data.user));
         }
       })
     );
@@ -32,16 +32,16 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('campus_job_token');
+    localStorage.removeItem('campus_job_user');
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem('campus_job_token');
   }
 
   getUser(): User | null {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('campus_job_user');
     if (!userStr) return null;
     try {
       return JSON.parse(userStr) as User;
@@ -65,6 +65,6 @@ export class AuthService {
   }
 
   setUser(user: User): void {
-    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('campus_job_user', JSON.stringify(user));
   }
 }

@@ -64,7 +64,7 @@ app.use(helmet({
 // CORS配置
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:3000', 'http://localhost:4200', 'http://localhost:4201', 'http://localhost:4202'];
+  : ['http://localhost:3000', 'http://localhost:4200', 'http://localhost:4201', 'http://localhost:4202', 'http://localhost:4204'];
 const corsOptions = {
   origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
