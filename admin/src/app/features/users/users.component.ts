@@ -120,8 +120,9 @@ export class UsersComponent implements OnInit {
           this.snackBar.open('用户已删除', '关闭', { duration: 3000 });
           this.loadUsers();
         },
-        error: () => {
-          this.snackBar.open('删除用户失败', '关闭', { duration: 3000 });
+        error: (err) => {
+          const msg = err.error?.message || '删除用户失败';
+          this.snackBar.open(msg, '关闭', { duration: 4000 });
         }
       });
     }

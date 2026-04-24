@@ -158,14 +158,14 @@ exports.deleteUser = async (req, res) => {
         throw { status: 404, message: '用户不存在' };
       }
 
-      // 如果要删除管理员，需确保不是最后一个活跃管理员
-      if (user.role === 'admin') {
+      // 如果要删除管理员，需确保删除后至少保留一个活跃管理员
+      if (user.role === 'admin' && user.status === 'active') {
         const activeAdminCount = await User.count({
-          where: { role: 'admin', status: 'active' },
+          where: { role: 'admin', status: 'active', id: { [require('sequelize').Op.ne]: user.id } },
           transaction: t,
           lock: t.LOCK.UPDATE
         });
-        if (activeAdminCount <= 1) {
+        if (activeAdminCount < 1) {
           throw { status: 400, message: '系统中必须保留至少一个活跃的管理员账号' };
         }
       }
