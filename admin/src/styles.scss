@@ -49,6 +49,27 @@ button {
   border-top: 1px solid #f3f4f6;
 }
 
+/* Heading typography helpers */
+.font-h1,
+.text-h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.font-h2,
+.text-h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* Ensure primary text color is visible */
+.text-primary {
+  color: #002045 !important;
+}
+
 /* Angular Material icon alignment helper */
 .mat-icon {
   display: inline-flex;
