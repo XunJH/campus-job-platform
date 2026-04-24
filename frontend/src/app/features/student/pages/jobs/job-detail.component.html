@@ -28,14 +28,14 @@
           </div>
         </div>
         <div class="flex gap-3 shrink-0">
-          <button (click)="toggleSave()" [class.bg-yellow-100]="saved" [class.text-yellow-700]="saved"
-            class="bg-surface-container-high text-primary px-6 py-2.5 rounded-lg font-button text-button hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-2">
+          <button (click)="toggleSave()" [disabled]="saveLoading" [class.bg-yellow-100]="saved" [class.text-yellow-700]="saved"
+            class="bg-surface-container-high text-primary px-6 py-2.5 rounded-lg font-button text-button hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50">
             <span class="material-symbols-outlined text-[18px]" [style.font-variation-settings]="saved ? '\'FILL\' 1' : '\'FILL\' 0'">bookmark</span>
-            {{ saved ? '已收藏' : '收藏' }}
+            {{ saveLoading ? '处理中...' : (saved ? '已收藏' : '收藏') }}
           </button>
-          <button (click)="applyJob()"
-            class="bg-primary text-on-primary px-8 py-2.5 rounded-lg font-button text-button shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-95">
-            立即申请
+          <button (click)="applyJob()" [disabled]="applyLoading || applied"
+            class="bg-primary text-on-primary px-8 py-2.5 rounded-lg font-button text-button shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-95 disabled:opacity-50">
+            {{ applyLoading ? '提交中...' : (applied ? '已申请' : '立即申请') }}
           </button>
         </div>
       </div>
@@ -47,10 +47,10 @@
         <svg class="w-full h-full transform -rotate-90">
           <circle class="text-blue-100" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="12"></circle>
           <circle class="text-[#1A365D]" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor"
-            stroke-dasharray="364.4" [attr.stroke-dashoffset]="364.4 - (364.4 * matchScore / 100)" stroke-width="12"></circle>
+            stroke-dasharray="364.4" [attr.stroke-dashoffset]="364.4 - (364.4 * (matchScore ?? 0) / 100)" stroke-width="12"></circle>
         </svg>
         <div class="absolute inset-0 flex flex-col items-center justify-center">
-          <span class="text-h1 font-h1 text-primary">{{ matchScore }}%</span>
+          <span class="text-h1 font-h1 text-primary">{{ matchScore ?? '--' }}</span>
           <span class="text-[10px] font-bold uppercase tracking-wider text-primary/60">匹配度</span>
         </div>
       </div>
@@ -61,17 +61,17 @@
             AI 职业洞察
           </h3>
           <p class="font-body-md text-body-md text-on-surface-variant mt-1">
-            该岗位与您的<strong>系统架构</strong>专长及<strong>沟通能力</strong>高度契合，是您近期项目的理想延续。
+            该岗位与您的技能方向相关，建议查看详细描述后申请。
           </p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="bg-white p-3 rounded-lg border border-blue-100 flex items-start gap-3">
             <span class="material-symbols-outlined text-green-600">check_circle</span>
-            <div class="font-caption text-caption text-on-surface-variant">您的 React 技能位列前 5%</div>
+            <div class="font-caption text-caption text-on-surface-variant">岗位已审核通过，真实有效</div>
           </div>
           <div class="bg-white p-3 rounded-lg border border-blue-100 flex items-start gap-3">
             <span class="material-symbols-outlined text-green-600">check_circle</span>
-            <div class="font-caption text-caption text-on-surface-variant">符合您偏好的混合办公模式</div>
+            <div class="font-caption text-caption text-on-surface-variant">企业已完成认证</div>
           </div>
         </div>
       </div>
@@ -122,19 +122,19 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
             <span class="material-symbols-outlined text-primary">health_and_safety</span>
-            <span class="font-body-md text-body-md">健康与牙科保险</span>
+            <span class="font-body-md text-body-md">具体福利以企业实际提供为准</span>
           </div>
           <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
-            <span class="material-symbols-outlined text-primary">school</span>
-            <span class="font-body-md text-body-md">年度学习津贴</span>
+            <span class="material-symbols-outlined text-primary">info</span>
+            <span class="font-body-md text-body-md">建议面试时详细询问</span>
           </div>
           <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
-            <span class="material-symbols-outlined text-primary">home_work</span>
-            <span class="font-body-md text-body-md">远程办公设备补贴</span>
+            <span class="material-symbols-outlined text-primary">schedule</span>
+            <span class="font-body-md text-body-md">工作时长：{{ job?.workingHours || '面议' }}</span>
           </div>
           <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
-            <span class="material-symbols-outlined text-primary">beach_access</span>
-            <span class="font-body-md text-body-md">带薪年假</span>
+            <span class="material-symbols-outlined text-primary">location_on</span>
+            <span class="font-body-md text-body-md">工作地点：{{ job?.location || '待定' }}</span>
           </div>
         </div>
       </div>
@@ -157,10 +157,10 @@
         <div class="mt-4 space-y-4">
           <div>
             <h3 class="font-h2 text-h2 text-primary">{{ job?.employer?.username || '企业名称' }}</h3>
-            <p class="font-caption text-caption text-on-surface-variant">互联网 · 软件 · 500-1000人</p>
+            <p class="font-caption text-caption text-on-surface-variant">认证企业</p>
           </div>
           <p class="font-body-md text-body-md text-on-surface-variant">
-            通过智能管理系统和数据驱动的学生成功工具，赋能下一代学术领导力。
+            {{ job?.employer?.bio || '企业简介尚未完善' }}
           </p>
           <hr class="border-slate-100"/>
           <div class="space-y-3">
@@ -186,10 +186,7 @@
           <span class="font-body-md text-body-md font-bold text-primary">{{ job?.applicationsCount || 0 }} 人</span>
         </div>
         <div class="flex -space-x-2">
-          <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center font-caption text-[10px]">张</div>
-          <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center font-caption text-[10px]">李</div>
-          <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center font-caption text-[10px]">王</div>
-          <div class="w-8 h-8 rounded-full border-2 border-white bg-blue-100 text-blue-600 flex items-center justify-center font-caption text-[10px] font-bold">+{{ (job?.applicationsCount || 0) > 3 ? (job?.applicationsCount || 0) - 3 : 0 }}</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white bg-blue-100 text-blue-600 flex items-center justify-center font-caption text-[10px] font-bold">{{ job?.applicationsCount || 0 }} 人申请</div>
         </div>
       </div>
       <div class="flex flex-col">
@@ -201,9 +198,9 @@
     <!-- Sticky CTA -->
     <div class="bg-primary text-on-primary p-6 rounded-xl shadow-xl shadow-primary/20 space-y-4">
       <div class="text-h2 font-h2">准备好申请了吗？</div>
-      <p class="font-body-md text-body-md opacity-80">加入 500+ 专业人士，共同构建教育科技的未来。</p>
-      <button (click)="applyJob()" class="w-full bg-white text-primary py-3 rounded-lg font-button text-button hover:bg-blue-50 transition-all active:scale-95">
-        立即申请
+      <p class="font-body-md text-body-md opacity-80">欢迎投递简历，企业会尽快审核您的申请。</p>
+      <button (click)="applyJob()" [disabled]="applyLoading || applied" class="w-full bg-white text-primary py-3 rounded-lg font-button text-button hover:bg-blue-50 transition-all active:scale-95 disabled:opacity-50">
+        {{ applyLoading ? '提交中...' : (applied ? '已申请' : '立即申请') }}
       </button>
     </div>
   </aside>

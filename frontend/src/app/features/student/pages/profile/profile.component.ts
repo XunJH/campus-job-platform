@@ -48,48 +48,23 @@ export class ProfileComponent implements OnInit {
   ];
 
   get workExperienceList(): WorkExperience[] {
-    return this.user?.personalityProfile?.workExperience || [
-      {
-        title: '软件工程实习生',
-        company: '谷歌云平台 (GCP)',
-        period: 'June 2023 - Sept 2023',
-        description: '使用 Go 语言优化后端微服务，将延迟降低 15%。参与内部计费系统的新 API 接口开发。',
-        skills: ['Go', 'gRPC', 'Cloud Monitoring']
-      },
-      {
-        title: '开源贡献者',
-        company: '项目：去中心化网络标准',
-        period: 'Jan 2023 - Present',
-        description: '为去中心化应用中的点对点数据同步开发核心模块',
-        skills: ['Rust', 'WebAssembly']
-      }
-    ];
+    return this.user?.personalityProfile?.workExperience || [];
   }
 
   get educationList(): Education[] {
-    return this.user?.personalityProfile?.education || [
-      {
-        school: 'Stanford University',
-        degree: '计算机科学学士',
-        gpa: '3.92 / 4.00',
-        graduationYear: '2024届',
-        status: '在读',
-        courses: '算法、人工智能、分布式系统',
-        honors: 'Dean\'s List (2021, 2022)'
-      }
-    ];
+    return this.user?.personalityProfile?.education || [];
   }
 
   get technicalSkills(): string[] {
-    return this.user?.personalityProfile?.technicalSkills || ['Python', 'React.js', 'Node.js', 'TensorFlow', 'Docker', 'TypeScript'];
+    return this.user?.personalityProfile?.technicalSkills || [];
   }
 
   get toolsList(): string[] {
-    return this.user?.personalityProfile?.tools || ['Git / GitHub', 'VS Code', 'Jira / Agile', 'Postman'];
+    return this.user?.personalityProfile?.tools || [];
   }
 
   get languages(): string {
-    return this.user?.personalityProfile?.languages || '中文、英语、日语';
+    return this.user?.personalityProfile?.languages || '';
   }
 
   constructor(

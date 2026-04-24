@@ -45,8 +45,8 @@ export class JobsComponent implements OnInit {
   ];
 
   get salaryConfig() {
-    if (this.selectedJobType === 'full_time') {
-      return { min: 1000, max: 3000, step: 100 };
+    if (this.selectedJobType === 'full_time' || this.selectedJobType === 'internship') {
+      return { min: 1000, max: 5000, step: 100 };
     }
     return { min: 15, max: 100, step: 1 };
   }

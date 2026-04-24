@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jobController = require('../controllers/jobController');
 const { authenticateToken, optionalAuth } = require('../middlewares/auth');
-const { employerGuard, adminGuard } = require('../middlewares/roleGuard');
+const { employerGuard, adminGuard, studentGuard } = require('../middlewares/roleGuard');
 
 // 发布岗位 - 仅限 employer 角色
 router.post('/', authenticateToken, employerGuard, jobController.createJob);
@@ -33,5 +33,25 @@ router.put('/:id', authenticateToken, employerGuard, jobController.updateJob);
 
 // 删除岗位 - 仅限发布该岗位的企业
 router.delete('/:id', authenticateToken, employerGuard, jobController.deleteJob);
+
+// ==================== 学生申请/收藏 ====================
+
+// 申请岗位 - 仅限学生
+router.post('/:id/apply', authenticateToken, studentGuard, jobController.applyJob);
+
+// 检查是否已申请 - 仅限学生
+router.get('/:id/applied', authenticateToken, studentGuard, jobController.checkApplied);
+
+// 收藏/取消收藏岗位 - 仅限学生
+router.post('/:id/bookmark', authenticateToken, studentGuard, jobController.toggleBookmark);
+
+// 检查是否已收藏 - 仅限学生
+router.get('/:id/bookmarked', authenticateToken, studentGuard, jobController.checkBookmarked);
+
+// 获取我的申请列表 - 仅限学生
+router.get('/applications/my', authenticateToken, studentGuard, jobController.getMyApplications);
+
+// 获取我的收藏列表 - 仅限学生
+router.get('/bookmarks/my', authenticateToken, studentGuard, jobController.getMyBookmarks);
 
 module.exports = router;

@@ -20,7 +20,10 @@ export class JobDetailComponent implements OnInit {
   loading = false;
   errorMessage = '';
   saved = false;
-  matchScore = 92; // TODO: 从后端获取真实匹配度
+  applied = false;
+  applyLoading = false;
+  saveLoading = false;
+  matchScore: number | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -45,6 +48,10 @@ export class JobDetailComponent implements OnInit {
       next: (res) => {
         if (res.success && res.data) {
           this.job = res.data;
+          if (this.authService.isAuthenticated()) {
+            this.checkApplied(id);
+            this.checkBookmarked(id);
+          }
         } else {
           this.errorMessage = '获取岗位详情失败';
         }
@@ -57,9 +64,36 @@ export class JobDetailComponent implements OnInit {
     });
   }
 
+  private checkApplied(id: number): void {
+    this.jobService.checkApplied(id).subscribe({
+      next: (res) => { if (res.success) this.applied = res.data.applied; },
+      error: () => {}
+    });
+  }
+
+  private checkBookmarked(id: number): void {
+    this.jobService.checkBookmarked(id).subscribe({
+      next: (res) => { if (res.success) this.saved = res.data.bookmarked; },
+      error: () => {}
+    });
+  }
+
   toggleSave(): void {
-    this.saved = !this.saved;
-    // TODO: 调用收藏API
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+    if (!this.job) return;
+    this.saveLoading = true;
+    this.jobService.toggleBookmark(this.job.id).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.saved = res.data.bookmarked;
+        }
+        this.saveLoading = false;
+      },
+      error: () => { this.saveLoading = false; }
+    });
   }
 
   applyJob(): void {
@@ -67,8 +101,23 @@ export class JobDetailComponent implements OnInit {
       this.router.navigate(['/auth/login']);
       return;
     }
-    // TODO: 调用申请API
-    alert('申请功能开发中...');
+    if (!this.job || this.applied) return;
+    this.applyLoading = true;
+    this.jobService.applyJob(this.job.id).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.applied = true;
+          if (this.job) this.job.applicationsCount = (this.job.applicationsCount || 0) + 1;
+        } else {
+          this.errorMessage = res.message || '申请失败';
+        }
+        this.applyLoading = false;
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || '申请失败，请稍后重试';
+        this.applyLoading = false;
+      }
+    });
   }
 
   get requirementsList(): string[] {

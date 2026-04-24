@@ -21,7 +21,7 @@ export class EmployerProfileComponent implements OnInit {
   isEditing = false;
   user: User | null = null;
   verification: VerificationStatus | null = null;
-  stats: EmployerStats = { activeJobsCount: 0, totalJobsCount: 0, recentJobs: [] };
+  stats: EmployerStats = { activeJobsCount: 0, totalJobsCount: 0, recentJobs: [], totalApplications: 0, pendingApplications: 0, recentApplications: [] };
   message = '';
   error = false;
 

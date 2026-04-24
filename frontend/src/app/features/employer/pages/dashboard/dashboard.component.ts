@@ -2,17 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
-import { JobService } from '../../../../core/services/job.service';
+import { JobService, EmployerStats } from '../../../../core/services/job.service';
 import { VerificationService, VerificationStatus } from '../../../../core/services/verification.service';
-
-interface EmployerStats {
-  activeJobsCount: number;
-  totalJobsCount: number;
-  recentJobs: any[];
-  totalApplications: number;
-  pendingApplications: number;
-  recentApplications: any[];
-}
 
 @Component({
   selector: 'app-employer-dashboard',

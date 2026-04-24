@@ -40,13 +40,27 @@ export class AuthGuard implements CanActivate {
       return false;
     }
 
-    // 检查角色权限（如果有配置）
-    const requiredRole = route.data['role'] as UserRole;
+    // 从路由配置或 URL 路径推断所需角色
+    let requiredRole = route.data['role'] as UserRole;
+    if (!requiredRole) {
+      const url = state.url;
+      if (url.startsWith('/student/')) {
+        requiredRole = 'student' as UserRole;
+      } else if (url.startsWith('/employer/')) {
+        requiredRole = 'employer' as UserRole;
+      } else if (url.startsWith('/admin/')) {
+        requiredRole = 'admin' as UserRole;
+      }
+    }
+
     if (requiredRole) {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser?.role !== requiredRole) {
-        // 角色不匹配，跳转到无权限页面
-        this.router.navigate(['/forbidden']);
+        // 角色不匹配，清除登录状态并跳转到登录页
+        this.authService.logout();
+        this.router.navigate(['/auth/login'], {
+          queryParams: { returnUrl: state.url }
+        });
         return false;
       }
     }

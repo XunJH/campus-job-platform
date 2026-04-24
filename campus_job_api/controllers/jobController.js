@@ -692,3 +692,154 @@ exports.getEmployerStats = async (req, res) => {
     });
   }
 };
+
+// ==================== 学生申请岗位 ====================
+exports.applyJob = async (req, res) => {
+  try {
+    const studentId = parseInt(req.user.id, 10);
+    const jobId = parseInt(req.params.id, 10);
+    const { coverLetter } = req.body;
+
+    const { Application, Job } = require('../models');
+
+    // 检查岗位是否存在且已审核通过
+    const job = await Job.findByPk(jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, message: '岗位不存在' });
+    }
+    if (job.auditStatus !== 'approved') {
+      return res.status(400).json({ success: false, message: '该岗位尚未通过审核' });
+    }
+
+    // 检查是否已经申请过
+    const existing = await Application.findOne({ where: { studentId, jobId } });
+    if (existing) {
+      return res.status(409).json({ success: false, message: '您已经申请过该岗位' });
+    }
+
+    // 创建申请记录
+    const application = await Application.create({
+      studentId,
+      jobId,
+      coverLetter: coverLetter || null,
+      status: 'pending'
+    });
+
+    // 增加岗位申请计数
+    await Job.increment('applicationsCount', { where: { id: jobId } });
+
+    res.json({ success: true, message: '申请提交成功', data: application });
+  } catch (error) {
+    console.error('申请岗位错误:', error);
+    res.status(500).json({ success: false, message: '服务器内部错误' });
+  }
+};
+
+// 检查是否已申请
+exports.checkApplied = async (req, res) => {
+  try {
+    const studentId = parseInt(req.user.id, 10);
+    const jobId = parseInt(req.params.id, 10);
+    const { Application } = require('../models');
+
+    const application = await Application.findOne({ where: { studentId, jobId } });
+    res.json({ success: true, data: { applied: !!application, status: application?.status || null } });
+  } catch (error) {
+    console.error('检查申请状态错误:', error);
+    res.status(500).json({ success: false, message: '服务器内部错误' });
+  }
+};
+
+// 获取我的申请列表
+exports.getMyApplications = async (req, res) => {
+  try {
+    const studentId = parseInt(req.user.id, 10);
+    const { Application, Job, User } = require('../models');
+
+    const applications = await Application.findAll({
+      where: { studentId },
+      order: [['appliedAt', 'DESC']],
+      include: [
+        { 
+          model: Job, 
+          as: 'job', 
+          attributes: ['id', 'title', 'location', 'salary', 'salaryType', 'status'],
+          include: [{ model: User, as: 'employer', attributes: ['id', 'username'] }]
+        }
+      ]
+    });
+
+    res.json({ success: true, data: applications });
+  } catch (error) {
+    console.error('获取申请列表错误:', error);
+    res.status(500).json({ success: false, message: '服务器内部错误' });
+  }
+};
+
+// ==================== 收藏岗位 ====================
+exports.toggleBookmark = async (req, res) => {
+  try {
+    const studentId = parseInt(req.user.id, 10);
+    const jobId = parseInt(req.params.id, 10);
+    const { Bookmark, Job } = require('../models');
+
+    // 检查岗位是否存在
+    const job = await Job.findByPk(jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, message: '岗位不存在' });
+    }
+
+    const existing = await Bookmark.findOne({ where: { studentId, jobId } });
+    if (existing) {
+      await existing.destroy();
+      return res.json({ success: true, message: '已取消收藏', data: { bookmarked: false } });
+    } else {
+      const bookmark = await Bookmark.create({ studentId, jobId });
+      return res.json({ success: true, message: '收藏成功', data: { bookmarked: true } });
+    }
+  } catch (error) {
+    console.error('收藏岗位错误:', error);
+    res.status(500).json({ success: false, message: '服务器内部错误' });
+  }
+};
+
+// 检查是否已收藏
+exports.checkBookmarked = async (req, res) => {
+  try {
+    const studentId = parseInt(req.user.id, 10);
+    const jobId = parseInt(req.params.id, 10);
+    const { Bookmark } = require('../models');
+
+    const bookmark = await Bookmark.findOne({ where: { studentId, jobId } });
+    res.json({ success: true, data: { bookmarked: !!bookmark } });
+  } catch (error) {
+    console.error('检查收藏状态错误:', error);
+    res.status(500).json({ success: false, message: '服务器内部错误' });
+  }
+};
+
+// 获取我的收藏列表
+exports.getMyBookmarks = async (req, res) => {
+  try {
+    const studentId = parseInt(req.user.id, 10);
+    const { Bookmark, Job, User } = require('../models');
+
+    const bookmarks = await Bookmark.findAll({
+      where: { studentId },
+      order: [['createdAt', 'DESC']],
+      include: [
+        { 
+          model: Job, 
+          as: 'job', 
+          attributes: ['id', 'title', 'location', 'salary', 'salaryType', 'jobType', 'status', 'auditStatus'],
+          include: [{ model: User, as: 'employer', attributes: ['id', 'username'] }]
+        }
+      ]
+    });
+
+    res.json({ success: true, data: bookmarks });
+  } catch (error) {
+    console.error('获取收藏列表错误:', error);
+    res.status(500).json({ success: false, message: '服务器内部错误' });
+  }
+};

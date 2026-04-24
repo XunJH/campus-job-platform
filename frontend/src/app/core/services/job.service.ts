@@ -36,6 +36,9 @@ export interface EmployerStats {
   activeJobsCount: number;
   totalJobsCount: number;
   recentJobs: Job[];
+  totalApplications: number;
+  pendingApplications: number;
+  recentApplications: any[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -95,5 +98,31 @@ export class JobService {
 
   deleteJob(id: number): Observable<{ success: boolean; message: string }> {
     return this.http.delete<any>(`${this.API_URL}/${id}`);
+  }
+
+  // ==================== 学生申请/收藏 ====================
+
+  applyJob(id: number, coverLetter?: string): Observable<{ success: boolean; message: string; data?: any }> {
+    return this.http.post<any>(`${this.API_URL}/${id}/apply`, { coverLetter });
+  }
+
+  checkApplied(id: number): Observable<{ success: boolean; data: { applied: boolean; status: string | null } }> {
+    return this.http.get<any>(`${this.API_URL}/${id}/applied`);
+  }
+
+  toggleBookmark(id: number): Observable<{ success: boolean; message: string; data: { bookmarked: boolean } }> {
+    return this.http.post<any>(`${this.API_URL}/${id}/bookmark`, {});
+  }
+
+  checkBookmarked(id: number): Observable<{ success: boolean; data: { bookmarked: boolean } }> {
+    return this.http.get<any>(`${this.API_URL}/${id}/bookmarked`);
+  }
+
+  getMyApplications(): Observable<{ success: boolean; data: any[] }> {
+    return this.http.get<any>(`${this.API_URL}/applications/my`);
+  }
+
+  getMyBookmarks(): Observable<{ success: boolean; data: any[] }> {
+    return this.http.get<any>(`${this.API_URL}/bookmarks/my`);
   }
 }
