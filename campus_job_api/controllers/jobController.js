@@ -617,6 +617,7 @@ exports.rejectJob = async (req, res) => {
 exports.getEmployerStats = async (req, res) => {
   try {
     const employerId = parseInt(req.user.id, 10);
+    const { Application, User } = require('../models');
 
     const activeJobsCount = await Job.count({
       where: { employerId, status: 'active', auditStatus: 'approved' }
@@ -633,12 +634,54 @@ exports.getEmployerStats = async (req, res) => {
       attributes: ['id', 'title', 'location', 'salary', 'status', 'auditStatus', 'createdAt', 'views', 'applicationsCount']
     });
 
+    // 获取雇主所有岗位ID
+    const employerJobIds = await Job.findAll({
+      where: { employerId },
+      attributes: ['id'],
+      raw: true
+    }).then(jobs => jobs.map(j => j.id));
+
+    let totalApplications = 0;
+    let pendingApplications = 0;
+    let recentApplications = [];
+
+    if (employerJobIds.length > 0) {
+      totalApplications = await Application.count({
+        where: { jobId: { [Op.in]: employerJobIds } }
+      });
+
+      pendingApplications = await Application.count({
+        where: { jobId: { [Op.in]: employerJobIds }, status: 'pending' }
+      });
+
+      recentApplications = await Application.findAll({
+        where: { jobId: { [Op.in]: employerJobIds } },
+        order: [['appliedAt', 'DESC']],
+        limit: 5,
+        include: [
+          {
+            model: User,
+            as: 'student',
+            attributes: ['id', 'username', 'avatar']
+          },
+          {
+            model: Job,
+            as: 'job',
+            attributes: ['id', 'title']
+          }
+        ]
+      });
+    }
+
     res.json({
       success: true,
       data: {
         activeJobsCount,
         totalJobsCount,
-        recentJobs
+        recentJobs,
+        totalApplications,
+        pendingApplications,
+        recentApplications
       }
     });
   } catch (error) {

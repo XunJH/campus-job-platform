@@ -80,52 +80,36 @@
               <div class="p-2 bg-blue-50 text-primary rounded-lg">
                 <span class="material-symbols-outlined">work</span>
               </div>
-              <span class="text-green-500 font-bold text-xs flex items-center">
-                <span class="material-symbols-outlined text-xs mr-1">trending_up</span>
-                +12%
-              </span>
             </div>
             <p class="text-secondary font-caption text-caption mb-1">在招岗位</p>
-            <p class="text-h1 font-h1 text-primary">24</p>
+            <p class="text-h1 font-h1 text-primary">{{ stats?.activeJobsCount || 0 }}</p>
           </div>
           <div class="bg-white p-6 rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50">
             <div class="flex justify-between items-start mb-4">
               <div class="p-2 bg-purple-50 text-purple-700 rounded-lg">
                 <span class="material-symbols-outlined">group</span>
               </div>
-              <span class="text-green-500 font-bold text-xs flex items-center">
-                <span class="material-symbols-outlined text-xs mr-1">trending_up</span>
-                +18%
-              </span>
             </div>
             <p class="text-secondary font-caption text-caption mb-1">总申请数</p>
-            <p class="text-h1 font-h1 text-primary">1,284</p>
+            <p class="text-h1 font-h1 text-primary">{{ stats?.totalApplications || 0 }}</p>
           </div>
           <div class="bg-white p-6 rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50">
             <div class="flex justify-between items-start mb-4">
               <div class="p-2 bg-orange-50 text-orange-700 rounded-lg">
                 <span class="material-symbols-outlined">pending_actions</span>
               </div>
-              <span class="text-orange-500 font-bold text-xs flex items-center">
-                <span class="material-symbols-outlined text-xs mr-1">horizontal_rule</span>
-                持平
-              </span>
             </div>
             <p class="text-secondary font-caption text-caption mb-1">待审核</p>
-            <p class="text-h1 font-h1 text-primary">42</p>
+            <p class="text-h1 font-h1 text-primary">{{ stats?.pendingApplications || 0 }}</p>
           </div>
           <div class="bg-white p-6 rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50">
             <div class="flex justify-between items-start mb-4">
               <div class="p-2 bg-green-50 text-green-700 rounded-lg">
                 <span class="material-symbols-outlined">handshake</span>
               </div>
-              <span class="text-green-500 font-bold text-xs flex items-center">
-                <span class="material-symbols-outlined text-xs mr-1">trending_up</span>
-                +5%
-              </span>
             </div>
             <p class="text-secondary font-caption text-caption mb-1">本月录用</p>
-            <p class="text-h1 font-h1 text-primary">18</p>
+            <p class="text-h1 font-h1 text-primary">{{ getMonthlyHires() }}</p>
           </div>
         </section>
 
@@ -139,56 +123,32 @@
                 <a routerLink="/employer/applications" class="text-primary font-button text-sm hover:underline">查看全部</a>
               </div>
               <div class="divide-y divide-gray-50">
-                <div class="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                  <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-white font-bold">张</div>
-                    <div>
-                      <h4 class="font-h2 text-body-lg text-primary">张小明</h4>
-                      <p class="text-secondary font-caption text-caption">软件工程实习生</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-6">
-                    <span class="hidden md:inline-flex px-3 py-1 bg-blue-50 text-primary rounded-full text-[10px] font-bold uppercase tracking-wider">待审核</span>
-                    <button class="px-4 py-2 border border-primary text-primary rounded-lg font-button text-sm hover:bg-blue-50 transition-colors">审核</button>
-                  </div>
+                <div *ngIf="stats?.recentApplications?.length === 0" class="p-12 text-center text-secondary">
+                  <span class="material-symbols-outlined text-4xl mb-2 text-gray-300">inbox</span>
+                  <p>暂无申请记录</p>
                 </div>
-                <div class="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                <div *ngFor="let app of stats?.recentApplications" class="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
                   <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold">李</div>
+                    <img *ngIf="app.student?.avatar" [src]="app.student.avatar" class="w-12 h-12 rounded-full object-cover bg-gray-100"/>
+                    <div *ngIf="!app.student?.avatar" class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-white font-bold">
+                      {{ app.student?.username?.charAt(0) || '?' }}
+                    </div>
                     <div>
-                      <h4 class="font-h2 text-body-lg text-primary">李婷婷</h4>
-                      <p class="text-secondary font-caption text-caption">UX设计助理</p>
+                      <h4 class="font-h2 text-body-lg text-primary">{{ app.student?.username || '未知用户' }}</h4>
+                      <p class="text-secondary font-caption text-caption">{{ app.job?.title || '未知岗位' }}</p>
                     </div>
                   </div>
                   <div class="flex items-center gap-6">
-                    <span class="hidden md:inline-flex px-3 py-1 bg-blue-50 text-primary rounded-full text-[10px] font-bold uppercase tracking-wider">待审核</span>
-                    <button class="px-4 py-2 border border-primary text-primary rounded-lg font-button text-sm hover:bg-blue-50 transition-colors">审核</button>
-                  </div>
-                </div>
-                <div class="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                  <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center text-white font-bold">王</div>
-                    <div>
-                      <h4 class="font-h2 text-body-lg text-primary">王强</h4>
-                      <p class="text-secondary font-caption text-caption">市场协调员</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-6">
-                    <span class="hidden md:inline-flex px-3 py-1 bg-blue-50 text-primary rounded-full text-[10px] font-bold uppercase tracking-wider">待审核</span>
-                    <button class="px-4 py-2 border border-primary text-primary rounded-lg font-button text-sm hover:bg-blue-50 transition-colors">审核</button>
-                  </div>
-                </div>
-                <div class="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                  <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold">陈</div>
-                    <div>
-                      <h4 class="font-h2 text-body-lg text-primary">陈雨薇</h4>
-                      <p class="text-secondary font-caption text-caption">数据科学实习生</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-6">
-                    <span class="hidden md:inline-flex px-3 py-1 bg-blue-50 text-primary rounded-full text-[10px] font-bold uppercase tracking-wider">待审核</span>
-                    <button class="px-4 py-2 border border-primary text-primary rounded-lg font-button text-sm hover:bg-blue-50 transition-colors">审核</button>
+                    <span class="hidden md:inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                      [class.bg-blue-50]="app.status === 'pending'"
+                      [class.text-primary]="app.status === 'pending'"
+                      [class.bg-green-50]="app.status === 'approved'"
+                      [class.text-green-700]="app.status === 'approved'"
+                      [class.bg-red-50]="app.status === 'rejected'"
+                      [class.text-red-700]="app.status === 'rejected'">
+                      {{ app.status === 'pending' ? '待审核' : app.status === 'approved' ? '已通过' : '已拒绝' }}
+                    </span>
+                    <a [routerLink]="['/employer/applications']" class="px-4 py-2 border border-primary text-primary rounded-lg font-button text-sm hover:bg-blue-50 transition-colors">查看</a>
                   </div>
                 </div>
               </div>
@@ -203,40 +163,17 @@
                 <span class="material-symbols-outlined text-secondary">more_horiz</span>
               </div>
               <div class="space-y-6">
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <p class="text-body-md font-semibold text-primary">软件实习生</p>
-                    <p class="text-caption font-bold text-primary">342 人申请</p>
-                  </div>
-                  <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                    <div class="bg-primary h-full rounded-full" style="width: 85%"></div>
-                  </div>
+                <div *ngIf="getTopJobs().length === 0" class="text-center text-secondary py-8">
+                  <span class="material-symbols-outlined text-4xl mb-2 text-gray-300">work_off</span>
+                  <p>暂无岗位数据</p>
                 </div>
-                <div>
+                <div *ngFor="let job of getTopJobs()">
                   <div class="flex justify-between items-center mb-2">
-                    <p class="text-body-md font-semibold text-primary">UX设计师</p>
-                    <p class="text-caption font-bold text-primary">156 人申请</p>
+                    <p class="text-body-md font-semibold text-primary">{{ job.title }}</p>
+                    <p class="text-caption font-bold text-primary">{{ job.applicationsCount }} 人申请</p>
                   </div>
                   <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                    <div class="bg-primary h-full rounded-full" style="width: 45%"></div>
-                  </div>
-                </div>
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <p class="text-body-md font-semibold text-primary">市场主管</p>
-                    <p class="text-caption font-bold text-primary">89 人申请</p>
-                  </div>
-                  <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                    <div class="bg-primary h-full rounded-full" style="width: 30%"></div>
-                  </div>
-                </div>
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <p class="text-body-md font-semibold text-primary">销售助理</p>
-                    <p class="text-caption font-bold text-primary">210 人申请</p>
-                  </div>
-                  <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                    <div class="bg-primary h-full rounded-full" style="width: 65%"></div>
+                    <div class="bg-primary h-full rounded-full" [style.width.%]="(job.applicationsCount / (getTopJobs()[0]?.applicationsCount || 1)) * 100"></div>
                   </div>
                 </div>
               </div>
@@ -245,7 +182,7 @@
                   <span class="material-symbols-outlined text-blue-500">lightbulb</span>
                   <div>
                     <p class="text-xs font-bold text-primary mb-1">招聘小贴士</p>
-                    <p class="text-[11px] text-secondary leading-relaxed">您的"软件实习生"岗位表现超出平均水平 40%，建议在后续发布中使用类似标签。</p>
+                    <p class="text-[11px] text-secondary leading-relaxed">保持岗位信息更新，及时回复申请者，可提高招聘效率和学生满意度。</p>
                   </div>
                 </div>
               </div>
