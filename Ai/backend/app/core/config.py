@@ -40,12 +40,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./campus_parttime.db"
 
     # CORS配置（允许前端访问）
-    CORS_ORIGINS: list = [
-        "http://localhost:4200",
-        "http://localhost:4201",
-        "http://localhost:4202",
-        "http://localhost:8000"
-    ]
+    CORS_ORIGINS: list = ["http://localhost:4200", "http://localhost:4202", "http://localhost:4204", "http://localhost:8000"]
 
     class Config:
         env_file = ".env"  # 从.env文件读取配置

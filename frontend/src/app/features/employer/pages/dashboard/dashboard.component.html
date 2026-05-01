@@ -33,7 +33,7 @@
       </a>
     </nav>
     <div class="pt-4 border-t border-gray-50 flex flex-col gap-1">
-      <a routerLink="/student/verification" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 transition-all rounded-lg font-semibold text-sm no-underline">
+      <a routerLink="/employer/verification" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 transition-all rounded-lg font-semibold text-sm no-underline">
         <span class="material-symbols-outlined">verified</span>
         企业认证
       </a>
@@ -222,7 +222,7 @@
                 <ng-container *ngIf="verificationStatus?.status === 'rejected'">认证申请已被拒绝，原因：{{ verificationStatus?.rejectionReason }}</ng-container>
                 <ng-container *ngIf="!verificationStatus?.status">只有通过企业认证后，才能发布岗位信息，开始招聘。</ng-container>
               </p>
-              <button routerLink="/student/verification" class="px-6 py-3 bg-primary text-white rounded-xl font-button text-button hover:bg-primary-container transition-all">
+              <button routerLink="/employer/verification" class="px-6 py-3 bg-primary text-white rounded-xl font-button text-button hover:bg-primary-container transition-all">
                 {{ verificationStatus?.status === 'rejected' ? '重新认证' : '去认证' }}
               </button>
             </div>

@@ -178,7 +178,7 @@ export class ProfileComponent implements OnInit {
   }
 
   startPersonalityTest(): void {
-    alert('人格测试将在下次登录时自动触发，或请联系管理员重置测试状态。');
+    this.router.navigate(['/student/ai'], { queryParams: { tab: 'test' } });
   }
 
   onSubmit(): void {
@@ -193,6 +193,8 @@ export class ProfileComponent implements OnInit {
     }));
     const education = formValue.education || [];
 
+    // 保留原有人格画像字段，防止被简历数据覆盖
+    const existingProfile = this.user?.personalityProfile || {};
     const updateData = {
       username: formValue.nickname,
       email: formValue.email,
@@ -200,7 +202,9 @@ export class ProfileComponent implements OnInit {
       avatar: formValue.avatar,
       bio: formValue.bio,
       personalityProfile: {
-        ...(this.user?.personalityProfile || {}),
+        // 先保留所有原有字段（人格画像 + 可能存在的其他字段）
+        ...existingProfile,
+        // 简历字段：更新为新值
         workExperience,
         education,
         technicalSkills: formValue.technicalSkills ? formValue.technicalSkills.split('、').map((s: string) => s.trim()).filter(Boolean) : [],

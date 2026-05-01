@@ -1,0 +1,322 @@
+<div class="page-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L4 7v10l8 5 8-5V7L12 2z" fill="currentColor" />
+        </svg>
+        <span>CampusJob</span>
+      </div>
+    </div>
+
+    <div class="sidebar-content">
+      <nav class="nav-section">
+        <a routerLink="/employer/dashboard" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="7" height="9" x="3" y="3" rx="1"/>
+            <rect width="7" height="5" x="14" y="3" rx="1"/>
+            <rect width="7" height="9" x="14" y="12" rx="1"/>
+            <rect width="7" height="5" x="3" y="16" rx="1"/>
+          </svg>
+          <span>企业首页</span>
+        </a>
+        <a routerLink="/employer/jobs/post" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          <span>发布岗位</span>
+        </a>
+        <a routerLink="/employer/jobs" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          <span>岗位管理</span>
+        </a>
+        <a routerLink="/employer/applications" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span>申请管理</span>
+        </a>
+      </nav>
+
+      <div class="nav-divider"></div>
+
+      <nav class="nav-section">
+        <p class="nav-label">AI助手</p>
+        <a routerLink="/employer/ai" class="nav-item active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a8 8 0 0 0-8 8c0 3.4 2.1 6.3 5 7.5V20h6v-2.5c2.9-1.2 5-4.1 5-7.5a8 8 0 0 0-8-8z"/>
+            <line x1="9" x2="15" y1="20" y2="20"/>
+          </svg>
+          <span>AI招聘助手</span>
+          <span class="badge badge-beta">AI</span>
+        </a>
+      </nav>
+
+      <div class="nav-divider"></div>
+
+      <nav class="nav-section">
+        <p class="nav-label">企业中心</p>
+        <a routerLink="/student/verification" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>企业认证</span>
+        </a>
+        <a routerLink="/employer/profile" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span>企业资料</span>
+        </a>
+        <a routerLink="/employer/wallet" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+          </svg>
+          <span>资金管理</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" (click)="logout()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" x2="9" y1="12" y2="12"/>
+        </svg>
+        <span>退出登录</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="page-header">
+      <div class="header-left">
+        <h1>AI招聘助手</h1>
+        <span class="badge badge-beta">AI</span>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <!-- Tab导航 -->
+      <div class="ai-tabs">
+        <button class="ai-tab" [class.active]="activeTab === 'chat'" (click)="switchTab('chat')">
+          💬 对话助手
+        </button>
+        <button class="ai-tab" [class.active]="activeTab === 'reverse'" (click)="switchTab('reverse')">
+          🎯 反向推荐
+        </button>
+        <button class="ai-tab" [class.active]="activeTab === 'jd'" (click)="switchTab('jd')">
+          📝 智能JD
+        </button>
+      </div>
+
+      <!-- ===== 企业版对话 ===== -->
+      <div class="ai-panel" *ngIf="activeTab === 'chat'">
+        <div class="chat-container">
+          <div class="chat-messages" *ngIf="chatMessages.length > 0; else chatEmpty">
+            <div class="chat-message" *ngFor="let msg of chatMessages" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+              <div class="message-avatar">{{ msg.role === 'user' ? '我' : '小招' }}</div>
+              <div class="message-content">{{ msg.content }}</div>
+            </div>
+            <div class="chat-message assistant" *ngIf="chatLoading">
+              <div class="message-avatar">小招</div>
+              <div class="message-content typing">正在思考中...</div>
+            </div>
+          </div>
+          <ng-template #chatEmpty>
+            <div class="chat-empty">
+              <div class="empty-icon">🤖</div>
+              <h3>你好，我是小招！</h3>
+              <p>你的专属招聘AI助手，帮你写JD、筛简历、做决策</p>
+              <div class="quick-questions">
+                <button class="quick-btn" (click)="chatInput = '帮我写一份家教的岗位描述'; sendChat()">帮我写一份家教的岗位描述</button>
+                <button class="quick-btn" (click)="chatInput = '面试学生应该问什么问题？'; sendChat()">面试学生应该问什么问题？</button>
+                <button class="quick-btn" (click)="chatInput = '兼职薪资怎么定比较合理？'; sendChat()">兼职薪资怎么定比较合理？</button>
+              </div>
+            </div>
+          </ng-template>
+        </div>
+        <div class="chat-input-bar">
+          <input type="text" [(ngModel)]="chatInput" (keyup.enter)="sendChat()" placeholder="输入你的招聘问题..." [disabled]="chatLoading">
+          <button class="send-btn" (click)="sendChat()" [disabled]="chatLoading || !chatInput.trim()">发送</button>
+        </div>
+      </div>
+
+      <!-- ===== 反向推荐 ===== -->
+      <div class="ai-panel" *ngIf="activeTab === 'reverse'">
+        <div class="reverse-section">
+          <div class="section-header">
+            <h2>🎯 反向推荐：岗位 → 学生</h2>
+            <p>输入你的岗位需求，AI为你匹配最合适的学生候选人</p>
+          </div>
+
+          <div class="reverse-form">
+            <div class="form-row">
+              <div class="form-group form-group-wide">
+                <label>岗位名称 <span class="required">*</span></label>
+                <input type="text" [(ngModel)]="jobTitleInput" placeholder="例如：餐厅服务员">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>岗位标签</label>
+                <input type="text" [(ngModel)]="jobTagsInput" placeholder="用逗号分隔，如：沟通,团队,耐心">
+              </div>
+              <div class="form-group">
+                <label>岗位要求</label>
+                <input type="text" [(ngModel)]="jobRequirementsInput" placeholder="用逗号分隔，如：有健康证,时间灵活">
+              </div>
+            </div>
+            <button class="btn btn-primary" (click)="reverseRecommend()" [disabled]="!jobTitleInput.trim() || reverseLoading">
+              {{ reverseLoading ? '匹配中...' : '🔍 匹配学生' }}
+            </button>
+          </div>
+
+          <div class="reverse-results" *ngIf="reverseResults.length > 0">
+            <h3>匹配结果</h3>
+            <div class="student-list">
+              <div class="student-card" *ngFor="let rec of reverseResults; let i = index">
+                <div class="student-rank">{{ i + 1 }}</div>
+                <div class="student-info">
+                  <div class="student-header">
+                    <h4>{{ rec.student?.name || '学生' }}</h4>
+                    <span class="student-major">{{ rec.student?.major || '' }} · {{ rec.student?.grade || '' }}</span>
+                  </div>
+                  <div class="student-score">匹配度：{{ rec.match_score }}%</div>
+                  <div class="student-tags">
+                    <span class="tag tag-blue" *ngFor="let tag of rec.student?.tags">{{ tag }}</span>
+                  </div>
+                  <div class="student-strengths">
+                    <span class="label">核心优势：</span>
+                    <span *ngFor="let s of rec.student?.strengths; let last = last">{{ s }}{{ last ? '' : '、' }}</span>
+                  </div>
+                  <div class="match-reasons">
+                    <span class="reason-tag" *ngFor="let r of rec.match_reasons">{{ r }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="loading-placeholder" *ngIf="reverseLoading">
+            <div class="spinner"></div>
+            <p>正在匹配最适合的学生...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 智能JD生成 ===== -->
+      <div class="ai-panel" *ngIf="activeTab === 'jd'">
+        <div class="jd-section" *ngIf="!jdResult">
+          <div class="section-header">
+            <h2>📝 智能岗位描述生成</h2>
+            <p>输入岗位名称和关键词，AI自动生成完整的岗位描述</p>
+          </div>
+
+          <div class="jd-form">
+            <div class="form-row">
+              <div class="form-group form-group-wide">
+                <label>岗位名称 <span class="required">*</span></label>
+                <input type="text" [(ngModel)]="jdJobTitle" placeholder="例如：咖啡店店员">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>关键词</label>
+                <input type="text" [(ngModel)]="jdKeywords" placeholder="用逗号分隔，如：远程,PS,设计">
+              </div>
+              <div class="form-group">
+                <label>公司类型</label>
+                <input type="text" [(ngModel)]="jdCompanyType" placeholder="例如：互联网、餐饮、教育">
+              </div>
+            </div>
+            <button class="btn btn-primary" (click)="generateJd()" [disabled]="!jdJobTitle.trim() || jdLoading">
+              {{ jdLoading ? '生成中...' : '🪄 生成JD' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="jd-result" *ngIf="jdResult">
+          <div class="jd-header">
+            <h2>{{ jdResult.title }}</h2>
+            <div class="jd-actions">
+              <button class="btn btn-outline btn-sm" (click)="copyJd()">📋 复制</button>
+              <button class="btn btn-outline btn-sm" (click)="jdResult = null">✏️ 重新生成</button>
+            </div>
+          </div>
+
+          <div class="jd-meta">
+            <div class="meta-item" *ngIf="jdResult.salary_range">
+              <span class="meta-label">💰 薪资</span>
+              <span>{{ jdResult.salary_range }}</span>
+            </div>
+            <div class="meta-item" *ngIf="jdResult.work_hours">
+              <span class="meta-label">🕐 时间</span>
+              <span>{{ jdResult.work_hours }}</span>
+            </div>
+            <div class="meta-item" *ngIf="jdResult.location">
+              <span class="meta-label">📍 地点</span>
+              <span>{{ jdResult.location }}</span>
+            </div>
+          </div>
+
+          <div class="jd-section-content">
+            <h4>📋 岗位职责</h4>
+            <ul>
+              <li *ngFor="let r of jdResult.responsibilities">{{ r }}</li>
+            </ul>
+          </div>
+
+          <div class="jd-section-content">
+            <h4>🎓 任职要求</h4>
+            <ul>
+              <li *ngFor="let r of jdResult.requirements">{{ r }}</li>
+            </ul>
+          </div>
+
+          <div class="jd-section-content">
+            <h4>🎁 福利待遇</h4>
+            <ul>
+              <li *ngFor="let b of jdResult.benefits">{{ b }}</li>
+            </ul>
+          </div>
+
+          <div class="jd-highlights" *ngIf="jdResult.highlights">
+            <span class="highlight-icon">✨</span>
+            <span>{{ jdResult.highlights }}</span>
+          </div>
+
+          <div class="jd-tips" *ngIf="jdResult.tips?.length">
+            <h4>💡 HR建议</h4>
+            <ul>
+              <li *ngFor="let tip of jdResult.tips">{{ tip }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="loading-placeholder" *ngIf="jdLoading">
+          <div class="spinner"></div>
+          <p>正在生成岗位描述...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 悬浮窗按钮（返回企业首页） -->
+  <a class="ai-fab" routerLink="/employer/dashboard" title="返回企业首页">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+  </a>
+</div>

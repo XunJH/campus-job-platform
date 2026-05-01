@@ -1,0 +1,186 @@
+<!-- Top Navigation Bar -->
+<header class="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 shadow-sm sticky top-0 z-50">
+  <div class="flex justify-between items-center h-16 px-6 w-full max-w-7xl mx-auto">
+    <div class="flex items-center gap-8">
+      <span class="text-xl font-bold text-[#1A365D] dark:text-white">校园招聘</span>
+      <nav class="hidden md:flex items-center gap-6 font-manrope text-sm font-medium">
+        <a class="text-gray-600 dark:text-gray-400 hover:text-[#1A365D] transition-colors no-underline" routerLink="/student/jobs">岗位</a>
+        <a class="text-gray-600 dark:text-gray-400 hover:text-[#1A365D] transition-colors no-underline" routerLink="/student/applications">我的投递</a>
+        <a class="text-gray-600 dark:text-gray-400 hover:text-[#1A365D] transition-colors no-underline" routerLink="/student/resume">资源</a>
+      </nav>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <button class="p-2 text-gray-500 hover:bg-gray-50 rounded-full transition-colors">
+          <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <button class="p-2 text-gray-500 hover:bg-gray-50 rounded-full transition-colors">
+          <span class="material-symbols-outlined">chat_bubble</span>
+        </button>
+        <a routerLink="/student/profile" class="h-8 w-8 rounded-full bg-primary-fixed overflow-hidden border border-gray-200 cursor-pointer hover:scale-105 transition-transform">
+          <img alt="头像" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGupVWCkSdE0K6l3H-EZgufSCl8D8a1lkFfWot89t_0BiN_3aV1qA1LAPIoReCbn_TmeakDfOFYSB5OqhJbx9eHT8d_dkcQ2FAxT-d6ktWMMbIImc1joL_yMtp-8odRy6uShw5pviXba3XZo8TkVXrY1yH5oEbBcLzN7wpyGENeHDwOPnezsJurviFhvFQyZIMsfumT9Wk4ijDSysnqanYfgn72V4gRpt7yw9_uWPjvmKyBgD-Bkw9VsOM-uoVO4LcYK84eYyKVqJG"/>
+        </a>
+        <button class="p-2 text-gray-500 hover:bg-gray-50 rounded-full transition-colors" (click)="logout()" title="退出登录">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="max-w-3xl mx-auto px-6 py-8 lg:py-12">
+  <!-- 标题区 -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-[#1A365D] mb-2">AI 人格画像</h1>
+    <p class="text-sm text-gray-500">回答10个问题，AI为你生成专属性格画像和岗位推荐</p>
+  </div>
+
+  <!-- 未完成测评 -->
+  <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-8" *ngIf="!testCompleted">
+    <!-- 进度条 -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium text-[#1A365D]">第 {{ currentQuestionIndex + 1 }} 题</span>
+        <span class="text-xs text-gray-400">{{ currentQuestionIndex + 1 }} / {{ questionnaire.length }}</span>
+      </div>
+      <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div class="h-full bg-[#1A365D] rounded-full transition-all duration-300"
+             [style.width.%]="(currentQuestionIndex + 1) / questionnaire.length * 100"></div>
+      </div>
+    </div>
+
+    <!-- 问题卡片 -->
+    <div class="mb-8" *ngIf="currentQuestion">
+      <h3 class="text-lg font-semibold text-gray-900 mb-6">{{ currentQuestion.question }}</h3>
+      <div class="space-y-3">
+        <button *ngFor="let opt of currentQuestion.options; let i = index"
+                (click)="selectAnswer(i)"
+                class="w-full text-left px-5 py-4 rounded-xl border-2 transition-all duration-200 text-sm"
+                [class.border-[#1A365D]]="answers[currentQuestionIndex] === i + 1"
+                [class.bg-[#F1F5F9]]="answers[currentQuestionIndex] === i + 1"
+                [class.text-[#1A365D]]="answers[currentQuestionIndex] === i + 1"
+                [class.font-semibold]="answers[currentQuestionIndex] === i + 1"
+                [class.border-gray-200]="answers[currentQuestionIndex] !== i + 1"
+                [class.bg-white]="answers[currentQuestionIndex] !== i + 1"
+                [class.text-gray-700]="answers[currentQuestionIndex] !== i + 1"
+                [class.hover:border-[#1A365D]]="answers[currentQuestionIndex] !== i + 1"
+                [class.hover:bg-gray-50]="answers[currentQuestionIndex] !== i + 1">
+          {{ opt.text }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="flex justify-end gap-3">
+      <button (click)="prevQuestion()"
+              [disabled]="currentQuestionIndex === 0"
+              class="px-5 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+        上一题
+      </button>
+      <button *ngIf="currentQuestionIndex < questionnaire.length - 1"
+              (click)="nextQuestion()"
+              [disabled]="answers[currentQuestionIndex] === 0"
+              class="px-5 py-2.5 bg-[#1A365D] text-white rounded-lg text-sm font-medium hover:bg-[#234876] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+        下一题
+      </button>
+      <button *ngIf="currentQuestionIndex === questionnaire.length - 1"
+              (click)="submitTest()"
+              [disabled]="answers[currentQuestionIndex] === 0 || testLoading"
+              class="px-5 py-2.5 bg-[#1A365D] text-white rounded-lg text-sm font-medium hover:bg-[#234876] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+        {{ testLoading ? '分析中...' : '提交测评' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- 测评结果 -->
+  <div class="space-y-6" *ngIf="testCompleted">
+    <!-- 性格画像卡片 -->
+    <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-8" *ngIf="personalityResult">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="h-10 w-10 rounded-lg bg-[#F1F5F9] flex items-center justify-center">
+          <span class="material-symbols-outlined text-[#1A365D]">psychology</span>
+        </div>
+        <h2 class="text-lg font-bold text-[#1A365D]">你的性格画像</h2>
+      </div>
+
+      <div class="flex flex-wrap gap-2 mb-6">
+        <span *ngFor="let tag of personalityResult.tags"
+              class="px-3 py-1.5 bg-[#F1F5F9] text-[#1A365D] rounded-full text-xs font-medium">
+          {{ tag }}
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#1A365D] text-sm">star</span>
+            核心优势
+          </h4>
+          <ul class="space-y-2">
+            <li *ngFor="let s of personalityResult.strengths" class="text-sm text-gray-600 flex items-start gap-2">
+              <span class="text-[#1A365D] mt-0.5">•</span>
+              {{ s }}
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#1A365D] text-sm">work</span>
+            适合岗位
+          </h4>
+          <ul class="space-y-2">
+            <li *ngFor="let j of personalityResult.suitable_jobs" class="text-sm text-gray-600 flex items-start gap-2">
+              <span class="text-[#1A365D] mt-0.5">•</span>
+              {{ j }}
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 推荐岗位卡片 -->
+    <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 p-8" *ngIf="recommendations.length > 0">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="h-10 w-10 rounded-lg bg-[#F1F5F9] flex items-center justify-center">
+          <span class="material-symbols-outlined text-[#1A365D]">recommend</span>
+        </div>
+        <h2 class="text-lg font-bold text-[#1A365D]">为你推荐的岗位</h2>
+      </div>
+
+      <div class="space-y-4">
+        <div *ngFor="let rec of recommendations; let i = index"
+             class="flex gap-4 p-4 bg-gray-50 rounded-xl hover:bg-[#F8FAFC] transition-colors">
+          <div class="h-10 w-10 rounded-full bg-[#1A365D] text-white flex items-center justify-center text-sm font-bold shrink-0">
+            {{ i + 1 }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="text-sm font-semibold text-gray-900 mb-1">{{ rec.job?.title || '岗位' }}</h4>
+            <p class="text-xs text-gray-500 mb-2">{{ rec.job?.company || '' }}</p>
+            <p class="text-xs font-semibold text-[#1A365D] mb-2">匹配度：{{ rec.match_score }}%</p>
+            <div class="flex flex-wrap gap-1.5">
+              <span *ngFor="let r of rec.match_reasons"
+                    class="px-2 py-0.5 bg-white text-[#1A365D] rounded-md text-[11px] border border-gray-200">
+                {{ r }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 加载中 -->
+    <div class="bg-white rounded-xl shadow border border-gray-50 p-12 text-center" *ngIf="recommendLoading">
+      <span class="material-symbols-outlined animate-spin text-[#1A365D] text-3xl">progress_activity</span>
+      <p class="mt-3 text-sm text-gray-500">正在为你匹配岗位...</p>
+    </div>
+
+    <!-- 重新测评 -->
+    <div class="text-center">
+      <button (click)="resetTest()"
+              class="px-6 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+        重新测评
+      </button>
+    </div>
+  </div>
+</main>

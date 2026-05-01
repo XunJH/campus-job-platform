@@ -1,5 +1,7 @@
 """
 智能匹配API路由
+
+包含正向推荐（学生→岗位）和反向推荐（岗位→学生）
 """
 
 from fastapi import APIRouter, HTTPException
@@ -12,10 +14,18 @@ router = APIRouter(prefix="/matching", tags=["智能匹配"])
 
 
 class MatchRequest(BaseModel):
-    """匹配请求"""
+    """正向推荐请求（学生→岗位）"""
     user_id: str
     # 可以传入人格画像，也可以让系统自动获取
     personality_profile: Optional[dict] = None
+    top_n: int = 5
+
+
+class ReverseMatchRequest(BaseModel):
+    """反向推荐请求（岗位→学生）"""
+    job_title: str
+    job_tags: List[str] = []
+    job_requirements: List[str] = []
     top_n: int = 5
 
 
@@ -76,5 +86,33 @@ async def recommend_jobs(request: MatchRequest):
 
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/reverse")
+async def reverse_recommend(request: ReverseMatchRequest):
+    """
+    反向推荐：根据岗位需求推荐匹配的学生
+
+    企业端核心功能：输入岗位标签和要求，返回最匹配的学生列表
+    """
+    try:
+        results = matching_service.reverse_match(
+            job_title=request.job_title,
+            job_tags=request.job_tags,
+            job_requirements=request.job_requirements,
+            top_n=request.top_n
+        )
+
+        return {
+            "code": 200,
+            "message": "反向推荐完成",
+            "data": {
+                "total": len(results),
+                "recommendations": results
+            }
+        }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

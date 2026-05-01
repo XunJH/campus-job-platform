@@ -132,7 +132,7 @@ exports.createJob = async (req, res) => {
 // 获取岗位列表
 exports.getJobs = async (req, res) => {
   try {
-    let { page = 1, limit = 10, title, minSalary, workLocation, category, jobType } = req.query;
+    let { page = 1, limit = 10, title, minSalary, workLocation, category, jobType, salaryType } = req.query;
     limit = Math.min(parseInt(limit) || 10, 100);
     page = parseInt(page) || 1;
     const offset = (page - 1) * limit;
@@ -158,6 +158,14 @@ exports.getJobs = async (req, res) => {
     }
     if (jobType) {
       where.jobType = jobType;
+    }
+    if (salaryType) {
+      const salaryTypes = salaryType.split(',').filter(Boolean);
+      if (salaryTypes.length > 1) {
+        where.salaryType = { [Op.in]: salaryTypes };
+      } else {
+        where.salaryType = salaryTypes[0];
+      }
     }
 
     // 非管理员只能看到审核通过的岗位

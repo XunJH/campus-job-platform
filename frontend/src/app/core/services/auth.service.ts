@@ -9,6 +9,7 @@ export class AuthService {
   
   private readonly API_URL = '/api/v1/auth';
   private tokenKey = 'campus_job_token';
+  private userKey = 'campus_job_user';
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   
   public currentUser$ = this.currentUserSubject.asObservable();
@@ -63,6 +64,7 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.userKey);
     this.currentUserSubject.next(null);
   }
 
@@ -76,6 +78,7 @@ export class AuthService {
 
   updateCurrentUser(user: User): void {
     this.currentUserSubject.next(user);
+    localStorage.setItem(this.userKey, JSON.stringify(user));
   }
 
   getToken(): string | null {
@@ -104,17 +107,33 @@ export class AuthService {
 
   private loadStoredAuth(): void {
     const token = this.getToken();
-    if (token) {
-      this.http.get<any>(`${this.API_URL}/profile`).subscribe({
-        next: (res) => {
-          if (res.success && res.data) {
-            this.currentUserSubject.next(this.mapUser(res.data));
-          }
-        },
-        error: () => {
+    if (!token) return;
+
+    // 优先从本地缓存恢复，避免页面刷新后数据闪烁
+    const cachedUser = localStorage.getItem(this.userKey);
+    if (cachedUser) {
+      try {
+        this.currentUserSubject.next(JSON.parse(cachedUser));
+      } catch {
+        localStorage.removeItem(this.userKey);
+      }
+    }
+
+    // 异步从后端同步最新数据
+    this.http.get<any>(`${this.API_URL}/profile`).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const user = this.mapUser(res.data);
+          this.currentUserSubject.next(user);
+          localStorage.setItem(this.userKey, JSON.stringify(user));
+        }
+      },
+      error: () => {
+        // 仅当没有缓存时才登出
+        if (!cachedUser) {
           this.logout();
         }
-      });
-    }
+      }
+    });
   }
 }

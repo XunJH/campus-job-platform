@@ -67,7 +67,8 @@ export class JobService {
     minSalary?: number,
     workLocation?: string,
     category?: string,
-    jobType?: string
+    jobType?: string,
+    salaryType?: string
   ): Observable<{ success: boolean; data: { jobs: Job[]; pagination: any } }> {
     let params = new HttpParams().set('page', page).set('limit', limit);
     if (title) {
@@ -84,6 +85,9 @@ export class JobService {
     }
     if (jobType) {
       params = params.set('jobType', jobType);
+    }
+    if (salaryType) {
+      params = params.set('salaryType', salaryType);
     }
     return this.http.get<any>(this.API_URL, { params });
   }

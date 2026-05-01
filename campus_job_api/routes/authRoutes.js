@@ -374,15 +374,34 @@ router.put('/change-password',
 
 /**
  * @swagger
- * /api/auth/logout:
+ * /api/auth/forgot-password:
  *   post:
- *     summary: 用户登出
+ *     summary: 忘记密码重置
  *     tags: [认证]
- *     security:
- *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - newPassword
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: 用户名或邮箱
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 6
+ *                 description: 新密码
  *     responses:
  *       200:
- *         description: 登出成功
+ *         description: 重置成功
+ *       400:
+ *         description: 请求参数错误
+ *       404:
+ *         description: 用户不存在
  */
 router.post('/forgot-password',
   [
@@ -392,6 +411,8 @@ router.post('/forgot-password',
     body('newPassword')
       .isLength({ min: 6 })
       .withMessage('新密码至少需要6个字符')
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+      .withMessage('新密码必须包含大小写字母和数字')
   ],
   handleValidationErrors,
   authController.forgotPassword

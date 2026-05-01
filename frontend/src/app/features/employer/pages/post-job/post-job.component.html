@@ -33,7 +33,7 @@
       </a>
     </nav>
     <div class="pt-4 border-t border-gray-50 flex flex-col gap-1">
-      <a routerLink="/student/verification" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 transition-all rounded-lg font-semibold text-sm no-underline">
+      <a routerLink="/employer/verification" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 transition-all rounded-lg font-semibold text-sm no-underline">
         <span class="material-symbols-outlined">verified</span>
         企业认证
       </a>
@@ -158,6 +158,36 @@
               <input type="date" formControlName="deadline"
                 class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" />
             </div>
+          </div>
+        </div>
+
+        <!-- AI 智能JD生成 -->
+        <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100 p-8">
+          <div class="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+            <span class="material-symbols-outlined text-primary">auto_fix_high</span>
+            <h2 class="font-h2 text-h2 text-primary">智能生成岗位描述</h2>
+          </div>
+          <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">关键词（用逗号分隔）</label>
+                <input type="text" [(ngModel)]="jdKeywords"
+                  class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all"
+                  placeholder="例如：Python, 数据分析, 远程" />
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">公司/岗位类型</label>
+                <input type="text" [(ngModel)]="jdCompanyType"
+                  class="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all"
+                  placeholder="例如：互联网公司、教育培训机构" />
+              </div>
+            </div>
+            <button type="button" (click)="generateJd()" [disabled]="jdLoading || !postForm.value.title"
+              class="px-6 py-2.5 bg-primary text-white rounded-lg font-button text-button hover:bg-primary-container active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2">
+              <span *ngIf="!jdLoading" class="material-symbols-outlined text-[18px]">auto_fix_high</span>
+              <span *ngIf="jdLoading" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+              {{ jdLoading ? '生成中...' : '一键生成JD' }}
+            </button>
           </div>
         </div>
 

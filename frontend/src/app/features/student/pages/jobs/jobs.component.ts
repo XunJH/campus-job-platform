@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { JobService, Job } from '../../../../core/services/job.service';
+import { PersonalityProfileService } from '../../../../core/services/personality-profile.service';
+import { AiFabComponent } from '../../../../shared/components/ai-fab/ai-fab.component';
 
 /**
  * @功能 学生端岗位浏览页
@@ -12,7 +14,7 @@ import { JobService, Job } from '../../../../core/services/job.service';
 @Component({
   selector: 'app-jobs',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, AiFabComponent],
   templateUrl: './jobs.component.html',
   styleUrls: ['./jobs.component.scss']
 })
@@ -21,10 +23,11 @@ export class JobsComponent implements OnInit {
   loading = false;
   errorMessage = '';
   searchKeyword = '';
-  minSalary = 15;
+  minSalary = 0;
   selectedCategories: string[] = [];
   selectedWorkLocation = '';
   selectedJobType = '';
+  selectedSalaryTypes: string[] = [];
 
   page = 1;
   limit = 8;
@@ -44,29 +47,50 @@ export class JobsComponent implements OnInit {
     { value: 'temporary', label: '临时' }
   ];
 
-  get salaryConfig() {
-    if (this.selectedJobType === 'full_time' || this.selectedJobType === 'internship') {
-      return { min: 1000, max: 5000, step: 100 };
-    }
-    return { min: 15, max: 100, step: 1 };
-  }
+  salaryTypes = [
+    { value: 'hourly', label: '时薪' },
+    { value: 'daily', label: '日薪' },
+    { value: 'weekly', label: '周薪' },
+    { value: 'monthly', label: '月薪' }
+  ];
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private jobService: JobService
+    private route: ActivatedRoute,
+    private jobService: JobService,
+    private personalityProfileService: PersonalityProfileService
   ) {}
 
   ngOnInit(): void {
-    this.loadJobs();
+    // 先获取最新人格画像数据，确保匹配度计算使用最新信息
+    this.personalityProfileService.getStatus().subscribe({
+      next: (status) => {
+        if (status.profile) {
+          const user = this.authService.getCurrentUser();
+          if (user) {
+            user.personalityProfile = status.profile;
+            this.authService.updateCurrentUser(user);
+          }
+        }
+      },
+      error: () => { /* 忽略错误，使用已有数据 */ }
+    });
+
+    this.route.queryParams.subscribe(params => {
+      if (params['search']) {
+        this.searchKeyword = params['search'];
+      }
+      this.loadJobs();
+    });
   }
 
   loadJobs(): void {
     this.loading = true;
     this.errorMessage = '';
     const category = this.selectedCategories.length > 0 ? this.selectedCategories.join(',') : undefined;
-    const cfg = this.salaryConfig;
-    const effectiveMinSalary = this.minSalary > cfg.min ? this.minSalary : undefined;
+    const salaryType = this.selectedSalaryTypes.length > 0 ? this.selectedSalaryTypes.join(',') : undefined;
+    const effectiveMinSalary = this.minSalary > 0 ? this.minSalary : undefined;
     this.jobService.getJobs(
       this.page,
       this.limit,
@@ -74,7 +98,8 @@ export class JobsComponent implements OnInit {
       effectiveMinSalary,
       this.selectedWorkLocation || undefined,
       category,
-      this.selectedJobType || undefined
+      this.selectedJobType || undefined,
+      salaryType
     ).subscribe({
       next: (res) => {
         if (res.success && res.data) {
@@ -120,17 +145,26 @@ export class JobsComponent implements OnInit {
 
   selectJobType(jobType: string): void {
     this.selectedJobType = this.selectedJobType === jobType ? '' : jobType;
-    const cfg = this.salaryConfig;
-    this.minSalary = cfg.min;
+    this.onFilterChange();
+  }
+
+  toggleSalaryType(salaryType: string): void {
+    const idx = this.selectedSalaryTypes.indexOf(salaryType);
+    if (idx > -1) {
+      this.selectedSalaryTypes.splice(idx, 1);
+    } else {
+      this.selectedSalaryTypes.push(salaryType);
+    }
     this.onFilterChange();
   }
 
   resetFilters(): void {
     this.searchKeyword = '';
     this.selectedJobType = '';
-    this.minSalary = 15;
+    this.minSalary = 0;
     this.selectedCategories = [];
     this.selectedWorkLocation = '';
+    this.selectedSalaryTypes = [];
     this.page = 1;
     this.loadJobs();
   }
@@ -174,6 +208,43 @@ export class JobsComponent implements OnInit {
     if (!dateStr) return '';
     const d = new Date(dateStr);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  /** 基于人格画像计算岗位匹配度 */
+  getMatchScore(job: Job): string {
+    const user = this.authService.getCurrentUser();
+    const profile = user?.personalityProfile;
+    const suitableJobs: string[] = profile?.suitable_jobs || [];
+
+    // 未做性格测试
+    if (!suitableJobs.length) {
+      return '待评估';
+    }
+
+    const jobText = `${job.title || ''} ${job.category || ''} ${job.description || ''} ${job.location || ''}`.toLowerCase();
+    let matchCount = 0;
+    for (const sj of suitableJobs) {
+      const keyword = sj.toLowerCase();
+      if (jobText.includes(keyword)) {
+        matchCount++;
+      }
+    }
+
+    // 基于岗位ID做伪随机偏移，避免每次刷新都变
+    const idStr = String(job.id || '');
+    const base = idStr.charCodeAt(idStr.length - 1) || 0;
+
+    if (matchCount >= 3) {
+      return `${85 + (base % 10)}%`;  // 85~94%
+    }
+    if (matchCount === 2) {
+      return `${70 + (base % 10)}%`;  // 70~79%
+    }
+    if (matchCount === 1) {
+      return `${55 + (base % 10)}%`;  // 55~64%
+    }
+    // 有画像但关键词未直接命中，给基础匹配度
+    return `${40 + (base % 10)}%`;     // 40~49%
   }
 
   logout(): void {

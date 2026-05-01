@@ -6,7 +6,6 @@
 <nav class="hidden md:flex items-center gap-6 font-manrope text-sm font-medium">
 <a class="text-[#1A365D] dark:text-blue-400 font-bold border-b-2 border-[#1A365D] pb-1 no-underline" routerLink="/student/jobs">岗位</a>
 <a class="text-gray-600 dark:text-gray-400 hover:text-[#1A365D] transition-colors no-underline" routerLink="/student/applications">我的投递</a>
-<a class="text-gray-600 dark:text-gray-400 hover:text-[#1A365D] transition-colors no-underline" routerLink="/student/verification">人格测试</a>
 <a class="text-gray-600 dark:text-gray-400 hover:text-[#1A365D] transition-colors no-underline" routerLink="/student/resume">资源</a>
 </nav>
 </div>
@@ -55,20 +54,37 @@
 <div class="space-y-lg">
 <!-- 岗位类型 -->
 <div>
-<h3 class="text-caption text-gray-400 uppercase mb-sm">岗位类型</h3>
-<div class="space-y-sm">
-<label *ngFor="let cat of categories" class="flex items-center gap-3 cursor-pointer group">
-<input class="rounded border-gray-200 text-primary focus:ring-primary h-4 w-4"
-       type="checkbox"
-       [checked]="selectedCategories.includes(cat)"
-       (change)="toggleCategory(cat)"/>
-<span class="font-body-md group-hover:text-primary transition-colors">{{ cat }}</span>
-</label>
+<h3 class="text-caption text-gray-700 uppercase mb-sm font-semibold">岗位类型</h3>
+<div class="flex flex-wrap gap-2">
+	<button *ngFor="let cat of categories"
+	        (click)="toggleCategory(cat)"
+	        class="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all duration-200"
+	        [class.border-blue-200]="cat === '技术类' && !selectedCategories.includes(cat)"
+	        [class.bg-blue-50]="cat === '技术类' && !selectedCategories.includes(cat)"
+	        [class.text-blue-700]="cat === '技术类' && !selectedCategories.includes(cat)"
+	        [class.border-emerald-200]="cat === '教学类' && !selectedCategories.includes(cat)"
+	        [class.bg-emerald-50]="cat === '教学类' && !selectedCategories.includes(cat)"
+	        [class.text-emerald-700]="cat === '教学类' && !selectedCategories.includes(cat)"
+	        [class.border-orange-200]="cat === '配送类' && !selectedCategories.includes(cat)"
+	        [class.bg-orange-50]="cat === '配送类' && !selectedCategories.includes(cat)"
+	        [class.text-orange-700]="cat === '配送类' && !selectedCategories.includes(cat)"
+	        [class.border-purple-200]="cat === '营销类' && !selectedCategories.includes(cat)"
+	        [class.bg-purple-50]="cat === '营销类' && !selectedCategories.includes(cat)"
+	        [class.text-purple-700]="cat === '营销类' && !selectedCategories.includes(cat)"
+	        [class.border-[#1A365D]]="selectedCategories.includes(cat)"
+	        [class.bg-[#1A365D]]="selectedCategories.includes(cat)"
+	        [class.text-white]="selectedCategories.includes(cat)"
+	        [class.shadow-sm]="selectedCategories.includes(cat)">
+		<span class="material-symbols-outlined text-base">
+			{{ cat === '技术类' ? 'code' : cat === '教学类' ? 'school' : cat === '配送类' ? 'local_shipping' : 'campaign' }}
+		</span>
+		{{ cat }}
+	</button>
 </div>
 </div>
 <!-- 工作地点 -->
 <div>
-<h3 class="text-caption text-gray-400 uppercase mb-sm">工作地点</h3>
+<h3 class="text-caption text-gray-700 uppercase mb-sm font-semibold">工作地点</h3>
 <div class="flex flex-wrap gap-2">
 <button *ngFor="let loc of workLocations"
         (click)="selectWorkLocation(loc.value)"
@@ -86,7 +102,7 @@
 </div>
 <!-- 工作方式 -->
 <div>
-<h3 class="text-caption text-gray-400 uppercase mb-sm">工作方式</h3>
+<h3 class="text-caption text-gray-700 uppercase mb-sm font-semibold">工作方式</h3>
 <div class="flex flex-wrap gap-2">
 <button *ngFor="let jt of jobTypes"
         (click)="selectJobType(jt.value)"
@@ -102,17 +118,33 @@
 </button>
 </div>
 </div>
-<!-- 薪资 Range -->
+<!-- 薪资类型 -->
 <div>
-<h3 class="text-caption text-gray-400 uppercase mb-sm">薪资</h3>
-<input class="w-full h-1.5 bg-secondary-container rounded-lg appearance-none cursor-pointer accent-primary"
-       [min]="salaryConfig.min" [max]="salaryConfig.max" [step]="salaryConfig.step"
-       type="range" [(ngModel)]="minSalary" (change)="onFilterChange()"/>
-<div class="flex justify-between mt-2 text-caption text-on-surface-variant">
-<span>¥{{ salaryConfig.min }}</span>
-<span class="font-bold text-primary">最低: ¥{{ minSalary }}</span>
-<span>¥{{ salaryConfig.max }}</span>
+<h3 class="text-caption text-gray-700 uppercase mb-sm font-semibold">薪资类型</h3>
+<div class="flex flex-wrap gap-2">
+<button *ngFor="let st of salaryTypes"
+        (click)="toggleSalaryType(st.value)"
+        class="px-3 py-1.5 rounded-full border text-caption transition-colors"
+        [class.border-primary]="selectedSalaryTypes.includes(st.value)"
+        [class.bg-primary]="selectedSalaryTypes.includes(st.value)"
+        [class.text-on-primary]="selectedSalaryTypes.includes(st.value)"
+        [class.border-gray-200]="!selectedSalaryTypes.includes(st.value)"
+        [class.text-gray-400]="!selectedSalaryTypes.includes(st.value)"
+        [class.hover:border-primary]="!selectedSalaryTypes.includes(st.value)"
+        [class.hover:text-primary]="!selectedSalaryTypes.includes(st.value)">
+  {{ st.label }}
+</button>
 </div>
+</div>
+<!-- 最低薪资输入 -->
+<div>
+<h3 class="text-caption text-gray-700 uppercase mb-sm font-semibold">最低薪资</h3>
+<div class="flex items-center gap-2">
+  <span class="text-body-md text-gray-500">¥</span>
+  <input class="flex-1 bg-surface-container-low border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary transition-colors"
+         type="number" min="0" [(ngModel)]="minSalary" (change)="onFilterChange()" placeholder="不限"/>
+</div>
+<p class="text-caption text-gray-400 mt-1">输入金额后按回车生效</p>
 </div>
 </div>
 <button (click)="resetFilters()" class="w-full mt-xl py-3 border border-gray-200 rounded-lg font-button text-primary hover:bg-surface-container transition-colors">重置所有筛选</button>
@@ -153,9 +185,15 @@
 <div class="h-12 w-12 rounded-lg bg-surface-container-high flex items-center justify-center p-2">
   <span class="material-symbols-outlined text-primary text-2xl">business</span>
 </div>
-<div class="flex items-center gap-1.5 px-2.5 py-1 bg-[#F0FDF4] text-[#166534] rounded-full border border-[#DCFCE7]">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
+     [class.bg-[#F0FDF4]]="getMatchScore(job) !== '待评估'"
+     [class.text-[#166534]]="getMatchScore(job) !== '待评估'"
+     [class.border-[#DCFCE7]]="getMatchScore(job) !== '待评估'"
+     [class.bg-gray-50]="getMatchScore(job) === '待评估'"
+     [class.text-gray-400]="getMatchScore(job) === '待评估'"
+     [class.border-gray-200]="getMatchScore(job) === '待评估'">
 <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
-<span class="text-caption font-bold">匹配度: 待评估</span>
+<span class="text-caption font-bold">匹配度: {{ getMatchScore(job) }}</span>
 </div>
 </div>
 <h2 class="font-h2 text-h2 text-primary mb-1">{{ job.title }}</h2>
@@ -200,25 +238,5 @@
 </div>
 </section>
 </main>
-<!-- 小兼 AI Assistant Floating Component -->
-<div class="fixed bottom-8 right-8 z-[100] group">
-<div class="absolute bottom-full right-0 mb-4 w-72 bg-white rounded-2xl shadow-2xl border border-primary-fixed/50 p-lg scale-0 origin-bottom-right group-hover:scale-100 transition-transform duration-300">
-<div class="flex items-center gap-3 mb-md">
-<div class="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-on-primary">
-<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
-</div>
-<div>
-<h4 class="font-button text-primary">小兼</h4>
-<p class="text-[10px] text-on-surface-variant">AI职业导师 • 在线</p>
-</div>
-</div>
-<p class="text-body-md text-on-surface italic mb-md">"找到一个适合你数学技能的Python开发岗位！需要简历帮助吗？"</p>
-<div class="flex flex-col gap-2">
-<button class="text-left px-3 py-2 text-caption bg-surface-container-low hover:bg-primary-fixed-dim rounded-lg transition-colors border border-gray-200/30 text-primary">优化简历</button>
-<button class="text-left px-3 py-2 text-caption bg-surface-container-low hover:bg-primary-fixed-dim rounded-lg transition-colors border border-gray-200/30 text-primary">面试技巧</button>
-</div>
-</div>
-<button class="h-16 w-16 bg-primary text-on-primary rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
-<span class="material-symbols-outlined text-[32px]" data-icon="smart_toy">smart_toy</span>
-</button>
-</div>
+<!-- AI 对话助手悬浮按钮 -->
+<app-ai-fab [mode]="'student'"></app-ai-fab>

@@ -31,6 +31,21 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'employer/verification',
+    loadComponent: () => import('./features/certification/pages/verification/verification.component').then(c => c.VerificationComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'student/ai',
+    loadComponent: () => import('./features/student/pages/ai/ai.component').then(c => c.StudentAiComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'employer/ai',
+    loadComponent: () => import('./features/employer/pages/ai/ai.component').then(c => c.EmployerAiComponent),
+    canActivate: [AuthGuard]
+  },
+  {
     path: 'student/applications',
     loadComponent: () => import('./features/placeholder/placeholder.component').then(c => c.PlaceholderComponent),
     canActivate: [AuthGuard]

@@ -7,7 +7,7 @@ FastAPI 主程序入口
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
-from .api import personality, matching, chat, verification
+from .api import personality, matching, chat, verification, interview, career, jd
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -30,6 +30,9 @@ app.include_router(personality.router)
 app.include_router(matching.router)
 app.include_router(chat.router)
 app.include_router(verification.router)
+app.include_router(interview.router)
+app.include_router(career.router)
+app.include_router(jd.router)
 
 
 @app.get("/")

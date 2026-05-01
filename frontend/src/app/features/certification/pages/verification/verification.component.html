@@ -35,7 +35,7 @@
         </a>
       </nav>
       <div class="pt-4 border-t border-gray-50 flex flex-col gap-1">
-        <a routerLink="/student/verification" class="flex items-center gap-3 px-3 py-2.5 bg-blue-50 text-primary rounded-lg font-semibold text-sm transition-all no-underline">
+        <a [routerLink]="isEmployer ? '/employer/verification' : '/student/verification'" class="flex items-center gap-3 px-3 py-2.5 bg-blue-50 text-primary rounded-lg font-semibold text-sm transition-all no-underline">
           <span class="material-symbols-outlined">verified</span>
           企业认证
         </a>

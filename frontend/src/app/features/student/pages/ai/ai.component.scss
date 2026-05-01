@@ -1,0 +1,8 @@
+// 少量自定义动画与补充样式
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 0.8s linear infinite;
+}

@@ -34,18 +34,7 @@ export class ForgotPasswordComponent {
   private passwordMatchValidator(form: FormGroup): null | { passwordMismatch: boolean } {
     const password = form.get('newPassword')?.value;
     const confirm = form.get('confirmPassword')?.value;
-    const ctrl = form.get('confirmPassword');
-    if (password !== confirm) {
-      const errors = { ...(ctrl?.errors || {}), passwordMismatch: true };
-      ctrl?.setErrors(errors);
-      return { passwordMismatch: true };
-    }
-    if (ctrl?.errors) {
-      const errors = { ...ctrl.errors };
-      delete (errors as any).passwordMismatch;
-      ctrl.setErrors(Object.keys(errors).length ? errors : null);
-    }
-    return null;
+    return password === confirm ? null : { passwordMismatch: true };
   }
 
   onSubmit(): void {

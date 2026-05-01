@@ -515,6 +515,13 @@ exports.forgotPassword = async (req, res) => {
         message: '新密码至少需要6个字符'
       });
     }
+    // 新密码必须包含大小写字母和数字
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: '新密码必须包含大小写字母和数字'
+      });
+    }
 
     // 查找用户（用户名或邮箱）
     const user = await User.findOne({
@@ -530,6 +537,15 @@ exports.forgotPassword = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: '用户不存在，请检查用户名或邮箱'
+      });
+    }
+
+    // 禁止新密码与旧密码相同
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        message: '新密码不能与旧密码相同'
       });
     }
 

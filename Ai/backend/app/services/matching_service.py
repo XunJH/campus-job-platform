@@ -6,103 +6,164 @@
 """
 
 from typing import List, Dict, Any
+import requests
 from ..models.ai_models import Job, MatchResult, PersonalityProfile
 from .personality_service import personality_service
 from ..services.ai_provider import _ai_service
+
+# 主后端API地址
+CAMPUS_JOB_API = "http://localhost:3001/api/v1"
 
 
 class MatchingService:
     """智能匹配服务"""
 
     def __init__(self):
-        # 预设岗位库（实际项目从数据库读取）
-        self.job_pool = self._init_job_pool()
+        # 预设学生池（用于反向推荐，实际项目从数据库读取）
+        self.student_pool = self._init_student_pool()
 
-    def _init_job_pool(self) -> List[Job]:
-        """初始化岗位库"""
-        jobs = [
-            Job(
-                id="job001",
-                title="餐厅服务员",
-                company="麦当劳",
-                requirements=["年满18岁", "能适应轮班", "有健康证优先"],
-                tags=["餐饮", "时间灵活", "可培训", "体力活"],
-                description="负责点餐、传菜、收桌等基础服务工作"
-            ),
-            Job(
-                id="job002",
-                title="家教老师",
-                company="个人/机构",
-                requirements=["本科在读及以上", "某学科成绩优秀", "有耐心"],
-                tags=["教育", "时薪高", "时间固定", "脑力劳动"],
-                description="为中小学生提供学科辅导"
-            ),
-            Job(
-                id="job003",
-                title="超市促销员",
-                company=" Various品牌",
-                requirements=["口齿清晰", "形象良好", "有促销经验优先"],
-                tags=["销售", "沟通能力", "站岗", "提成"],
-                description="在超市推销商品，引导顾客购买"
-            ),
-            Job(
-                id="job004",
-                title="外卖配送员",
-                company="美团/饿了么",
-                requirements=["有电动车", "熟悉周边", "吃苦耐劳"],
-                tags=["配送", "多劳多得", "体力活", "时间自由"],
-                description="负责外卖餐品的配送工作"
-            ),
-            Job(
-                id="job005",
-                title="图书馆助理",
-                company="学校图书馆",
-                requirements=["细心认真", "手脚麻利", "每周至少8小时"],
-                tags=["安静", "稳定", "环境好", "可自习"],
-                description="负责图书整理、上架、读者服务等工作"
-            ),
-            Job(
-                id="job006",
-                title="校园代理",
-                company=" Various商家",
-                requirements=["人脉广", "善于推广", "有执行力"],
-                tags=["销售", "提成高", "锻炼能力", "社交"],
-                description="在校园内推广产品或服务，赚取佣金"
-            ),
-            Job(
-                id="job007",
-                title="便利店店员",
-                company="全家/7-11",
-                requirements=["能上夜班", "细心负责", "手脚麻利"],
-                tags=["零售", "夜班", "稳定", "可培训"],
-                description="收银、商品整理、货架陈列等工作"
-            ),
-            Job(
-                id="job008",
-                title="展会工作人员",
-                company="展会公司",
-                requirements=["形象端正", "沟通能力强", "能站一天"],
-                tags=["活动", "短期", "薪资日结", "社交"],
-                description="在各类展会、活动中提供现场服务"
-            ),
-            Job(
-                id="job009",
-                title="数据标注员",
-                company="AI公司外包",
-                requirements=["电脑操作熟练", "细心认真", "耐心"],
-                tags=["远程", "脑力劳动", "可兼职", "新兴"],
-                description="对图片、文本等数据进行标注"
-            ),
-            Job(
-                id="job010",
-                title="咖啡店店员",
-                company="瑞幸/星巴克",
-                requirements=["年满18岁", "对咖啡有兴趣", "有服务意识"],
-                tags=["餐饮", "环境好", "技能培训", "氛围轻松"],
-                description="制作咖啡饮品、提供顾客服务"
-            ),
+    def _fetch_real_jobs(self) -> List[Job]:
+        """从 campus_job_api 获取真实岗位数据"""
+        try:
+            resp = requests.get(
+                f"{CAMPUS_JOB_API}/jobs",
+                params={"page": 1, "limit": 100},
+                timeout=5
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if not data.get("success"):
+                return []
+
+            jobs = []
+            for item in data.get("data", {}).get("jobs", []):
+                # 解析 requirements（数据库中为文本，可能按换行/逗号分隔）
+                req_raw = item.get("requirements", "")
+                if isinstance(req_raw, list):
+                    requirements = req_raw
+                elif isinstance(req_raw, str):
+                    requirements = [r.strip() for r in req_raw.replace("，", ",").replace("\n", ",").split(",") if r.strip()]
+                else:
+                    requirements = []
+
+                # 构建 tags：从 category + jobType + salaryType 组合
+                tags = []
+                if item.get("category"):
+                    tags.append(item["category"])
+                if item.get("jobType"):
+                    tags.append(item["jobType"])
+                if item.get("salaryType"):
+                    tags.append(item["salaryType"])
+                if item.get("workLocation"):
+                    tags.append(item["workLocation"])
+
+                # 获取公司名（employer.username）
+                employer = item.get("employer", {})
+                company = employer.get("username", employer.get("companyName", "未知企业"))
+
+                jobs.append(Job(
+                    id=str(item.get("id", "")),
+                    title=item.get("title", "未命名岗位"),
+                    company=company,
+                    requirements=requirements,
+                    tags=tags,
+                    description=item.get("description", "")
+                ))
+            return jobs
+        except Exception as e:
+            print(f"[MatchingService] 获取真实岗位失败: {e}")
+            return []
+
+    @property
+    def job_pool(self) -> List[Job]:
+        """动态从主后端获取岗位列表"""
+        return self._fetch_real_jobs()
+
+    def _init_student_pool(self) -> List[Dict[str, Any]]:
+        """初始化学生池（用于反向推荐）"""
+        students = [
+            {
+                "student_id": "stu001",
+                "name": "张同学",
+                "major": "计算机科学",
+                "grade": "大二",
+                "tags": ["技术", "细心", "逻辑强", "自学能力"],
+                "strengths": ["编程", "数据分析", "逻辑思维"],
+                "suitable_jobs": ["数据标注", "程序员助理", "技术支持"],
+                "dimensions": {"外向性": 0.4, "尽责性": 0.8, "开放性": 0.7, "宜人性": 0.6, "情绪稳定性": 0.7}
+            },
+            {
+                "student_id": "stu002",
+                "name": "李同学",
+                "major": "市场营销",
+                "grade": "大三",
+                "tags": ["外向", "沟通", "创意", "社交"],
+                "strengths": ["沟通表达", "活动策划", "人际交往"],
+                "suitable_jobs": ["促销员", "校园代理", "活动策划"],
+                "dimensions": {"外向性": 0.9, "尽责性": 0.6, "开放性": 0.8, "宜人性": 0.7, "情绪稳定性": 0.5}
+            },
+            {
+                "student_id": "stu003",
+                "name": "王同学",
+                "major": "英语",
+                "grade": "大一",
+                "tags": ["耐心", "细心", "安静", "认真"],
+                "strengths": ["语言能力", "耐心辅导", "细致认真"],
+                "suitable_jobs": ["家教", "翻译助理", "客服"],
+                "dimensions": {"外向性": 0.3, "尽责性": 0.9, "开放性": 0.5, "宜人性": 0.8, "情绪稳定性": 0.8}
+            },
+            {
+                "student_id": "stu004",
+                "name": "赵同学",
+                "major": "设计",
+                "grade": "大二",
+                "tags": ["创意", "审美", "独立", "学习快"],
+                "strengths": ["平面设计", "审美能力", "创意思维"],
+                "suitable_jobs": ["设计助理", "美工", "新媒体运营"],
+                "dimensions": {"外向性": 0.5, "尽责性": 0.7, "开放性": 0.9, "宜人性": 0.6, "情绪稳定性": 0.6}
+            },
+            {
+                "student_id": "stu005",
+                "name": "陈同学",
+                "major": "工商管理",
+                "grade": "大三",
+                "tags": ["领导力", "组织", "沟通", "积极"],
+                "strengths": ["团队管理", "项目协调", "执行能力"],
+                "suitable_jobs": ["校园代理", "活动执行", "管理培训生"],
+                "dimensions": {"外向性": 0.8, "尽责性": 0.8, "开放性": 0.6, "宜人性": 0.5, "情绪稳定性": 0.7}
+            },
+            {
+                "student_id": "stu006",
+                "name": "刘同学",
+                "major": "金融",
+                "grade": "大二",
+                "tags": ["严谨", "数学好", "细心", "稳定"],
+                "strengths": ["数据处理", "财务分析", "细心严谨"],
+                "suitable_jobs": ["数据录入", "财务助理", "收银员"],
+                "dimensions": {"外向性": 0.3, "尽责性": 0.9, "开放性": 0.4, "宜人性": 0.7, "情绪稳定性": 0.9}
+            },
+            {
+                "student_id": "stu007",
+                "name": "孙同学",
+                "major": "新闻传播",
+                "grade": "大二",
+                "tags": ["写作", "社交", "敏锐", "表达"],
+                "strengths": ["文案撰写", "信息搜集", "沟通采访"],
+                "suitable_jobs": ["新媒体运营", "文案编辑", "记者助理"],
+                "dimensions": {"外向性": 0.7, "尽责性": 0.6, "开放性": 0.8, "宜人性": 0.7, "情绪稳定性": 0.5}
+            },
+            {
+                "student_id": "stu008",
+                "name": "周同学",
+                "major": "体育",
+                "grade": "大一",
+                "tags": ["体力好", "守时", "团队", "积极"],
+                "strengths": ["体力充沛", "团队协作", "时间观念强"],
+                "suitable_jobs": ["配送员", "展会工作", "健身房助理"],
+                "dimensions": {"外向性": 0.7, "尽责性": 0.7, "开放性": 0.5, "宜人性": 0.8, "情绪稳定性": 0.8}
+            },
         ]
-        return jobs
+        return students
 
     def get_all_jobs(self) -> List[Dict[str, Any]]:
         """获取所有岗位列表"""
@@ -280,6 +341,138 @@ class MatchingService:
             warnings.append("注意：提成岗位收入不稳定，要有一定心理准备")
 
         return warnings
+
+    def reverse_match(
+        self,
+        job_title: str,
+        job_tags: List[str],
+        job_requirements: List[str],
+        top_n: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        反向推荐：根据岗位需求匹配学生
+
+        逻辑与 match_jobs 相反：
+        - match_jobs: 用户性格 → 岗位池
+        - reverse_match: 岗位需求 → 学生池
+        """
+        # 构建岗位关键词集合
+        job_keywords = set(job_tags + job_requirements + [job_title])
+
+        results = []
+
+        for student in self.student_pool:
+            # 计算匹配度（复用打分逻辑，交换角色）
+            score = self._calculate_reverse_score(
+                job_tags, job_requirements, job_title,
+                student, job_keywords
+            )
+
+            # 生成匹配理由
+            match_reasons = self._generate_reverse_reasons(
+                job_title, job_tags, student, score
+            )
+
+            results.append({
+                "student": {
+                    "student_id": student["student_id"],
+                    "name": student["name"],
+                    "major": student["major"],
+                    "grade": student["grade"],
+                    "tags": student["tags"],
+                    "strengths": student["strengths"],
+                    "suitable_jobs": student["suitable_jobs"]
+                },
+                "match_score": score,
+                "match_reasons": match_reasons
+            })
+
+        # 按匹配度排序
+        results.sort(key=lambda x: x["match_score"], reverse=True)
+        return results[:top_n]
+
+    def _calculate_reverse_score(
+        self,
+        job_tags: List[str],
+        job_requirements: List[str],
+        job_title: str,
+        student: Dict[str, Any],
+        job_keywords: set
+    ) -> float:
+        """
+        计算反向匹配度
+
+        岗位需求 vs 学生能力
+        """
+        score = 0.0
+
+        # 1. 岗位标签 vs 学生标签（占40%）
+        tag_matches = 0
+        student_tags = student.get("tags", [])
+        for tag in job_tags:
+            for s_tag in student_tags:
+                if tag in s_tag or s_tag in tag:
+                    tag_matches += 1
+                    break
+
+        if job_tags:
+            score += (tag_matches / len(job_tags)) * 40
+
+        # 2. 岗位要求 vs 学生优势（占30%）
+        strength_matches = 0
+        student_strengths = student.get("strengths", [])
+        for req in job_requirements:
+            for strength in student_strengths:
+                if any(kw in strength for kw in req if len(kw) > 1):
+                    strength_matches += 1
+                    break
+
+        if job_requirements:
+            score += (strength_matches / len(job_requirements)) * 30
+
+        # 3. 岗位名称 vs 适合岗位类型（占30%）
+        suitable_matches = 0
+        suitable_jobs = student.get("suitable_jobs", [])
+        for suitable in suitable_jobs:
+            if suitable.lower() in job_title.lower() or \
+               job_title.lower() in suitable.lower():
+                suitable_matches += 1
+
+        if suitable_jobs:
+            score += (suitable_matches / len(suitable_jobs)) * 30
+
+        return min(round(score, 1), 100.0)
+
+    def _generate_reverse_reasons(
+        self,
+        job_title: str,
+        job_tags: List[str],
+        student: Dict[str, Any],
+        score: float
+    ) -> List[str]:
+        """生成反向匹配理由"""
+        reasons = []
+
+        # 基于分数和匹配情况生成理由
+        if score >= 60:
+            reasons.append(f"综合匹配度{score}%，高度适配该岗位")
+        elif score >= 30:
+            reasons.append(f"匹配度{score}%，基本符合岗位需求")
+        else:
+            reasons.append(f"匹配度{score}%，部分条件吻合")
+
+        # 基于标签匹配生成理由
+        student_tags = student.get("tags", [])
+        matched_tags = [t for t in job_tags if any(t in st or st in t for st in student_tags)]
+        if matched_tags:
+            reasons.append(f"具备岗位所需特质：{'、'.join(matched_tags[:3])}")
+
+        # 基于优势生成理由
+        strengths = student.get("strengths", [])
+        if strengths:
+            reasons.append(f"核心优势：{strengths[0]}")
+
+        return reasons[:3]
 
 
 # 创建全局实例

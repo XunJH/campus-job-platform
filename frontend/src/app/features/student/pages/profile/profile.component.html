@@ -57,10 +57,14 @@
     </section>
 
     <!-- AI Personality Card -->
-    <section *ngIf="user?.personalityProfileCompletedAt" class="bg-white rounded-xl p-6 shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100">
-      <div class="flex items-center gap-2 mb-4">
-        <span class="material-symbols-outlined text-[#1A365D]">psychology</span>
-        <h2 class="text-lg font-bold text-[#1A365D]">AI 人格画像</h2>
+    <!-- 有完整数据：展示结果 -->
+    <section *ngIf="user?.personalityProfileCompletedAt && (user?.personalityProfile?.tags?.length || user?.personalityProfile?.summary)" class="bg-white rounded-xl p-6 shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#1A365D]">psychology</span>
+          <h2 class="text-lg font-bold text-[#1A365D]">AI 人格画像</h2>
+        </div>
+        <button (click)="startPersonalityTest()" class="text-xs text-[#1A365D] underline hover:no-underline">重新测试</button>
       </div>
       <div class="flex flex-wrap gap-2 mb-4">
         <span *ngFor="let tag of user?.personalityProfile?.tags || []" class="px-3 py-1 bg-blue-50 text-[#1A365D] rounded-full text-xs font-medium">{{ tag }}</span>
@@ -70,14 +74,15 @@
       </p>
     </section>
 
-    <section *ngIf="!user?.personalityProfileCompletedAt" class="bg-white rounded-xl p-6 shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100 text-center">
+    <!-- 未完成或数据为空：显示入口 -->
+    <section *ngIf="!user?.personalityProfileCompletedAt || !(user?.personalityProfile?.tags?.length || user?.personalityProfile?.summary)" class="bg-white rounded-xl p-6 shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100 text-center">
       <div class="flex items-center gap-2 mb-4 justify-center">
         <span class="material-symbols-outlined text-[#1A365D]">psychology</span>
         <h2 class="text-lg font-bold text-[#1A365D]">AI 人格画像</h2>
       </div>
       <p class="text-sm text-slate-500 mb-4">完成人格测试，获取AI驱动的职业洞察和岗位匹配建议</p>
       <button (click)="startPersonalityTest()" class="w-full py-3 bg-[#1A365D] text-white rounded-xl font-semibold hover:opacity-90 transition-all active:scale-95">
-        开始测试
+        {{ user?.personalityProfileCompletedAt ? '重新测试' : '开始测试' }}
       </button>
     </section>
   </aside>
