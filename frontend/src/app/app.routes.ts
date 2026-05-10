@@ -47,22 +47,22 @@ export const routes: Routes = [
   },
   {
     path: 'student/applications',
-    loadComponent: () => import('./features/placeholder/placeholder.component').then(c => c.PlaceholderComponent),
+    loadComponent: () => import('./features/student/pages/applications/applications.component').then(c => c.StudentApplicationsComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/favorites',
-    loadComponent: () => import('./features/placeholder/placeholder.component').then(c => c.PlaceholderComponent),
+    loadComponent: () => import('./features/student/pages/favorites/favorites.component').then(c => c.StudentFavoritesComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/resume',
-    loadComponent: () => import('./features/placeholder/placeholder.component').then(c => c.PlaceholderComponent),
+    loadComponent: () => import('./features/student/pages/profile/profile.component').then(c => c.ProfileComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/wallet',
-    loadComponent: () => import('./features/placeholder/placeholder.component').then(c => c.PlaceholderComponent),
+    loadComponent: () => import('./features/student/pages/wallet/wallet.component').then(c => c.StudentWalletComponent),
     canActivate: [AuthGuard]
   },
   {
@@ -78,6 +78,16 @@ export const routes: Routes = [
   {
     path: 'employer/jobs',
     loadComponent: () => import('./features/employer/pages/job-management/job-management.component').then(c => c.JobManagementComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'employer/applications',
+    loadComponent: () => import('./features/employer/pages/applications/applications.component').then(c => c.EmployerApplicationsComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'employer/wallet',
+    loadComponent: () => import('./features/employer/pages/wallet/wallet.component').then(c => c.EmployerWalletComponent),
     canActivate: [AuthGuard]
   },
   {

@@ -1,74 +1,31 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './forgot-password.component.html',
   styleUrls: ['./forgot-password.component.scss']
 })
 export class ForgotPasswordComponent {
-  form!: FormGroup;
-  isLoading = false;
-  errorMessage = '';
-  successMessage = '';
-  showPassword = false;
-  showConfirmPassword = false;
+  readonly title = '在线找回密码暂未开放';
+  readonly description =
+    '当前版本为了避免匿名重置风险，已关闭直接在线找回密码。你仍然可以通过登录后修改密码，或联系管理员协助处理。';
 
-  constructor(
-    private fb: FormBuilder,
-    private http: HttpClient,
-    private router: Router
-  ) {
-    this.form = this.fb.group({
-      username: ['', [Validators.required]],
-      newPassword: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
-  }
-
-  private passwordMatchValidator(form: FormGroup): null | { passwordMismatch: boolean } {
-    const password = form.get('newPassword')?.value;
-    const confirm = form.get('confirmPassword')?.value;
-    return password === confirm ? null : { passwordMismatch: true };
-  }
-
-  onSubmit(): void {
-    this.form.markAllAsTouched();
-    if (this.form.invalid) return;
-
-    this.isLoading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-
-    const { username, newPassword } = this.form.value;
-
-    this.http.post('/api/v1/auth/forgot-password', { username, newPassword }).subscribe({
-      next: () => {
-        this.isLoading = false;
-        this.successMessage = '密码重置成功，即将跳转到登录页...';
-        setTimeout(() => this.router.navigate(['/auth/login']), 1500);
-      },
-      error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || '重置失败，请稍后重试';
-      }
-    });
-  }
-
-  togglePassword(): void {
-    this.showPassword = !this.showPassword;
-  }
-
-  toggleConfirmPassword(): void {
-    this.showConfirmPassword = !this.showConfirmPassword;
-  }
-
-  get f() {
-    return this.form.controls;
-  }
+  readonly guides = [
+    {
+      title: '如果你还能登录',
+      description: '进入个人资料页后使用“修改密码”功能，这是当前最直接也最安全的处理方式。'
+    },
+    {
+      title: '如果你已经无法登录',
+      description: '请联系管理员或项目维护者协助重置密码，并同步确认你的账号邮箱和联系方式。'
+    },
+    {
+      title: '当前安全说明',
+      description: '系统已经下线匿名重置密码能力，避免未经验证直接修改密码带来的安全风险。'
+    }
+  ];
 }

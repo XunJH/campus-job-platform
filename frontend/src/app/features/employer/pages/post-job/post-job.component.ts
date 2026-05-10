@@ -4,11 +4,12 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } 
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { JobService } from '../../../../core/services/job.service';
 import { AiApiService } from '../../../../core/services/ai-api.service';
+import { EmployerShellSidebarComponent } from '../../../../shared/components/employer-shell-sidebar/employer-shell-sidebar.component';
 
 @Component({
   selector: 'app-post-job',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, FormsModule, EmployerShellSidebarComponent],
   templateUrl: './post-job.component.html',
   styleUrls: ['./post-job.component.scss']
 })

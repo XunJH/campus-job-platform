@@ -4,11 +4,19 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { RouterModule, Router } from '@angular/router';
 import { VerificationService, VerificationStatus, VerificationApplyData } from '../../../../core/services/verification.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { StudentShellHeaderComponent } from '../../../../shared/components/student-shell-header/student-shell-header.component';
+import { EmployerShellSidebarComponent } from '../../../../shared/components/employer-shell-sidebar/employer-shell-sidebar.component';
 
 @Component({
   selector: 'app-verification',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterModule,
+    StudentShellHeaderComponent,
+    EmployerShellSidebarComponent
+  ],
   templateUrl: './verification.component.html',
   styleUrls: ['./verification.component.scss']
 })

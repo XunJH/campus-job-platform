@@ -1,5 +1,4 @@
 const { sequelize } = require('../config/database');
-const { Op } = require('sequelize');
 const { Verification, User } = require('../models');
 const { verifyIdentity } = require('../services/aiService');
 const { sanitizeFields } = require('../utils/sanitize');

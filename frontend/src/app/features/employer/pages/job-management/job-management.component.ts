@@ -3,15 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { JobService, Job } from '../../../../core/services/job.service';
+import { EmployerShellSidebarComponent } from '../../../../shared/components/employer-shell-sidebar/employer-shell-sidebar.component';
 
-/**
- * @功能 企业端岗位管理页
- * @说明 展示企业发布的所有岗位列表，支持查看、编辑、删除
- */
 @Component({
   selector: 'app-job-management',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, EmployerShellSidebarComponent],
   templateUrl: './job-management.component.html',
   styleUrls: ['./job-management.component.scss']
 })
@@ -37,6 +34,7 @@ export class JobManagementComponent implements OnInit {
   loadJobs(): void {
     this.loading = true;
     this.errorMessage = '';
+
     this.jobService.getMyJobs(this.page, this.limit).subscribe({
       next: (res) => {
         if (res.success && res.data) {
@@ -44,12 +42,12 @@ export class JobManagementComponent implements OnInit {
           this.total = res.data.pagination?.total || 0;
           this.totalPages = res.data.pagination?.totalPages || 0;
         } else {
-          this.errorMessage = '获取岗位列表失败';
+          this.errorMessage = '获取岗位列表失败。';
         }
         this.loading = false;
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || '网络错误，请稍后重试';
+        this.errorMessage = err.error?.message || '网络错误，请稍后重试。';
         this.loading = false;
       }
     });
@@ -64,52 +62,71 @@ export class JobManagementComponent implements OnInit {
     this.router.navigate(['/employer/jobs/edit', job.id]);
   }
 
+  viewApplications(job: Job): void {
+    this.router.navigate(['/employer/applications'], {
+      queryParams: { jobId: job.id }
+    });
+  }
+
+  canToggleStatus(job: Job): boolean {
+    return job.auditStatus === 'approved' && (job.status === 'active' || job.status === 'closed');
+  }
+
   toggleStatus(job: Job): void {
+    if (!this.canToggleStatus(job)) {
+      return;
+    }
+
     const newStatus = job.status === 'active' ? 'closed' : 'active';
     this.jobService.updateJob(job.id, { status: newStatus }).subscribe({
-      next: () => {
-        job.status = newStatus;
+      next: (res) => {
+        job.status = res.data?.status || newStatus;
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || '操作失败';
+        this.errorMessage = err.error?.message || '岗位状态更新失败。';
       }
     });
   }
 
   deleteJob(job: Job): void {
-    if (!confirm(`确定要删除岗位「${job.title}」吗？此操作不可恢复。`)) {
+    if (!confirm(`确定要删除岗位“${job.title}”吗？此操作不可恢复。`)) {
       return;
     }
+
     this.jobService.deleteJob(job.id).subscribe({
       next: () => {
-        this.jobs = this.jobs.filter(j => j.id !== job.id);
-        this.total--;
+        this.jobs = this.jobs.filter((item) => item.id !== job.id);
+        this.total = Math.max(this.total - 1, 0);
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || '删除失败';
+        this.errorMessage = err.error?.message || '删除岗位失败。';
       }
     });
   }
 
-  formatDate(dateStr: string): string {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  formatDate(dateStr?: string): string {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
 
-  formatStatus(status: string, auditStatus?: string): { label: string; class: string } {
-    if (auditStatus === 'pending') {
-      return { label: '审核中', class: 'bg-slate-100 text-slate-600' };
+  formatStatus(job: Job): { label: string; className: string } {
+    if (job.auditStatus === 'pending') {
+      return { label: '待审核', className: 'bg-slate-100 text-slate-700' };
     }
-    if (auditStatus === 'rejected') {
-      return { label: '已拒绝', class: 'bg-red-50 text-red-700' };
+
+    if (job.auditStatus === 'rejected') {
+      return { label: '审核拒绝', className: 'bg-rose-50 text-rose-700' };
     }
-    const map: Record<string, { label: string; class: string }> = {
-      active: { label: '招聘中', class: 'bg-green-50 text-green-700' },
-      paused: { label: '已暂停', class: 'bg-orange-50 text-orange-700' },
-      closed: { label: '已结束', class: 'bg-blue-50 text-blue-700' }
+
+    const map: Record<string, { label: string; className: string }> = {
+      draft: { label: '草稿', className: 'bg-slate-100 text-slate-700' },
+      active: { label: '招聘中', className: 'bg-emerald-50 text-emerald-700' },
+      closed: { label: '已关闭', className: 'bg-blue-50 text-blue-700' },
+      cancelled: { label: '已取消', className: 'bg-gray-100 text-gray-600' }
     };
-    return map[status] || { label: status, class: 'bg-gray-50 text-gray-600' };
+
+    return map[job.status] || { label: job.status, className: 'bg-gray-100 text-gray-600' };
   }
 
   formatJobType(jobType: string): string {
@@ -119,19 +136,35 @@ export class JobManagementComponent implements OnInit {
       internship: '实习',
       temporary: '临时'
     };
+
     return map[jobType] || jobType;
+  }
+
+  formatSalary(job: Job): string {
+    const typeMap: Record<string, string> = {
+      hourly: '时薪',
+      daily: '日薪',
+      weekly: '周薪',
+      monthly: '月薪'
+    };
+
+    return `${typeMap[job.salaryType] || '薪资'} ￥${Number(job.salary || 0)}`;
+  }
+
+  getToggleLabel(job: Job): string {
+    return job.status === 'active' ? '关闭招聘' : '重新开放';
   }
 
   prevPage(): void {
     if (this.page > 1) {
-      this.page--;
+      this.page -= 1;
       this.loadJobs();
     }
   }
 
   nextPage(): void {
     if (this.page < this.totalPages) {
-      this.page++;
+      this.page += 1;
       this.loadJobs();
     }
   }

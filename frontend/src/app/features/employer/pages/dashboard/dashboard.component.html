@@ -1,255 +1,219 @@
-<div class="flex min-h-screen bg-background">
-  <!-- Sidebar Navigation -->
-  <aside class="fixed left-0 top-0 h-screen w-64 border-r border-gray-100 bg-white shadow-[4px_0_6px_-1px_rgba(26,54,93,0.05)] flex flex-col p-4 gap-2 z-50">
-    <div class="flex items-center gap-3 px-2 py-4 mb-4">
-      <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
-        <span class="material-symbols-outlined">domain</span>
-      </div>
+<app-employer-shell-sidebar></app-employer-shell-sidebar>
+
+<main class="min-h-screen bg-[#F7FAFC] px-6 py-8 md:px-8 lg:ml-64">
+  <div class="mx-auto max-w-7xl space-y-8">
+    <section class="flex flex-col gap-4 rounded-3xl bg-gradient-to-r from-[#1A365D] to-[#2C5282] p-8 shadow-xl lg:flex-row lg:items-end lg:justify-between">
       <div>
-        <h1 class="text-lg font-black text-primary">企业招聘端</h1>
-        <p class="text-[10px] uppercase tracking-wider font-bold text-gray-400">机构认证入口</p>
+        <p class="text-sm font-semibold tracking-[0.3em] text-blue-100">EMPLOYER CENTER</p>
+        <h1 class="mt-3 text-3xl font-black text-white">企业工作台</h1>
+        <p class="mt-3 max-w-2xl text-sm leading-7 text-white/90">
+          统一查看企业认证、岗位发布、投递处理和招聘进度，避免在不同页面间出现导航和布局不一致的问题。
+        </p>
       </div>
-    </div>
-    <nav class="flex-1 flex flex-col gap-1">
-      <a routerLink="/employer/dashboard" class="flex items-center gap-3 px-3 py-2.5 bg-blue-50 text-primary rounded-lg font-semibold text-sm transition-all no-underline">
-        <span class="material-symbols-outlined">dashboard</span>
-        仪表盘
-      </a>
-      <a routerLink="/employer/jobs/post" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
-        <span class="material-symbols-outlined">add_circle</span>
-        发布岗位
-      </a>
-      <a routerLink="/employer/jobs" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
-        <span class="material-symbols-outlined">work</span>
-        岗位管理
-      </a>
-      <a routerLink="/employer/applications" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
-        <span class="material-symbols-outlined">group</span>
-        申请管理
-      </a>
-      <a routerLink="/employer/profile" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:translate-x-1 transition-all rounded-lg font-semibold text-sm no-underline">
-        <span class="material-symbols-outlined">domain</span>
-        企业资料
-      </a>
-    </nav>
-    <div class="pt-4 border-t border-gray-50 flex flex-col gap-1">
-      <a routerLink="/employer/verification" class="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:bg-gray-50 transition-all rounded-lg font-semibold text-sm no-underline">
-        <span class="material-symbols-outlined">verified</span>
-        企业认证
-      </a>
-      <button (click)="logout()" class="flex items-center gap-3 px-3 py-2.5 text-error hover:bg-red-50 transition-all rounded-lg font-semibold text-sm w-full text-left !border-0 outline-none">
-        <span class="material-symbols-outlined">logout</span>
-        退出登录
-      </button>
-    </div>
-  </aside>
 
-  <!-- Main Content Area -->
-  <main class="ml-64 min-h-screen p-8 max-w-[1400px] flex-1">
-    <!-- Loading State -->
-    <div *ngIf="isLoading" class="flex flex-col items-center justify-center py-24">
-      <span class="material-symbols-outlined animate-spin text-primary text-4xl mb-4">progress_activity</span>
-      <p class="text-gray-500 font-body-md">加载中...</p>
-    </div>
+      <div class="rounded-2xl bg-white/10 px-5 py-4 backdrop-blur">
+        <p class="text-sm text-blue-100">企业认证状态</p>
+        <p class="mt-2 inline-flex rounded-full px-3 py-1 text-sm font-semibold" [ngClass]="getVerificationMeta().className">
+          {{ getVerificationMeta().label }}
+        </p>
+      </div>
+    </section>
 
-    <ng-container *ngIf="!isLoading">
-      <!-- Approved State -->
-      <ng-container *ngIf="verificationStatus?.status === 'approved'; else notApproved">
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-8">
-          <div>
-            <div class="flex items-center gap-3 mb-1">
-              <h2 class="font-h1 text-h1 text-primary">早上好，企业用户（已更新）</h2>
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                <span class="material-symbols-outlined text-[14px] mr-1" style="font-variation-settings: 'FILL' 1;">verified</span>
-                已认证
-              </span>
-            </div>
-            <p class="font-body-md text-body-md text-secondary">以下是您今日的招聘动态概览。</p>
-          </div>
-          <button routerLink="/employer/jobs/post" class="bg-primary hover:bg-primary-container text-white px-6 py-3 rounded-xl font-button text-button flex items-center gap-2 shadow-lg shadow-blue-900/10 transition-all active:scale-95">
-            <span class="material-symbols-outlined">add</span>
-            发布新岗位
-          </button>
-        </header>
+    <section *ngIf="isLoading" class="rounded-3xl border border-slate-200 bg-white p-16 text-center shadow-sm">
+      <span class="material-symbols-outlined animate-spin text-4xl text-[#1A365D]">progress_activity</span>
+      <p class="mt-4 text-slate-500">正在加载企业数据...</p>
+    </section>
 
-        <!-- Summary Stats Row -->
-        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div class="bg-white p-6 rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50">
-            <div class="flex justify-between items-start mb-4">
-              <div class="p-2 bg-blue-50 text-primary rounded-lg">
-                <span class="material-symbols-outlined">work</span>
-              </div>
-            </div>
-            <p class="text-secondary font-caption text-caption mb-1">在招岗位</p>
-            <p class="text-h1 font-h1 text-primary">{{ stats?.activeJobsCount || 0 }}</p>
-          </div>
-          <div class="bg-white p-6 rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50">
-            <div class="flex justify-between items-start mb-4">
-              <div class="p-2 bg-purple-50 text-purple-700 rounded-lg">
-                <span class="material-symbols-outlined">group</span>
-              </div>
-            </div>
-            <p class="text-secondary font-caption text-caption mb-1">总申请数</p>
-            <p class="text-h1 font-h1 text-primary">{{ stats?.totalApplications || 0 }}</p>
-          </div>
-          <div class="bg-white p-6 rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50">
-            <div class="flex justify-between items-start mb-4">
-              <div class="p-2 bg-orange-50 text-orange-700 rounded-lg">
-                <span class="material-symbols-outlined">pending_actions</span>
-              </div>
-            </div>
-            <p class="text-secondary font-caption text-caption mb-1">待审核</p>
-            <p class="text-h1 font-h1 text-primary">{{ stats?.pendingApplications || 0 }}</p>
-          </div>
-          <div class="bg-white p-6 rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50">
-            <div class="flex justify-between items-start mb-4">
-              <div class="p-2 bg-green-50 text-green-700 rounded-lg">
-                <span class="material-symbols-outlined">handshake</span>
-              </div>
-            </div>
-            <p class="text-secondary font-caption text-caption mb-1">本月录用</p>
-            <p class="text-h1 font-h1 text-primary">{{ getMonthlyHires() }}</p>
-          </div>
-        </section>
+    <section
+      *ngIf="!isLoading && verificationStatus?.status !== 'approved'"
+      class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"
+    >
+      <div class="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <h2 class="text-2xl font-black text-[#1A365D]">先完成企业认证</h2>
+        <p class="mt-3 text-base leading-7 text-slate-600">{{ getVerificationMeta().description }}</p>
 
-        <!-- Main Dashboard Content (Bento Style) -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <!-- Recent Applications List -->
-          <section class="lg:col-span-2">
-            <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 overflow-hidden">
-              <div class="p-6 border-b border-gray-50 flex justify-between items-center">
-                <h3 class="font-h2 text-h2 text-primary">最新申请</h3>
-                <a routerLink="/employer/applications" class="text-primary font-button text-sm hover:underline">查看全部</a>
-              </div>
-              <div class="divide-y divide-gray-50">
-                <div *ngIf="stats?.recentApplications?.length === 0" class="p-12 text-center text-secondary">
-                  <span class="material-symbols-outlined text-4xl mb-2 text-gray-300">inbox</span>
-                  <p>暂无申请记录</p>
-                </div>
-                <div *ngFor="let app of stats?.recentApplications" class="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                  <div class="flex items-center gap-4">
-                    <img *ngIf="app.student?.avatar" [src]="app.student.avatar" class="w-12 h-12 rounded-full object-cover bg-gray-100"/>
-                    <div *ngIf="!app.student?.avatar" class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-white font-bold">
-                      {{ app.student?.username?.charAt(0) || '?' }}
-                    </div>
-                    <div>
-                      <h4 class="font-h2 text-body-lg text-primary">{{ app.student?.username || '未知用户' }}</h4>
-                      <p class="text-secondary font-caption text-caption">{{ app.job?.title || '未知岗位' }}</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-6">
-                    <span class="hidden md:inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                      [class.bg-blue-50]="app.status === 'pending'"
-                      [class.text-primary]="app.status === 'pending'"
-                      [class.bg-green-50]="app.status === 'approved'"
-                      [class.text-green-700]="app.status === 'approved'"
-                      [class.bg-red-50]="app.status === 'rejected'"
-                      [class.text-red-700]="app.status === 'rejected'">
-                      {{ app.status === 'pending' ? '待审核' : app.status === 'approved' ? '已通过' : '已拒绝' }}
-                    </span>
-                    <a [routerLink]="['/employer/applications']" class="px-4 py-2 border border-primary text-primary rounded-lg font-button text-sm hover:bg-blue-50 transition-colors">查看</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Job Status Overview Section -->
-          <section class="lg:col-span-1 flex flex-col gap-8">
-            <div class="bg-white p-6 rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 flex-1">
-              <div class="flex justify-between items-center mb-6">
-                <h3 class="font-h2 text-h2 text-primary">岗位热度</h3>
-                <span class="material-symbols-outlined text-secondary">more_horiz</span>
-              </div>
-              <div class="space-y-6">
-                <div *ngIf="getTopJobs().length === 0" class="text-center text-secondary py-8">
-                  <span class="material-symbols-outlined text-4xl mb-2 text-gray-300">work_off</span>
-                  <p>暂无岗位数据</p>
-                </div>
-                <div *ngFor="let job of getTopJobs()">
-                  <div class="flex justify-between items-center mb-2">
-                    <p class="text-body-md font-semibold text-primary">{{ job.title }}</p>
-                    <p class="text-caption font-bold text-primary">{{ job.applicationsCount }} 人申请</p>
-                  </div>
-                  <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                    <div class="bg-primary h-full rounded-full" [style.width.%]="(job.applicationsCount / (getTopJobs()[0]?.applicationsCount || 1)) * 100"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-8 p-4 bg-slate-50 rounded-lg border border-dashed border-gray-200">
-                <div class="flex gap-3">
-                  <span class="material-symbols-outlined text-blue-500">lightbulb</span>
-                  <div>
-                    <p class="text-xs font-bold text-primary mb-1">招聘小贴士</p>
-                    <p class="text-[11px] text-secondary leading-relaxed">保持岗位信息更新，及时回复申请者，可提高招聘效率和学生满意度。</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Small Notification Card -->
-            <div class="bg-primary text-white p-6 rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)]">
-              <div class="flex justify-between items-start mb-4">
-                <span class="material-symbols-outlined">auto_awesome</span>
-                <span class="px-2 py-0.5 bg-white/20 rounded text-[10px] uppercase font-bold">新功能</span>
-              </div>
-              <h4 class="font-h2 text-lg mb-2 text-white">AI 人才匹配</h4>
-              <p class="text-blue-100 text-xs mb-4">让AI助手根据技能和学术表现为您的候选人排序。</p>
-              <button class="w-full py-2 bg-white text-primary rounded-lg font-button text-xs hover:bg-blue-50 transition-colors">
-                了解更多
-              </button>
-            </div>
-          </section>
+        <div class="mt-6 rounded-2xl p-5" [ngClass]="getVerificationMeta().className">
+          <p class="text-sm font-semibold">当前状态</p>
+          <p class="mt-2 text-lg font-bold">{{ getVerificationMeta().label }}</p>
         </div>
-      </ng-container>
 
-      <!-- Not Approved State -->
-      <ng-template #notApproved>
-        <div class="max-w-3xl mx-auto pt-12">
-          <div class="bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05),0_2px_4px_-1px_rgba(26,54,93,0.03)] border border-gray-50 overflow-hidden">
-            <div class="p-8 text-center">
-              <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6">
-                <span class="material-symbols-outlined text-4xl text-gray-400">domain</span>
+        <div *ngIf="verificationStatus?.rejectionReason" class="mt-6 rounded-2xl border border-rose-100 bg-rose-50 p-5 text-rose-700">
+          <p class="text-sm font-semibold">驳回原因</p>
+          <p class="mt-2 leading-7">{{ verificationStatus?.rejectionReason }}</p>
+        </div>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a
+            routerLink="/employer/verification"
+            class="inline-flex items-center gap-2 rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white no-underline transition-opacity hover:opacity-90"
+          >
+            <span class="material-symbols-outlined text-[18px]">verified</span>
+            去完成企业认证
+          </a>
+          <a
+            routerLink="/employer/profile"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-[#1A365D] no-underline"
+          >
+            <span class="material-symbols-outlined text-[18px]">business</span>
+            完善企业资料
+          </a>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 class="text-lg font-bold text-[#1A365D]">认证通过后可用功能</h3>
+          <div class="mt-5 space-y-4">
+            <div class="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+              <span class="material-symbols-outlined text-[#1A365D]">post_add</span>
+              <div>
+                <p class="font-semibold text-slate-900">发布和管理岗位</p>
+                <p class="mt-1 text-sm leading-6 text-slate-500">支持岗位审核、启停和申请管理。</p>
               </div>
-              <h2 class="font-h1 text-h1 text-primary mb-2">
-                <ng-container *ngIf="verificationStatus?.status === 'pending'">认证审核中</ng-container>
-                <ng-container *ngIf="verificationStatus?.status === 'rejected'">认证被拒绝</ng-container>
-                <ng-container *ngIf="!verificationStatus?.status">请先完成企业认证</ng-container>
-              </h2>
-              <p class="text-secondary font-body-md mb-6 max-w-md mx-auto">
-                <ng-container *ngIf="verificationStatus?.status === 'pending'">您的认证申请正在审核中，请耐心等待，通常需要 1-3 个工作日。</ng-container>
-                <ng-container *ngIf="verificationStatus?.status === 'rejected'">认证申请已被拒绝，原因：{{ verificationStatus?.rejectionReason }}</ng-container>
-                <ng-container *ngIf="!verificationStatus?.status">只有通过企业认证后，才能发布岗位信息，开始招聘。</ng-container>
-              </p>
-              <button routerLink="/employer/verification" class="px-6 py-3 bg-primary text-white rounded-xl font-button text-button hover:bg-primary-container transition-all">
-                {{ verificationStatus?.status === 'rejected' ? '重新认证' : '去认证' }}
-              </button>
             </div>
-            <div class="bg-slate-50 p-6 border-t border-gray-100">
-              <p class="text-xs font-bold text-primary mb-3 text-center">认证通过后将获得以下权益</p>
-              <div class="grid grid-cols-2 gap-3">
-                <div class="flex items-center gap-2 text-sm text-secondary">
-                  <span class="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
-                  无限发布岗位
-                </div>
-                <div class="flex items-center gap-2 text-sm text-secondary">
-                  <span class="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
-                  查看求职者简历
-                </div>
-                <div class="flex items-center gap-2 text-sm text-secondary">
-                  <span class="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
-                  管理申请和面试
-                </div>
-                <div class="flex items-center gap-2 text-sm text-secondary">
-                  <span class="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
-                  资金托管服务
-                </div>
+            <div class="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+              <span class="material-symbols-outlined text-[#1A365D]">group</span>
+              <div>
+                <p class="font-semibold text-slate-900">查看学生投递</p>
+                <p class="mt-1 text-sm leading-6 text-slate-500">快速筛选待处理、通过和拒绝记录。</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+              <span class="material-symbols-outlined text-[#1A365D]">psychology</span>
+              <div>
+                <p class="font-semibold text-slate-900">使用 AI 招聘助手</p>
+                <p class="mt-1 text-sm leading-6 text-slate-500">支持候选人推荐和智能问答。</p>
               </div>
             </div>
           </div>
         </div>
-      </ng-template>
+      </div>
+    </section>
+
+    <ng-container *ngIf="!isLoading && verificationStatus?.status === 'approved' && stats as employerStats">
+      <section class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p class="text-sm text-slate-500">招聘中岗位</p>
+          <p class="mt-3 text-3xl font-black text-[#1A365D]">{{ employerStats.activeJobsCount }}</p>
+          <p class="mt-2 text-sm text-slate-500">共 {{ employerStats.totalJobsCount }} 个岗位</p>
+        </article>
+
+        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p class="text-sm text-slate-500">总投递数</p>
+          <p class="mt-3 text-3xl font-black text-[#1A365D]">{{ employerStats.totalApplications }}</p>
+          <p class="mt-2 text-sm text-slate-500">包含已撤回和已处理记录</p>
+        </article>
+
+        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p class="text-sm text-slate-500">待处理申请</p>
+          <p class="mt-3 text-3xl font-black text-[#1A365D]">{{ employerStats.pendingApplications }}</p>
+          <p class="mt-2 text-sm text-slate-500">建议优先处理新近投递</p>
+        </article>
+
+        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p class="text-sm text-slate-500">本周重点</p>
+          <p class="mt-3 text-lg font-bold text-[#1A365D]">
+            {{ getTopJobs().length ? '优先跟进高投递岗位' : '先发布你的第一个岗位' }}
+          </p>
+          <p class="mt-2 text-sm text-slate-500">统一招聘节奏，减少多页面来回切换。</p>
+        </article>
+      </section>
+
+      <section class="flex flex-wrap gap-3">
+        <a
+          routerLink="/employer/post-job"
+          class="inline-flex items-center gap-2 rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white no-underline transition-opacity hover:opacity-90"
+        >
+          <span class="material-symbols-outlined text-[18px]">add_business</span>
+          发布新岗位
+        </a>
+        <a
+          routerLink="/employer/jobs"
+          class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-[#1A365D] no-underline"
+        >
+          <span class="material-symbols-outlined text-[18px]">work_history</span>
+          管理岗位
+        </a>
+        <a
+          routerLink="/employer/applications"
+          class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-[#1A365D] no-underline"
+        >
+          <span class="material-symbols-outlined text-[18px]">assignment</span>
+          查看申请
+        </a>
+      </section>
+
+      <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-black text-[#1A365D]">热门岗位</h2>
+              <p class="mt-2 text-sm text-slate-500">按申请人数排序，帮助你快速定位重点岗位。</p>
+            </div>
+            <a routerLink="/employer/jobs" class="text-sm font-semibold text-[#1A365D] no-underline">查看全部</a>
+          </div>
+
+          <div *ngIf="!getTopJobs().length" class="mt-6 rounded-2xl bg-slate-50 p-8 text-center text-slate-500">
+            暂无热门岗位数据，先去发布岗位或等待更多学生投递。
+          </div>
+
+          <div *ngIf="getTopJobs().length" class="mt-6 space-y-4">
+            <div *ngFor="let job of getTopJobs()" class="rounded-2xl border border-slate-100 p-5">
+              <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <h3 class="text-lg font-bold text-[#1A365D]">{{ job.title }}</h3>
+                  <p class="mt-2 text-sm text-slate-500">
+                    {{ job.location || '地点待定' }} · {{ getJobStatusLabel(job.status) }} · {{ getAuditStatusLabel(job.auditStatus) }}
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm text-slate-500">申请人数</p>
+                  <p class="text-2xl font-black text-[#1A365D]">{{ job.applicationsCount || 0 }}</p>
+                </div>
+              </div>
+              <div class="mt-4 flex items-center justify-between">
+                <p class="text-sm text-slate-500">发布时间：{{ formatDate(job.createdAt) }}</p>
+                <a
+                  [routerLink]="['/employer/applications']"
+                  [queryParams]="{ jobId: job.id }"
+                  class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white no-underline"
+                >
+                  查看申请
+                </a>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-black text-[#1A365D]">最近申请</h2>
+              <p class="mt-2 text-sm text-slate-500">在一个页面里快速识别待处理学生投递。</p>
+            </div>
+            <a routerLink="/employer/applications" class="text-sm font-semibold text-[#1A365D] no-underline">去处理</a>
+          </div>
+
+          <div *ngIf="!employerStats.recentApplications.length" class="mt-6 rounded-2xl bg-slate-50 p-8 text-center text-slate-500">
+            还没有学生投递记录。
+          </div>
+
+          <div *ngIf="employerStats.recentApplications.length" class="mt-6 space-y-4">
+            <div *ngFor="let application of employerStats.recentApplications" class="rounded-2xl border border-slate-100 p-4">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h3 class="font-bold text-slate-900">{{ getStudentName(application) }}</h3>
+                  <p class="mt-1 text-sm text-slate-500">{{ application.job?.title || '岗位信息缺失' }}</p>
+                  <p class="mt-2 text-xs text-slate-400">投递时间：{{ formatDate(application.appliedAt) }}</p>
+                </div>
+                <span class="rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getApplicationStatusMeta(application.status).className">
+                  {{ getApplicationStatusMeta(application.status).label }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
     </ng-container>
-  </main>
-</div>
+  </div>
+</main>

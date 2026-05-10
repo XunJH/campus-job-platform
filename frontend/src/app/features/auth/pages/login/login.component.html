@@ -1,130 +1,164 @@
-<div class="min-h-screen w-full relative flex items-center justify-end">
-  <!-- Full-screen Background Image -->
-  <div class="absolute inset-0">
-    <img
-      src="assets/images/login-bg.jpg"
-      class="w-full h-full object-cover object-center"
-      alt="校园招聘平台"
-    />
-  </div>
+<div class="login-page">
+  <div class="login-page__pattern"></div>
+  <div class="login-page__glow login-page__glow--left"></div>
+  <div class="login-page__glow login-page__glow--right"></div>
 
-  <!-- Right-side Login Card -->
-  <div class="relative z-10 w-full max-w-[460px] mr-4 sm:mr-8 lg:mr-16 xl:mr-24 my-6 px-4">
-    <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/30 p-6 sm:p-8">
-      <!-- Header -->
-      <div class="flex flex-col items-center mb-6">
-        <div class="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mb-3 shadow-lg">
-          <span class="material-symbols-outlined text-white text-2xl">school</span>
+  <div class="login-page__shell">
+    <section class="hero-panel" aria-label="平台介绍">
+      <a routerLink="/" class="brand-badge">
+        <span class="brand-badge__icon material-symbols-outlined">school</span>
+        <span>校园招聘平台</span>
+      </a>
+
+      <div class="hero-panel__content">
+        <p class="hero-panel__eyebrow">STUDENT ACCESS</p>
+        <h1>让校园求职<br />更明确，也更好投</h1>
+        <p class="hero-panel__description">
+          统一岗位浏览、投递进度、AI 匹配与面试准备，登录后直接进入你的个人求职工作区。
+        </p>
+      </div>
+
+      <div class="hero-panel__chips">
+        <span class="hero-chip">实习岗位</span>
+        <span class="hero-chip">AI 推荐</span>
+        <span class="hero-chip">安全审核</span>
+      </div>
+
+      <div class="preview-board">
+        <div class="preview-board__search">
+          <span class="material-symbols-outlined">search</span>
+          <span>搜索岗位、公司或技能关键词</span>
         </div>
-        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">校园招聘平台</h1>
-        <p class="text-sm text-gray-500 mt-1">连接校园与职场的桥梁</p>
+
+        <div class="preview-board__cards">
+          <article class="job-preview-card">
+            <div class="job-preview-card__avatar"></div>
+            <div class="job-preview-card__body">
+              <h2>前端开发实习生</h2>
+              <p>校内科技园 · 本周活跃投递 28 人</p>
+              <span class="job-preview-card__tag job-preview-card__tag--green">支持 AI 匹配</span>
+            </div>
+          </article>
+
+          <article class="job-preview-card">
+            <div class="job-preview-card__avatar"></div>
+            <div class="job-preview-card__body">
+              <h2>数据分析助理</h2>
+              <p>线上实习 · 适配画像评分 92%</p>
+              <span class="job-preview-card__tag job-preview-card__tag--amber">推荐优先岗位</span>
+            </div>
+          </article>
+        </div>
       </div>
 
-      <!-- Error Message -->
-      <div
-        *ngIf="errorMessage"
-        class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium flex items-center gap-2"
-      >
-        <span class="material-symbols-outlined text-base">error</span>
-        {{ errorMessage }}
+      <div class="hero-panel__metrics">
+        <article class="metric-card metric-card--primary">
+          <p class="metric-card__eyebrow">THIS WEEK</p>
+          <strong>126</strong>
+          <span>新增可投递岗位</span>
+        </article>
+
+        <article class="metric-card metric-card--light">
+          <p class="metric-card__label">本周亮点</p>
+          <strong>AI 匹配效率 +23%</strong>
+          <span>登录后可查看推荐理由与岗位动态</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="login-card" aria-label="登录表单">
+      <div class="login-card__badge">欢迎回来</div>
+      <h2>登录你的账号</h2>
+      <p class="login-card__subtitle">使用校园账号、邮箱或手机号进入平台</p>
+
+      <div *ngIf="errorMessage" class="login-message login-message--error">
+        <span class="material-symbols-outlined">error</span>
+        <span>{{ errorMessage }}</span>
       </div>
 
-      <!-- Login Form -->
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5">
-        <!-- Username -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-medium text-gray-600">用户名或邮箱</label>
-          <div class="relative">
-            <span
-              class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]"
-            >
-              person
-            </span>
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <div class="form-field">
+          <div class="form-field__header">
+            <label for="username">账号</label>
+          </div>
+          <div class="input-shell" [class.input-shell--error]="f['username'].touched && f['username'].invalid">
+            <span class="material-symbols-outlined input-shell__icon">person</span>
             <input
+              id="username"
               type="text"
               formControlName="username"
-              class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all outline-none bg-gray-50/50 text-sm"
               placeholder="请输入用户名或邮箱"
-              [class.border-red-400]="f['username'].touched && f['username'].invalid"
+              autocomplete="username"
             />
           </div>
-          <div *ngIf="f['username'].touched && f['username'].invalid" class="text-red-500 text-xs">
-            <span *ngIf="f['username'].errors?.['required']">用户名不能为空</span>
-          </div>
+          <p *ngIf="f['username'].touched && f['username'].invalid" class="form-field__error">
+            请输入用户名或邮箱
+          </p>
         </div>
 
-        <!-- Password -->
-        <div class="space-y-1.5">
-          <div class="flex justify-between items-center">
-            <label class="text-xs font-medium text-gray-600">密码</label>
-            <a routerLink="/auth/forgot-password" class="text-xs text-primary hover:underline">忘记密码？</a>
+        <div class="form-field">
+          <div class="form-field__header">
+            <label for="password">密码</label>
+            <a routerLink="/auth/forgot-password">忘记密码？</a>
           </div>
-          <div class="relative">
-            <span
-              class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]"
-            >
-              lock
-            </span>
+          <div class="input-shell" [class.input-shell--error]="f['password'].touched && f['password'].invalid">
+            <span class="material-symbols-outlined input-shell__icon">lock</span>
             <input
+              id="password"
               [type]="showPassword ? 'text' : 'password'"
               formControlName="password"
-              class="w-full pl-10 pr-10 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all outline-none bg-gray-50/50 text-sm"
               placeholder="请输入密码"
-              [class.border-red-400]="f['password'].touched && f['password'].invalid"
+              autocomplete="current-password"
             />
             <button
               type="button"
+              class="input-shell__action"
               (click)="togglePassword()"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors !border-0 outline-none"
+              [attr.aria-label]="showPassword ? '隐藏密码' : '显示密码'"
             >
-              <span class="material-symbols-outlined text-[18px]">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+              <span class="material-symbols-outlined">
+                {{ showPassword ? 'visibility_off' : 'visibility' }}
+              </span>
             </button>
           </div>
-          <div *ngIf="f['password'].touched && f['password'].invalid" class="text-red-500 text-xs">
-            <span *ngIf="f['password'].errors?.['required']">密码不能为空</span>
-            <span *ngIf="f['password'].errors?.['minlength']">密码至少6位</span>
-          </div>
+          <p *ngIf="f['password'].touched && f['password'].invalid" class="form-field__error">
+            密码至少需要 6 位
+          </p>
         </div>
 
-        <!-- Remember Me -->
-        <div class="flex items-center gap-2">
-          <input
-            type="checkbox"
-            formControlName="remember"
-            class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-            id="remember"
-          />
-          <label for="remember" class="text-sm text-gray-600 select-none">保持登录状态</label>
-        </div>
+        <label class="remember-toggle" for="remember">
+          <input id="remember" type="checkbox" formControlName="remember" />
+          <span class="remember-toggle__box">
+            <span class="material-symbols-outlined">check</span>
+          </span>
+          <span>保持登录状态</span>
+        </label>
 
-        <!-- Submit -->
-        <button
-          type="submit"
-          class="w-full bg-primary text-white py-3 rounded-lg font-semibold text-sm hover:bg-[#1A365D] active:scale-[0.98] transition-all shadow-md !border-0"
-          [disabled]="isLoading"
-        >
+        <button type="submit" class="submit-button" [disabled]="isLoading">
           <span *ngIf="!isLoading">登录</span>
-          <span *ngIf="isLoading" class="flex items-center justify-center gap-2">
-            <span class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+          <span *ngIf="isLoading" class="submit-button__loading">
+            <span class="submit-button__spinner"></span>
             登录中...
           </span>
         </button>
       </form>
 
-      <!-- Footer -->
-      <div class="mt-6 pt-5 border-t border-gray-100 text-center space-y-3">
-        <p class="text-sm text-gray-500">
-          还没有账号？
-          <a routerLink="/auth/register" class="text-primary font-semibold hover:underline">立即注册</a>
-        </p>
-        <div class="flex justify-center gap-4 text-xs text-gray-400">
-          <a href="#" class="hover:text-gray-600 transition-colors">隐私政策</a>
-          <span class="text-gray-300">|</span>
-          <a href="#" class="hover:text-gray-600 transition-colors">服务条款</a>
-          <span class="text-gray-300">|</span>
-          <a href="#" class="hover:text-gray-600 transition-colors">帮助中心</a>
+      <div class="login-card__footer">
+        <p>还没有账号？<a routerLink="/auth/register">立即注册</a></p>
+
+        <div class="quick-actions">
+          <a routerLink="/auth/register" class="quick-actions__item">学生注册</a>
+          <a routerLink="/auth/register" class="quick-actions__item">企业入驻</a>
+        </div>
+
+        <div class="policy-links">
+          <a href="#">隐私政策</a>
+          <span>·</span>
+          <a href="#">服务条款</a>
+          <span>·</span>
+          <a href="#">帮助中心</a>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 </div>

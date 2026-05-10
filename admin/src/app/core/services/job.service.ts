@@ -10,6 +10,8 @@ export interface Job {
   requirements: string;
   salary: string;
   location: string;
+  workLocation?: string;
+  category?: string;
   jobType: string;
   salaryType: string;
   workingHours?: string;
@@ -17,6 +19,7 @@ export interface Job {
   status: 'active' | 'inactive' | 'filled' | 'draft' | 'closed' | 'cancelled';
   auditStatus?: 'pending' | 'approved' | 'rejected';
   rejectionReason?: string;
+  fraudCheckResult?: any;
   views: number;
   createdAt: string;
   employerId: number;

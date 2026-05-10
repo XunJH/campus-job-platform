@@ -4,6 +4,7 @@ const User = require('./User');
 const Job = require('./Job');
 const Application = require('./Application');
 const Bookmark = require('./Bookmark');
+const Settlement = require('./Settlement');
 const Verification = require('./Verification')(sequelize, DataTypes);
 
 // 定义模型关联关系
@@ -68,6 +69,51 @@ Bookmark.belongsTo(Job, {
   as: 'job'
 });
 
+Application.hasOne(Settlement, {
+  foreignKey: 'applicationId',
+  as: 'settlement'
+});
+Settlement.belongsTo(Application, {
+  foreignKey: 'applicationId',
+  as: 'application'
+});
+
+Job.hasMany(Settlement, {
+  foreignKey: 'jobId',
+  as: 'settlements'
+});
+Settlement.belongsTo(Job, {
+  foreignKey: 'jobId',
+  as: 'job'
+});
+
+User.hasMany(Settlement, {
+  foreignKey: 'studentId',
+  as: 'studentSettlements'
+});
+Settlement.belongsTo(User, {
+  foreignKey: 'studentId',
+  as: 'student'
+});
+
+User.hasMany(Settlement, {
+  foreignKey: 'employerId',
+  as: 'employerSettlements'
+});
+Settlement.belongsTo(User, {
+  foreignKey: 'employerId',
+  as: 'employer'
+});
+
+User.hasMany(Settlement, {
+  foreignKey: 'paidBy',
+  as: 'processedSettlements'
+});
+Settlement.belongsTo(User, {
+  foreignKey: 'paidBy',
+  as: 'processor'
+});
+
 // User 和 Verification 的关系：一个用户对应一条认证记录
 User.hasOne(Verification, {
   foreignKey: 'userId',
@@ -85,5 +131,6 @@ module.exports = {
   Job,
   Application,
   Bookmark,
+  Settlement,
   Verification
 };

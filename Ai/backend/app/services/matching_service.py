@@ -8,11 +8,12 @@
 from typing import List, Dict, Any
 import requests
 from ..models.ai_models import Job, MatchResult, PersonalityProfile
+from ..core.config import settings
 from .personality_service import personality_service
 from ..services.ai_provider import _ai_service
 
 # 主后端API地址
-CAMPUS_JOB_API = "http://localhost:3001/api/v1"
+CAMPUS_JOB_API = settings.CAMPUS_JOB_API_URL
 
 
 class MatchingService:
@@ -73,6 +74,25 @@ class MatchingService:
         except Exception as e:
             print(f"[MatchingService] 获取真实岗位失败: {e}")
             return []
+
+    def fetch_personality_profile(self, user_id: str):
+        """Fetch the persisted personality profile from the main backend."""
+        try:
+            resp = requests.get(
+                f"{CAMPUS_JOB_API}/auth/internal/personality-profile/{user_id}",
+                headers={"X-AI-Service-Token": settings.AI_INTERNAL_TOKEN},
+                timeout=5
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            profile = data.get("data", {}).get("profile")
+            if not profile:
+                return None
+
+            return PersonalityProfile(**profile)
+        except Exception as e:
+            print(f"[MatchingService] Failed to fetch personality profile: {e}")
+            return None
 
     @property
     def job_pool(self) -> List[Job]:
@@ -473,6 +493,227 @@ class MatchingService:
             reasons.append(f"核心优势：{strengths[0]}")
 
         return reasons[:3]
+
+
+    # ==================== 智能调剂推荐（增强版） ====================
+
+    def smart_referral(
+        self,
+        job_id: str,
+        job_title: str,
+        job_description: str = "",
+        job_requirements: List[str] = None,
+        job_salary: str = None,
+        top_n: int = 10,
+        include_gap_analysis: bool = True
+    ) -> Dict[str, Any]:
+        """
+        智能调剂推荐（增强版）
+
+        企业端核心功能：
+        1. 根据岗位需求推荐最接近的学生
+        2. 对每位学生做差距分析（已匹配项 vs 差距项）
+        3. 给出 AI 调剂建议（是否建议录用 + 条件）
+        """
+        job_requirements = job_requirements or []
+        job_keywords = set(job_requirements + [job_title] + job_description.split())
+
+        # Step 1: 对所有学生计算匹配度
+        results = []
+        for student in self.student_pool:
+            score = self._calc_student_match(student, job_requirements, job_title, job_keywords)
+
+            # 差距分析
+            gap_analysis = None
+            if include_gap_analysis:
+                gap_analysis = self._analyze_gap(student, job_requirements, job_title)
+
+            # 推荐度分级
+            if score >= 70:
+                recommendation = "✅ 强烈推荐"
+                recruit_condition = "可直接录用"
+            elif score >= 50:
+                recommendation = "⚠️ 可考虑调剂"
+                recruit_condition = gap_analysis["gap_suggestion"] if gap_analysis else "需面试确认"
+            else:
+                recommendation = "❌ 不推荐"
+                recruit_condition = "匹配度过低，不建议录用"
+
+            results.append({
+                "student": {
+                    "student_id": student["student_id"],
+                    "name": student["name"],
+                    "major": student["major"],
+                    "grade": student["grade"],
+                    "tags": student["tags"],
+                    "strengths": student["strengths"],
+                    "suitable_jobs": student["suitable_jobs"]
+                },
+                "match_score": score,
+                "recommendation": recommendation,
+                "recruit_condition": recruit_condition,
+                "gap_analysis": gap_analysis
+            })
+
+        # 按匹配度排序
+        results.sort(key=lambda x: x["match_score"], reverse=True)
+        top_results = results[:top_n]
+
+        # 统计
+        strong_count = sum(1 for r in top_results if "✅" in r["recommendation"])
+        consider_count = sum(1 for r in top_results if "⚠️" in r["recommendation"])
+
+        return {
+            "job_id": job_id,
+            "job_title": job_title,
+            "job_requirements": job_requirements,
+            "total_candidates": len(results),
+            "recommendations": top_results,
+            "statistics": {
+                "strongly_recommended": strong_count,
+                "worth_considering": consider_count,
+                "not_recommended": len(top_results) - strong_count - consider_count
+            },
+            "ai_summary": self._generate_referral_summary(top_results, job_title)
+        }
+
+    def _calc_student_match(
+        self,
+        student: Dict[str, Any],
+        job_requirements: List[str],
+        job_title: str,
+        job_keywords: set
+    ) -> float:
+        """计算单个学生的匹配度"""
+        score = 0.0
+
+        # 1. 学生优势 vs 岗位要求（占50%）
+        strength_matches = 0
+        for req in job_requirements:
+            for strength in student.get("strengths", []):
+                if any(kw.lower() in strength.lower() or strength.lower() in kw.lower()
+                       for kw in req.split() if len(kw) > 1):
+                    strength_matches += 1
+                    break
+
+        if job_requirements:
+            score += min((strength_matches / len(job_requirements)) * 50, 50)
+
+        # 2. 学生标签 vs 岗位关键词（占30%）
+        student_tags = student.get("tags", [])
+        tag_matches = 0
+        for keyword in job_keywords:
+            for tag in student_tags:
+                if keyword.lower() in tag.lower() or tag.lower() in keyword.lower():
+                    tag_matches += 1
+                    break
+
+        if job_keywords:
+            score += min((tag_matches / max(len(job_keywords), 1)) * 30, 30)
+
+        # 3. 适合岗位 vs 岗位名称（占20%）
+        suitable_jobs = student.get("suitable_jobs", [])
+        title_match = 0
+        for suitable in suitable_jobs:
+            if suitable.lower() in job_title.lower() or job_title.lower() in suitable.lower():
+                title_match = 1
+                break
+        score += title_match * 20
+
+        return min(round(score, 1), 100.0)
+
+    def _analyze_gap(
+        self,
+        student: Dict[str, Any],
+        job_requirements: List[str],
+        job_title: str
+    ) -> Dict[str, Any]:
+        """
+        差距分析：逐项对比岗位要求和学生能力
+
+        返回：
+        - matched: 已匹配的项
+        - gaps: 差距项（含severity和建议）
+        - gap_suggestion: 一句话调剂建议
+        """
+        matched = []
+        gaps = []
+
+        student_strengths = [s.lower() for s in student.get("strengths", [])]
+        student_tags = [t.lower() for t in student.get("tags", [])]
+        student_all = student_strengths + student_tags
+
+        for req in job_requirements:
+            req_lower = req.lower()
+            matched_flag = False
+
+            for sa in student_all:
+                if req_lower in sa or sa in req_lower or \
+                   any(word in sa for word in req_lower.split() if len(word) > 2):
+                    matched_flag = True
+                    break
+
+            if matched_flag:
+                matched.append({
+                    "requirement": req,
+                    "status": "✅ 已匹配",
+                    "evidence": next((s for s in student.get("strengths", [])
+                                      if req_lower in s.lower() or s.lower() in req_lower),
+                               student.get("tags", [""])[0])
+                })
+            else:
+                # 判断差距严重程度
+                severity = "🟡 部分匹配"
+                suggestion = f"可在入职后补充学习「{req}」"
+
+                if any(kw in req_lower for kw in ["精通", "资深", "5年", "3年"]):
+                    severity = "🔴 差距较大"
+                    suggestion = f"该要求较高，建议降低此条要求或提供培训"
+                elif any(kw in req_lower for kw in ["熟练", "经验"]):
+                    severity = "🟡 部分匹配"
+                    suggestion = f"可安排1-2周岗前培训补充「{req}」技能"
+
+                gaps.append({
+                    "requirement": req,
+                    "status": "❌ 未匹配",
+                    "severity": severity,
+                    "suggestion": suggestion
+                })
+
+        # 生成调剂建议
+        gap_count = len(gaps)
+        if gap_count == 0:
+            gap_suggestion = "全部要求已匹配，可直接录用"
+        elif gap_count <= 2:
+            gap_suggestion = f"有{gap_count}项差距，建议面试后决定是否录用，或安排短期培训"
+        else:
+            gap_suggestion = f"有{gap_count}项差距较大，建议降低部分要求或考虑其他候选人"
+
+        return {
+            "matched_items": matched,
+            "gap_items": gaps,
+            "matched_count": len(matched),
+            "gap_count": gap_count,
+            "gap_suggestion": gap_suggestion
+        }
+
+    def _generate_referral_summary(
+        self,
+        recommendations: List[Dict[str, Any]],
+        job_title: str
+    ) -> str:
+        """生成 AI 调剂建议总结"""
+        strong = [r for r in recommendations if "✅" in r["recommendation"]]
+        consider = [r for r in recommendations if "⚠️" in r["recommendation"]]
+
+        if strong:
+            names = "、".join(r["student"]["name"] for r in strong[:3])
+            return f"推荐优先考虑「{names}」等{len(strong)}位同学，匹配度较高，建议直接面试或录用。"
+        elif consider:
+            names = "、".join(r["student"]["name"] for r in consider[:3])
+            return f"「{names}」等{len(consider)}位同学可考虑调剂，但需在面试中重点考察差距项。"
+        else:
+            return f"当前候选人池中没有与「{job_title}」高度匹配的同学，建议放宽岗位要求或扩大搜索范围。"
 
 
 # 创建全局实例

@@ -5,8 +5,8 @@ import { RegisterComponent } from '../pages/register/register.component';
 import { ForgotPasswordComponent } from '../pages/forgot-password/forgot-password.component';
 
 /**
- * @功能 认证模块路由配置
- * @说明 登录、注册相关路由
+ * 认证模块路由配置。
+ * 包含登录、注册和密码帮助页面。
  */
 const routes: Routes = [
   {
@@ -32,4 +32,4 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
-export class AuthRoutingModule { }
+export class AuthRoutingModule {}

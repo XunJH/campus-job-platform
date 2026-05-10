@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 简历优化 - 校园招聘平台</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+<style>
+  :root {
+    --primary: #1A365D;
+    --primary-light: #EBF4FF;
+    --primary-dark: #0F2347;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --card-bg: #fff;
+    --border: #E2E8F0;
+    --text: #1F2937;
+    --text-muted: #6B7280;
+    --text-light: #9CA3AF;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Manrope', system-ui, sans-serif;
+    background: #F1F5F9;
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* 导航栏 */
+  header {
+    background: var(--primary);
+    color: #fff;
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 2px 8px rgba(26,54,93,.25);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-inner { max-width: 1400px; width: 100%; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .header-logo { font-size: 16px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-tag { background: rgba(255,255,255,.15); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+
+  /* 主容器 */
+  .main { max-width: 1400px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* 页面标题 */
+  .page-title {
+    display: flex; align-items: flex-start; gap: 14px;
+  }
+  .page-title-icon {
+    width: 48px; height: 48px; background: var(--primary);
+    border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .page-title-icon .material-symbols-outlined { color: #fff; font-size: 24px; }
+  .page-title-text h1 { font-size: 22px; font-weight: 800; color: var(--primary); letter-spacing: -0.4px; }
+  .page-title-text p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+  /* 布局：左右分栏 */
+  .editor-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    min-height: 600px;
+  }
+  @media (max-width: 900px) {
+    .editor-layout { grid-template-columns: 1fr; }
+  }
+
+  /* 卡片 */
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);
+    display: flex; flex-direction: column;
+  }
+  .card-header {
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  }
+  .card-header .material-symbols-outlined { color: var(--primary); font-size: 18px; }
+  .card-header-title { font-size: 14px; font-weight: 700; color: var(--primary); }
+  .card-header-tag {
+    margin-left: auto; font-size: 11px; font-weight: 600;
+    padding: 2px 10px; border-radius: 10px;
+  }
+  .tag-blue { background: var(--primary-light); color: var(--primary); }
+  .tag-green { background: #D1FAE5; color: #065F46; }
+  .tag-yellow { background: #FEF3C7; color: #92400E; }
+
+  .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+
+  /* 表单 */
+  label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  input[type="text"], textarea, select {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); font-family: inherit; font-size: 13px;
+    color: var(--text); background: #fff; outline: none; transition: border-color .2s;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,54,93,.06);
+  }
+  textarea { resize: vertical; }
+
+  /* 优化建议标签 */
+  .opt-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+  .opt-tag {
+    font-size: 11px; font-weight: 600; padding: 3px 10px;
+    border-radius: 10px; display: flex; align-items: center; gap: 4px;
+  }
+  .opt-tag.strength { background: #D1FAE5; color: #065F46; }
+  .opt-tag.weakness { background: #FEF3C7; color: #92400E; }
+  .opt-tag.keyword { background: var(--primary-light); color: var(--primary); }
+
+  /* 优化对比区 */
+  .compare-section { margin-top: 8px; }
+  .compare-title {
+    font-size: 12px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .compare-box {
+    background: #F8FAFC; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 13px; line-height: 1.7; white-space: pre-wrap;
+    max-height: 300px; overflow-y: auto;
+  }
+  .compare-box.original { border-left: 3px solid var(--text-light); }
+  .compare-box.optimized { border-left: 3px solid var(--success); }
+
+  /* 差异高亮 */
+  .diff-add { background: #D1FAE5; color: #065F46; border-radius: 3px; padding: 0 2px; }
+  .diff-del { background: #FEE2E2; color: #991B1B; text-decoration: line-through; border-radius: 3px; padding: 0 2px; }
+
+  /* 按钮 */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 20px; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; transition: all .15s;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .btn-outline { background: #fff; color: var(--primary); border: 1.5px solid var(--border); }
+  .btn-outline:hover { border-color: var(--primary); background: var(--primary-light); }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: #059669; }
+
+  /* Loading 动画 */
+  .loading-dots { display: inline-flex; gap: 4px; }
+  .loading-dots span {
+    width: 6px; height: 6px; background: var(--primary);
+    border-radius: 50%; animation: dotPulse 1.2s infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: .2s; }
+  .loading-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes dotPulse { 0%,80%,100%{ transform: scale(0); } 40%{ transform: scale(1); } }
+
+  /* 评分条 */
+  .score-row { display: flex; align-items: center; gap: 10px; margin: 4px 0; }
+  .score-label { font-size: 12px; font-weight: 600; min-width: 80px; color: var(--text-muted); }
+  .score-bar-wrap { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .score-bar { height: 100%; border-radius: 4px; transition: width .6s ease; }
+  .score-val { font-size: 12px; font-weight: 700; min-width: 36px; text-align: right; }
+
+  /* 空状态 */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; min-height: 200px; color: var(--text-light); text-align: center; gap: 8px;
+  }
+  .empty-state .material-symbols-outlined { font-size: 48px; opacity: .4; }
+  .empty-state p { font-size: 13px; }
+
+  /* 操作栏 */
+  .action-bar {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    padding: 12px 16px; border-top: 1px solid var(--border); background: #FAFBFC;
+  }
+
+  /* 提示横幅 */
+  .info-banner {
+    display: flex; align-items: flex-start; gap: 8px;
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    font-size: 12px; line-height: 1.5;
+  }
+  .info-banner.blue { background: var(--primary-light); border: 1px solid #BFDBFE; color: var(--primary); }
+  .info-banner.green { background: #D1FAE5; border: 1px solid #A7F3D0; color: #065F46; }
+  .info-banner .material-symbols-outlined { flex-shrink: 0; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="material-symbols-outlined">description</span>
+    <span class="header-logo">AI 简历优化</span>
+    <span class="header-tag">演示模式</span>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="page-title">
+    <div class="page-title-icon"><span class="material-symbols-outlined">auto_awesome</span></div>
+    <div class="page-title-text">
+      <h1>AI 简历优化助手</h1>
+      <p>粘贴你的原始简历内容，AI 将帮你优化措辞、突出优势、弱化短板，生成更具竞争力的简历版本</p>
+    </div>
+  </div>
+
+  <!-- 目标岗位配置 -->
+  <div class="info-banner blue">
+    <span class="material-symbols-outlined">info</span>
+    <div>💡 <strong>使用建议：</strong>填写目标岗位可以让 AI 更精准地优化简历方向。不填也会进行通用优化。优化结果会<strong>放大你的优点</strong>，对薄弱环节会用更积极的措辞包装，而不是直接删除。</div>
+  </div>
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div style="flex:1;min-width:200px;">
+      <label>目标岗位（选填，填了更精准）</label>
+      <input type="text" id="targetJob" placeholder="例如：前端开发实习生、数据分析助理" />
+    </div>
+    <div style="flex:1;min-width:200px;">
+      <label>优化侧重</label>
+      <select id="optimizeFocus">
+        <option value="balanced">均衡优化（推荐）</option>
+        <option value="strength">重点放大优势</option>
+        <option value="weakness">重点包装薄弱环节</option>
+        <option value="keywords">增加岗位关键词（过ATS）</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="optimizeBtn" onclick="startOptimization()" style="padding:10px 28px;">
+      <span class="material-symbols-outlined">auto_awesome</span>
+      AI 优化简历
+    </button>
+  </div>
+
+  <!-- 左右分栏：原始简历 | 优化结果 -->
+  <div class="editor-layout">
+
+    <!-- 左：原始简历输入 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="material-symbols-outlined">edit_note</span>
+        <span class="card-header-title">原始简历内容</span>
+        <span class="card-header-tag tag-blue" id="leftTag">待输入</span>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-outline" style="font-size:11px;padding:6px 12px;" onclick="loadSampleResume()">
+            <span class="material-symbols-outlined" style="font-size:14px;">description</span>加载示例简历
+          </button>
+          <button class="btn btn-outline" style="font-size:11px;padding:6px 12px;" onclick="clearInput()">
+            <span class="material-symbols-outlined" style="font-size:14px;">close</span>清空
+          </button>
+        </div>
+        <textarea id="rawResume" rows="22" placeholder="请粘贴你的简历内容，或点击「加载示例简历」快速体验...&#10;&#10;建议包含：&#10;- 教育背景&#10;- 实习/项目经历（含具体成果）&#10;- 技能清单&#10;- 自我评价"></textarea>
+      </div>
+    </div>
+
+    <!-- 右：优化结果 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="material-symbols-outlined">verified</span>
+        <span class="card-header-title">AI 优化结果</span>
+        <span class="card-header-tag tag-yellow" id="rightTag">等待优化</span>
+      </div>
+      <div class="card-body" id="resultBody">
+
+        <!-- 空状态 -->
+        <div class="empty-state" id="emptyResult">
+          <span class="material-symbols-outlined">psychology</span>
+          <p>在左侧输入简历内容后<br>点击「AI 优化简历」查看结果</p>
+        </div>
+
+        <!-- 优化中 -->
+        <div id="loadingResult" style="display:none;justify-content:center;align-items:center;flex:1;">
+          <div style="text-align:center;">
+            <div class="loading-dots" style="justify-content:center;margin-bottom:12px;">
+              <span></span><span></span><span></span>
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);" id="loadingText">AI 正在分析简历结构...</div>
+          </div>
+        </div>
+
+        <!-- 结果内容（默认隐藏） -->
+        <div id="resultContent" style="display:none;flex:1;overflow:auto;">
+
+          <!-- 优化评分 -->
+          <div>
+            <div class="compare-title"><span class="material-symbols-outlined" style="font-size:16px;color:var(--primary);">analytics</span> 优化评分</div>
+            <div id="optScores"></div>
+          </div>
+
+          <!-- 优化标签 -->
+          <div>
+            <div class="compare-title"><span class="material-symbols-outlined" style="font-size:16px;color:var(--primary);">sell</span> 优化要点</div>
+            <div class="opt-tags" id="optTags"></div>
+          </div>
+
+          <div class="divider" style="height:1px;background:var(--border);margin:4px 0;"></div>
+
+          <!-- 逐段对比 -->
+          <div class="compare-section">
+            <div class="compare-title"><span class="material-symbols-outlined" style="font-size:16px;color:var(--text-light);">close</span> 原文</div>
+            <div class="compare-box original" id="originalBox"></div>
+          </div>
+
+          <div class="compare-section">
+            <div class="compare-title"><span class="material-symbols-outlined" style="font-size:16px;color:var(--success);">check_circle</span> 优化版</div>
+            <div class="compare-box optimized" id="optimizedBox"></div>
+          </div>
+
+          <!-- 改进说明 -->
+          <div id="improvementNotes" style="margin-top:8px;"></div>
+
+        </div>
+      </div>
+
+      <!-- 操作栏 -->
+      <div class="action-bar" id="resultActions" style="display:none;">
+        <button class="btn btn-outline" onclick="copyOptimized()">
+          <span class="material-symbols-outlined" style="font-size:16px;">content_copy</span>复制优化版
+        </button>
+        <button class="btn btn-success" onclick="downloadOptimized()">
+          <span class="material-symbols-outlined" style="font-size:16px;">download</span>下载优化简历
+        </button>
+        <button class="btn btn-outline" onclick="reoptimize()" style="margin-left:auto;">
+          <span class="material-symbols-outlined" style="font-size:16px;">refresh</span>重新优化
+        </button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ================================================================
+   Mock 优化配置
+   ================================================================ */
+const OPTIMIZE_STRATEGIES = {
+  balanced: '均衡优化：在保持真实性的前提下，适度放大优点、用更积极的措辞包装薄弱环节，让整体表现更专业。',
+  strength: '重点放大优势：识别简历中最亮眼的经历/技能，用更强有力的动词和量化数据来呈现，让招聘方一眼看到价值。',
+  weakness: '重点包装薄弱环节：对经历较少或表现一般的板块，用概括性、积极性的措辞进行包装，避免直接暴露短板。',
+  keywords: '关键词优化：分析目标岗位的常用关键词（技能名词、行业术语），自然地融入简历，提升ATS（招聘系统）匹配度。',
+};
+
+/* ================================================================
+   加载示例简历
+   ================================================================ */
+function loadSampleResume() {
+  $('rawResume').value = `张明
+广西科技大学 · 计算机科学与技术 · 大四
+联系电话：138XXXXXXX | 邮箱：zhangming@email.com
+
+教育背景
+2022.09 - 2026.06  广西科技大学  计算机科学与技术  本科
+- 主修课程：数据结构、操作系统、计算机网络、数据库系统
+- GPA：3.2/4.0
+
+实习经历
+2025.07 - 2025.12  南宁某科技公司  前端开发实习生
+- 负责公司官网的部分页面开发
+- 用 Vue 框架做了几个组件
+- 参与了代码评审，修改了一些 bug
+- 协助组长做一些文档整理
+
+项目经历
+2024.09 - 2025.01  校园二手交易小程序
+- 使用微信小程序 + 云开发实现
+- 实现了商品发布、搜索、聊天功能
+- 项目已上线，有约300个用户
+
+技能清单
+- 编程语言：JavaScript、Python、Java（了解）
+- 前端：HTML、CSS、JavaScript、Vue.js
+- 工具：Git、VS Code、微信开发者工具
+- 英语：CET-4 通过
+
+自我评价
+学习能力强，能快速适应新环境。有一定的前端开发经验，希望在企业中继续成长。为人诚恳，团队合作意识强。`;
+
+  $('leftTag').textContent = '已输入';
+  $('leftTag').className = 'card-header-tag tag-green';
+}
+
+function clearInput() {
+  $('rawResume').value = '';
+  $('leftTag').textContent = '待输入';
+  $('leftTag').className = 'card-header-tag tag-blue';
+}
+
+/* ================================================================
+   AI 优化主流程（Mock）
+   ================================================================ */
+const MOCK_LOADING_STEPS = [
+  'AI 正在分析简历结构...',
+  '识别优势板块与薄弱环节...',
+  '优化动词与量化表达...',
+  '包装薄弱环节...',
+  '生成优化版简历...',
+];
+
+async function startOptimization() {
+  const raw = $('rawResume').value.trim();
+  if (!raw) {
+    $('rawResume').focus();
+    $('rawResume').style.borderColor = 'var(--danger)';
+    setTimeout(() => $('rawResume').style.borderColor = '', 2000);
+    return;
+  }
+
+  const targetJob = $('targetJob').value.trim();
+  const focus = $('optimizeFocus').value;
+
+  // 切换 UI 到 loading
+  $('emptyResult').style.display = 'none';
+  $('resultContent').style.display = 'none';
+  $('resultActions').style.display = 'none';
+  $('loadingResult').style.display = 'flex';
+  $('rightTag').textContent = '优化中...';
+  $('rightTag').className = 'card-header-tag tag-yellow';
+  $('optimizeBtn').disabled = true;
+
+  // 模拟 loading 步骤
+  for (let i = 0; i < MOCK_LOADING_STEPS.length; i++) {
+    $('loadingText').textContent = MOCK_LOADING_STEPS[i];
+    await sleep(700 + Math.random() * 500);
+  }
+
+  // 生成 Mock 优化结果
+  const result = generateMockOptimization(raw, targetJob, focus);
+
+  // 渲染结果
+  renderResult(result, raw);
+
+  // 切换 UI 到结果
+  $('loadingResult').style.display = 'none';
+  $('resultContent').style.display = 'flex';
+  $('resultActions').style.display = 'flex';
+  $('rightTag').textContent = '已优化';
+  $('rightTag').className = 'card-header-tag tag-green';
+  $('optimizeBtn').disabled = false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ================================================================
+   Mock 优化生成器（核心）
+   ================================================================ */
+function generateMockOptimization(raw, targetJob, focus) {
+  const jobHint = targetJob ? `针对「${targetJob}」岗位，` : '';
+
+  // 模拟优化版（基于示例简历的规则替换）
+  let optimized = raw;
+
+  // 动词强化映射
+  const verbMap = {
+    '负责': '主导',
+    '做了': '独立开发并交付',
+    '参与了': '深度参与',
+    '协助': '协同',
+    '修改了一些': '定位并修复了累计',
+    '做了几个': '独立开发了',
+    '实现了': '从0到1实现了',
+    '有约': '累计服务',
+  };
+  for (const [k, v] of Object.entries(verbMap)) {
+    optimized = optimized.replaceAll(k, v);
+  }
+
+  // 添加量化（模拟）
+  optimized = optimized.replace(
+    '修改了一些 bug',
+    '定位并修复了累计20+个前端bug，显著提升了页面稳定性'
+  );
+  optimized = optimized.replace(
+    '约300个用户',
+    '约300个活跃用户，次日留存率达45%'
+  );
+  optimized = optimized.replace(
+    '部分页面开发',
+    '独立负责5+个核心页面（日均PV 2000+）的开发与维护'
+  );
+
+  // 技能栏强化
+  optimized = optimized.replace(
+    'JavaScript、Python、Java（了解）',
+    'JavaScript（熟练，3年经验）、Python（良好）、Java（了解，可快速上手）'
+  );
+
+  // 自我评价包装（弱化"了解"、强化主动性）
+  optimized = optimized.replace(
+    /学习能力强[，,]能快速适应新环境。/,
+    '具备快速学习能力，能在2周内上手新框架；主动关注前端前沿技术，持续自我迭代。'
+  );
+
+  // 评分（Mock，随 focus 变化）
+  const scoreBase = focus === 'strength' ? 8 : focus === 'weakness' ? 7 : focus === 'keywords' ? 7.5 : 7.5;
+  const scores = {
+    '表达专业度': +(scoreBase + Math.random() * 1.2).toFixed(1),
+    '量化程度': +(scoreBase - 0.3 + Math.random() * 1.5).toFixed(1),
+    '关键词匹配': focus === 'keywords' ? +(scoreBase + 1.2).toFixed(1) : +(scoreBase - 0.5 + Math.random()).toFixed(1),
+    '整体竞争力': +(scoreBase + Math.random() * 0.8).toFixed(1),
+  };
+
+  const tags = [];
+  if (optimized !== raw) tags.push({ type: 'strength', text: '动词强化' });
+  if (optimized.includes('20+') || optimized.includes('300')) tags.push({ type: 'strength', text: '量化成果' });
+  tags.push({ type: 'keyword', text: '关键词优化' });
+  if (focus === 'weakness') tags.push({ type: 'weakness', text: '薄弱环节包装' });
+  tags.push({ type: 'strength', text: '自我评价升级' });
+
+  return { optimized, scores, tags, focus, jobHint };
+}
+
+/* ================================================================
+   渲染结果
+   ================================================================ */
+function renderResult(result, raw) {
+  const { optimized, scores, tags, jobHint } = result;
+
+  // 评分条
+  const scoreColors = { '表达专业度':'#3B82F6','量化程度':'#10B981','关键词匹配':'#F59E0B','整体竞争力':'#8B5CF6' };
+  let scoresHtml = '';
+  for (const [k, v] of Object.entries(scores)) {
+    const pct = (v / 10 * 100).toFixed(0);
+    scoresHtml += `
+      <div class="score-row">
+        <div class="score-label">${k}</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:${pct}%;background:${scoreColors[k]};"></div></div>
+        <div class="score-val" style="color:${scoreColors[k]};">${v}/10</div>
+      </div>`;
+  }
+  $('optScores').innerHTML = scoresHtml;
+
+  // 标签
+  $('optTags').innerHTML = tags.map(t =>
+    `<span class="opt-tag ${t.type}">${
+      t.type === 'strength' ? '✅' : t.type === 'weakness' ? '⚠️' : '🔑'
+    } ${t.text}</span>`
+  ).join('');
+
+  // 原文 vs 优化版（取前 500 字做对比，避免过长）
+  const displayRaw = raw.slice(0, 600);
+  const displayOpt = optimized.slice(0, 600);
+  $('originalBox').textContent = displayRaw + (raw.length > 600 ? '\n...(过长内容已折叠)' : '');
+  $('optimizedBox').textContent = displayOpt + (optimized.length > 600 ? '\n...(过长内容已折叠)' : '');
+
+  // 改进说明
+  $('improvementNotes').innerHTML = `
+    <div class="info-banner green">
+      <span class="material-symbols-outlined">lightbulb</span>
+      <div>
+        <strong>💡 优化说明</strong><br>
+        ${jobHint}本次优化主要做了：动词强化（"负责"→"主导"）、量化补充（增加具体数字）、技能表述专业化、自我评价从被动描述改为主动表达。
+        薄弱环节已用更积极的措辞包装，不会直接暴露短板。
+      </div>
+    </div>`;
+}
+
+/* ================================================================
+   操作按钮
+   ================================================================ */
+function copyOptimized() {
+  const text = $('optimizedBox').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target.closest('button');
+    const original = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">check</span>已复制';
+    setTimeout(() => btn.innerHTML = original, 1500);
+  });
+}
+
+function downloadOptimized() {
+  const text = $('optimizedBox').textContent;
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `优化简历_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function reoptimize() {
+  // 切换优化侧重，重新跑
+  const select = $('optimizeFocus');
+  const opts = select.options;
+  const current = select.selectedIndex;
+  select.selectedIndex = (current + 1) % opts.length;
+  startOptimization();
+}
+</script>
+
+</body>
+</html>

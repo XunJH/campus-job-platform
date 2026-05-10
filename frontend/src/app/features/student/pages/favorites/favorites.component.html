@@ -1,0 +1,115 @@
+<app-student-shell-header></app-student-shell-header>
+
+<main class="mx-auto max-w-7xl space-y-8 px-6 py-8">
+  <section class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-[#1A365D]">我的收藏</h1>
+      <p class="mt-2 text-slate-500">保留感兴趣的岗位，方便后续比较和投递。</p>
+    </div>
+    <a
+      routerLink="/student/jobs"
+      class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-[#1A365D] no-underline transition-colors hover:bg-slate-50"
+    >
+      <span class="material-symbols-outlined text-[18px]">add_circle</span>
+      继续收藏岗位
+    </a>
+  </section>
+
+  <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <article class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+      <p class="text-sm text-slate-500">收藏总数</p>
+      <p class="mt-3 text-3xl font-bold text-[#1A365D]">{{ bookmarks.length }}</p>
+    </article>
+    <article class="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
+      <p class="text-sm text-emerald-700">当前可投</p>
+      <p class="mt-3 text-3xl font-bold text-emerald-700">{{ activeCount }}</p>
+    </article>
+    <article class="rounded-2xl border border-slate-200 bg-slate-100 p-5">
+      <p class="text-sm text-slate-600">暂不可投</p>
+      <p class="mt-3 text-3xl font-bold text-slate-700">{{ unavailableCount }}</p>
+    </article>
+  </section>
+
+  <div *ngIf="successMessage" class="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-emerald-700">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="errorMessage && !loading" class="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-rose-700">
+    {{ errorMessage }}
+  </div>
+
+  <section *ngIf="loading" class="flex justify-center rounded-2xl border border-slate-100 bg-white p-16">
+    <span class="material-symbols-outlined animate-spin text-4xl text-[#1A365D]">progress_activity</span>
+  </section>
+
+  <section *ngIf="!loading && bookmarks.length === 0" class="rounded-2xl border border-dashed border-slate-200 bg-white p-16 text-center">
+    <span class="material-symbols-outlined text-6xl text-slate-300">bookmark_remove</span>
+    <h2 class="mt-4 text-2xl font-bold text-[#1A365D]">还没有收藏岗位</h2>
+    <p class="mt-2 text-slate-500">遇到感兴趣的岗位可以先收藏，之后再统一比较和投递。</p>
+    <div class="mt-6">
+      <a
+        routerLink="/student/jobs"
+        class="inline-flex items-center gap-2 rounded-xl bg-[#1A365D] px-5 py-3 text-white no-underline transition-opacity hover:opacity-90"
+      >
+        <span class="material-symbols-outlined text-[18px]">favorite</span>
+        去岗位广场看看
+      </a>
+    </div>
+  </section>
+
+  <section *ngIf="!loading && bookmarks.length > 0" class="grid grid-cols-1 gap-5 xl:grid-cols-2">
+    <article *ngFor="let bookmark of bookmarks" class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div class="min-w-0 flex-1 space-y-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <h2 class="truncate text-2xl font-bold text-[#1A365D]">
+              {{ bookmark.job?.title || '岗位信息已失效' }}
+            </h2>
+            <span class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium" [ngClass]="getAvailabilityClasses(bookmark.job)">
+              {{ getAvailabilityLabel(bookmark.job) }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
+            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p class="text-slate-500">企业</p>
+              <p class="mt-2 font-semibold text-[#1A365D]">{{ bookmark.job?.employer?.username || '企业信息待补充' }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p class="text-slate-500">薪资</p>
+              <p class="mt-2 font-semibold text-[#1A365D]">{{ formatSalary(bookmark.job) }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p class="text-slate-500">地点</p>
+              <p class="mt-2 font-semibold text-[#1A365D]">{{ bookmark.job?.location || '待定' }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 text-sm text-slate-600">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">bookmark_added</span>
+            <span>收藏时间：{{ formatDate(bookmark.createdAt) }}</span>
+          </div>
+        </div>
+
+        <div class="flex w-40 flex-col gap-3">
+          <a
+            *ngIf="bookmark.job?.id"
+            [routerLink]="getJobLink(bookmark.job)"
+            class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-[#1A365D] no-underline transition-colors hover:bg-slate-50"
+          >
+            <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+            查看详情
+          </a>
+          <button
+            type="button"
+            (click)="removeBookmark(bookmark, $event)"
+            [disabled]="removingId === bookmark.id || !bookmark.job?.id"
+            class="rounded-xl bg-slate-900 px-4 py-3 text-white transition-colors hover:bg-slate-800 disabled:opacity-50"
+          >
+            {{ removingId === bookmark.id ? '处理中...' : '取消收藏' }}
+          </button>
+        </div>
+      </div>
+    </article>
+  </section>
+</main>

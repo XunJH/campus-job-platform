@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 投递反馈与智能调剂 - 校园招聘平台</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+<style>
+  :root {
+    --primary: #1A365D; --primary-light: #EBF4FF; --primary-dark: #0F2347;
+    --success: #10B981; --success-light: #D1FAE5;
+    --warning: #F59E0B; --warning-light: #FEF3C7;
+    --danger: #EF4444; --danger-light: #FEF2F2;
+    --card-bg: #fff; --border: #E2E8F0;
+    --text: #1F2937; --text-muted: #6B7280; --text-light: #9CA3AF;
+    --radius: 12px; --radius-sm: 8px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Manrope', system-ui, sans-serif; background: #F1F5F9; color: var(--text); min-height: 100vh; }
+
+  /* 导航 */
+  header { background: var(--primary); color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(26,54,93,.25); position: sticky; top: 0; z-index: 100; }
+  .header-inner { max-width: 1200px; width: 100%; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .header-logo { font-size: 16px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-tag { background: rgba(255,255,255,.15); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+
+  /* Tab 切换 */
+  .tab-bar { display: flex; gap: 0; background: #fff; border-radius: var(--radius); padding: 6px; border: 1px solid var(--border); }
+  .tab-btn { flex: 1; padding: 10px 16px; border: none; background: transparent; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-radius: var(--radius-sm); transition: all .15s; text-align: center; }
+  .tab-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 6px rgba(26,54,93,.25); }
+  .tab-btn:hover:not(.active) { background: var(--primary-light); color: var(--primary); }
+
+  .main { max-width: 1200px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+  .page-title { display: flex; align-items: flex-start; gap: 14px; }
+  .page-title-icon { width: 44px; height: 44px; background: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .page-title-icon .material-symbols-outlined { color: #fff; font-size: 22px; }
+  .page-title-text h1 { font-size: 20px; font-weight: 800; color: var(--primary); }
+  .page-title-text p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .card-header { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: #FAFBFC; }
+  .card-header .material-symbols-outlined { font-size: 18px; }
+  .card-header-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .card-body { padding: 16px 18px; }
+
+  /* 视图切换 */
+  .view-panel { display: none; }
+  .view-panel.active { display: block; }
+
+  /* ===== 投递列表 ===== */
+  .app-list { display: flex; flex-direction: column; gap: 10px; }
+  .app-item {
+    display: grid; grid-template-columns: auto 1fr auto auto;
+    gap: 14px; align-items: center;
+    padding: 14px 18px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border); background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .app-item:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+  .app-item.selected { border-color: var(--danger); background: var(--danger-light); }
+
+  .app-job-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; flex-shrink: 0; }
+  .app-job-icon.tech { background: #3B82F6; } .app-job-icon.sales { background: #10B981; }
+  .app-job-icon.service { background: #8B5CF6; } .app-job-icon.other { background: #6B7280; }
+
+  .app-info { min-width: 0; }
+  .app-info h3 { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .app-info p { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .app-status-badge { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; white-space: nowrap; }
+  .status-pending { background: var(--warning-light); color: #92400E; }
+  .status-approved { background: var(--success-light); color: #065F46; }
+  .status-rejected { background: var(--danger-light); color: #991B1B; }
+
+  .app-action { flex-shrink: 0; }
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 16px; border-radius: var(--radius-sm); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+  .btn-primary { background: var(--primary); color: #fff; } .btn-primary:hover { transform: translateY(-1px); }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+
+  /* ===== 分析结果面板 ===== */
+  .analysis-panel {
+    margin-top: 14px; border-radius: var(--radius);
+    border: 1.5px solid var(--border); background: #fff; overflow: hidden;
+    animation: slideUp .35s ease;
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .analysis-header {
+    padding: 14px 20px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .analysis-header.student-side { background: linear-gradient(135deg, #EBF4FF, #DBEAFE); }
+  .analysis-header.employer-side { background: linear-gradient(135deg, #FEF3C7, #FDE68A); }
+
+  .match-gauge { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; padding: 14px; background: #F8FAFC; border-radius: var(--radius-sm); }
+  .gauge-circle {
+    width: 80px; height: 80px; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .gauge-val { font-size: 24px; font-weight: 800; line-height: 1; }
+  .gauge-label { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+  .gauge-detail { flex: 1; }
+  .gauge-bar-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  .gauge-bar-label { font-size: 11px; font-weight: 600; width: 70px; color: var(--text-muted); }
+  .gauge-bar-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .gauge-bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+
+  /* 差距分析卡片 */
+  .gap-section { margin-top: 10px; }
+  .gap-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .gap-item {
+    display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px;
+    border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 12px; line-height: 1.55;
+  }
+  .gap-matched { background: var(--success-light); border-left: 3px solid var(--success); }
+  .gap-partial { background: var(--warning-light); border-left: 3px solid var(--warning); }
+  .gap-gap { background: var(--danger-light); border-left: 3px solid var(--danger); }
+  .gap-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .gap-label { font-weight: 700; }
+  .gap-tip { font-size: 11px; margin-top: 2px; opacity: .75; }
+
+  /* 建议行动 */
+  .action-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin-top: 10px; }
+  .action-card { padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 12px; }
+  .action-card h4 { font-size: 12px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+  .action-card p { color: var(--text-muted); line-height: 1.5; }
+
+  /* 企业调剂推荐 */
+  .rec-card {
+    display: flex; gap: 14px; padding: 14px; border-radius: var(--radius-sm);
+    margin-bottom: 8px; border: 1.5px solid var(--border); transition: all .15s;
+    cursor: pointer; align-items: flex-start;
+  }
+  .rec-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+  .rec-card.recommended { border-left: 4px solid var(--success); background: #FAFDFA; }
+  .rec-card.maybe { border-left: 4px solid var(--warning); background: #FFFBEB; }
+  .rec-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+  .rec-body { flex: 1; min-width: 0; }
+  .rec-name { font-size: 13px; font-weight: 700; }
+  .rec-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .rec-match-bar { margin-top: 6px; }
+  .rec-match-bar-track { height: 5px; background: var(--border); border-radius: 3px; }
+  .rec-match-bar-fill { height: 100%; border-radius: 3px; }
+  .rec-reason { font-size: 11px; color: var(--text-muted); margin-top: 4px; padding: 4px 8px; background: rgba(0,0,0,.03); border-radius: 6px; }
+  .rec-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+
+  /* 空状态 */
+  .empty-hint { text-align: center; padding: 30px 20px; color: var(--text-light); font-size: 13px; }
+  .empty-hint .material-symbols-outlined { font-size: 36px; opacity: .3; margin-bottom: 8px; }
+
+  .info-banner { display: flex; align-items: flex-start; gap: 8px; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px; line-height: 1.5; }
+  .info-banner.blue { background: var(--primary-light); border: 1px solid #BFDBFE; color: var(--primary); }
+  .info-banner.green { background: var(--success-light); border: 1px solid #A7F3D0; color: #065F46; }
+  .info-banner.yellow { background: var(--warning-light); border: 1px solid #FDE68A; color: #92400E; }
+  .info-banner .material-symbols-outlined { flex-shrink: 0; font-size: 16px; }
+
+  /* loading */
+  .loading-dots { display: inline-flex; gap: 4px; }
+  .loading-dots span { width: 6px; height: 6px; background: var(--primary); border-radius: 50%; animation: dotPulse 1.2s infinite; }
+  .loading-dots span:nth-child(2) { animation-delay: .2s; }
+  .loading-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes dotPulse { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
+
+  @media (max-width: 650px) {
+    .app-item { grid-template-columns: auto 1fr auto; }
+    .app-action { grid-column: span 2; justify-content: end; margin-top: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="material-symbols-outlined">psychology</span>
+    <span class="header-logo">AI 智能投递分析</span>
+    <span class="header-tag">演示模式</span>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="page-title">
+    <div class="page-title-icon"><span class="material-symbols-outlined">analytics</span></div>
+    <div class="page-title-text">
+      <h1>投递反馈 &amp; 智能调剂</h1>
+      <p>功能 B：学生被拒后 AI 分析原因 + 功能 C：企业招不满 AI 推荐可调剂人选</p>
+    </div>
+  </div>
+
+  <!-- Tab 切换 -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('student')">👨‍🎓 学生视角：被拒原因分析</button>
+    <button class="tab-btn" onclick="switchTab('employer')">🏢 企业视角：智能调剂推荐</button>
+  </div>
+
+  <!-- ==================== 学生端：被拒分析 ==================== -->
+  <div class="view-panel active" id="panel-student">
+
+    <div class="info-banner blue" style="margin-bottom:4px;">
+      <span class="material-symbols-outlined">lightbulb</span>
+      <div>点击下方<strong>「已拒绝」</strong>的投递记录旁的「AI 分析」按钮，查看被拒原因、匹配度差距、以及具体改进建议。</div>
+    </div>
+
+    <!-- 我的投递列表 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="material-symbols-outlined">history</span>
+        <span class="card-header-title">我的投递记录</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text-muted);" id="appCountBadge">共 6 条记录</span>
+      </div>
+      <div class="card-body">
+        <div class="app-list" id="studentAppList"></div>
+      </div>
+    </div>
+
+    <!-- 分析结果（动态插入） -->
+    <div id="studentAnalysisContainer"></div>
+
+  </div>
+
+  <!-- ==================== 企业端：智能调剂 ==================== -->
+  <div class="view-panel" id="panel-employer">
+
+    <div class="info-banner yellow" style="margin-bottom:4px;">
+      <span class="material-symbols-outlined">group_add</span>
+      <div>当岗位收到多份投递但<strong>没有完全匹配的候选人</strong>时，AI 会分析哪些学生「接近达标」，建议是否可以<strong>降低某条要求或给予试用机会</strong>。</div>
+    </div>
+
+    <!-- 岗位选择 -->
+    <div class="card" style="margin-bottom:10px;">
+      <div class="card-header">
+        <span class="material-symbols-outlined">work</span>
+        <span class="card-header-title">选择要分析的岗位</span>
+      </div>
+      <div class="card-body">
+        <div id="employerJobList" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+    </div>
+
+    <!-- 调剂推荐结果 -->
+    <div id="employerAnalysisContainer"></div>
+
+  </div>
+
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ================================================================
+   Mock 数据
+   ================================================================ */
+
+// 学生的投递记录
+const MOCK_APPLICATIONS = [
+  { id: 1, jobId: 101, jobTitle: '前端开发实习生', company: '南宁科技有限公司', salary: '3000-4500/月', location: '南宁·青秀区', status: 'rejected', icon: 'tech',
+    requirements: ['熟悉 Vue/React 框架', '有至少1个完整项目经验', '了解 TypeScript', '有团队协作经历'],
+    studentSkills: { techStack: 'Vue.js (基础)', experience: '校园二手小程序项目', tsLevel: '未接触 TypeScript', teamExp: '无正式团队协作' },
+    matchScore: 58,
+    gaps: [
+      { type: 'gap', skill: 'TypeScript 要求', reason: '岗位明确要求 TS，学生完全没接触过', suggestion: '建议在接下来 2-3 周内学习 TypeScript 基础，完成一个小练习项目并放到 GitHub 上。优先掌握类型声明、泛型和接口。' },
+      { type: 'partial', skill: '项目经验深度', reason: '有项目但偏简单（CRUD 小程序），缺少复杂业务场景处理', suggestion: '补充 1 个有一定技术深度的项目（如带权限管理、状态管理的应用），并在简历中用 STAR 法则描述你在其中的角色和解决的技术难点。' },
+      { type: 'matched', skill: 'Vue.js 基础', reason: '已使用 Vue 完成过项目，基础扎实', suggestion: '' },
+      { type: 'gap', skill: '团队协作经历', reason: '所有项目都是个人完成，缺乏多人协作证据', suggestion: '参与开源社区或组队参加一个黑客松/课程大作业，在简历中体现你如何与他人分工、code review 和解决冲突。' },
+    ]
+  },
+  { id: 2, jobId: 102, jobTitle: '数据分析师助理', company: '广西电商集团', salary: '3500/月', location: '南宁·西乡塘区', status: 'pending', icon: 'tech' },
+  { id: 3, jobId: 103, jobTitle: '新媒体运营实习生', company: '星巴克万达店', salary: '时薪 25 元', location: '南宁·万达广场', status: 'approved', icon: 'sales' },
+  { id: 4, jobId: 104, jobTitle: 'Java 后端开发实习生', company: '南宁软件园某公司', salary: '4000-5500/月', location: '南宁·高新区', status: 'rejected', icon: 'tech',
+    requirements: ['熟练 Java / Spring Boot', '熟悉 MySQL 数据库设计', '了解 Redis 缓存', '有实习经验优先'],
+    studentSkills: { javaLevel: '仅学过课程', springLevel: '未接触 Spring Boot', mysqlLevel: '学过 SQL 基础', redisLevel: '未接触', internExp: '无' },
+    matchScore: 32,
+    gaps: [
+      { type: 'gap', skill: 'Spring Boot 框架', reason: '岗位核心要求 Spring Boot，学生从未学习过', suggestion: '这个差距较大。如果目标是 Java 方向，建议先系统学习 Spring Boot（视频教程 + 手写一个 RESTful API 项目）。预计需要 4-6 周入门。' },
+      { type: 'gap', skill: 'Redis 缓存', reason: '完全没有 Redis 经验', suggestion: '配合 Spring 学习同步上手 Redis，理解缓存场景（热点数据、计数器、分布式锁）即可，不需要深入研究源码。' },
+      { type: 'partial', skill: 'Java 语言基础', reason: '学过 Java 课程但缺乏实际项目运用', suggestion: '把课程作业从控制台程序升级为 Web 应用（如 Spring Boot + MySQL 的图书管理系统），体现你能把知识转化为工程能力。' },
+      { type: 'gap', skill: '相关实习经验', reason: '岗位明确偏好有实习经验的候选人', suggestion: '如果没有企业实习机会，可以参与开源项目、做外包小单或在 GitHub 上维护一个有 star 的项目来弥补。' },
+    ]
+  },
+  { id: 5, jobId: 105, jobTitle: '咖啡师兼职', company: '瑞幸咖啡航洋店', salary: '时薪 22 元', location: '南宁·航洋城', status: 'pending', icon: 'service' },
+  { id: 6, jobId: 106, jobTitle: '市场调研员', company: '某咨询公司', salary: '150/天', location: '南宁市内', status: 'rejected', icon: 'other',
+    requirements: ['良好的沟通表达能力', '能够进行面对面问卷调查', '每周至少工作 15 小时', '细心负责'],
+    studentSkills: { commSkill: '中等偏上', surveyExp: '做过一次社团活动问卷', timeAvail: '课余时间有限', responsibility: '较好' },
+    matchScore: 65,
+    gaps: [
+      { type: 'matched', skill: '沟通表达', reason: '担任过防诈社团会长，组织过大型活动，沟通能力较强', suggestion: '' },
+      { type: 'partial', skill: '时间可用性', reason: '岗位要求每周 15 小时，但大四课业+毕设导致时间紧张', suggestion: '可以和企业协商弹性排班（如周末集中工作），或在面试中主动说明你的可用时间段。' },
+      { type: 'gap', skill: '专业调查经验', reason: '仅有一次社团问卷经验，缺乏系统化调研方法论训练', suggestion: '补充学习基础的问卷设计和数据分析方法（如使用问卷星/腾讯问卷），在自我评价中强调你的学习能力可以快速上手。' },
+    ]
+  },
+];
+
+// 企业的岗位及收到的投递
+const MOCK_EMPLOYER_JOBS = [
+  {
+    id: 201, title: '前端开发实习生', company: '我的科技公司', location: '南宁·青秀区', applicationsCount: 8, approvedCount: 0,
+    candidates: [
+      {
+        id: 'S01', name: '张明', school: '广西科技大学', major: '计算机科学', grade: '大四',
+        avatar: '张', skills: ['Vue.js', 'JavaScript', 'HTML/CSS'], projects: '校园二手交易小程序',
+        matchScore: 68, recommendation: 'strong',
+        matchedItems: [{ item: '前端框架 Vue.js', score: 85 }, { item: 'JavaScript 基础', score: 78 }],
+        gapItems: [
+          { item: 'TypeScript', note: '未接触过，但 JS 基础好，预计 2 周可上手', severity: 'medium' },
+          { item: '团队协作经历', note: '个人项目为主，但社团经历证明有组织能力', severity: 'low' },
+        ],
+        employerAdvice: '✅ 强烈推荐录用。该候选人技术栈与岗位高度吻合，缺失的 TS 和团队协作可通过入职培训快速补齐。建议安排一轮技术面试确认编码能力。',
+      },
+      {
+        id: 'S02', name: '李雪', school: '桂林电子科技大学', major: '软件工程', grade: '大三',
+        avatar: '李', skills: ['React', 'TypeScript', 'Node.js'], projects: '在线考试系统（React+Node）',
+        matchScore: 82, recommendation: 'strong',
+        matchedItems: [{ item: 'React/TS 技术栈', score: 90 }, { item: '全栈开发能力', score: 80 }],
+        gapItems: [],
+        employerAdvice: '✅ 非常匹配。技术栈完全对口且有完整项目经验，建议作为首选候选人尽快联系面试。',
+      },
+      {
+        id: 'S03', name: '王浩', school: '南宁师范大学', major: '计算机科学', grade: '大四',
+        avatar: '王', skills: ['Java', 'Python', 'MySQL'], projects: '图书管理系统（Java+Swing）',
+        matchScore: 42, recommendation: 'maybe',
+        matchedItems: [{ item: '编程基础', score: 70 }],
+        gapItems: [
+          { item: '前端框架', note: '主要使用 Java/Swing，无 Web 前端经验', severity: 'high' },
+          { item: 'JavaScript', note: '仅在课程中接触过，不熟练', severity: 'high' },
+        ],
+        employerAdvice: '⚠️ 可考虑调剂。该候选人有扎实的编程基础和项目经验，但技术栈方向不同（偏后端）。如果贵司有后端/全栈培训计划，可以考虑录用并安排转岗培训。否则不建议。',
+      },
+      {
+        id: 'S04', name: '陈思', school: '广西大学', major: '数字媒体技术', grade: '大四',
+        avatar: '陈', skills: ['UI设计', 'Figma', 'HTML/CSS', '基础JS'], projects: '多个 UI 设计稿 + 简单网页实现',
+        matchScore: 52, recommendation: 'maybe',
+        matchedItems: [{ item: '页面开发/CSS', score: 80 }, { item: '设计感', score: 88 }],
+        gapItems: [
+          { item: '框架经验', note: '只会原生 HTML/CSS，不会 Vue/React', severity: 'medium' },
+          { item: 'JS 深度', note: 'JS 能力停留在 DOM 操作层面，不懂组件化', severity: 'medium' },
+        ],
+        employerAdvice: '⚠️ 有潜力但需培养。该候选人设计能力强，前端基础尚可但缺框架经验。适合对 UI/交互要求高的项目。建议安排一个简单的编程测试（如用 Vue 写一个 Todo），通过即可录用为初级前端。',
+      },
+    ]
+  },
+  {
+    id: 202, title: '咖啡师兼职', company: '瑞幸咖啡航洋店', location: '南宁·航洋城', applicationsCount: 12, approvedCount: 3,
+    candidates: [
+      {
+        id: 'S05', name: '刘芳', school: '广西艺术学院', major: '音乐表演', grade: '大二',
+        avatar: '刘', skills: ['服务意识强', '形象气质佳', '周末全天空闲'],
+        matchScore: 85, recommendation: 'strong',
+        matchedItems: [{ item: '服务态度', score: 92 }, { item: '时间匹配度', score: 88 }, { item: '形象气质', score: 82 }],
+        gapItems: [],
+        employerAdvice: '✅ 非常推荐。虽然非相关专业，但服务行业更看重亲和力和可用时间。该候选人条件完美契合。',
+      },
+      {
+        id: 'S06', name: '赵强', school: '广西科技大学', major: '机械工程', grade: '大三',
+        avatar: '赵', skills: ['做事踏实', '有责任心', '周一至周五晚上有空'],
+        matchScore: 70, recommendation: 'maybe',
+        matchedItems: [{ item: '责任感', score: 85 }, { item: '稳定性', score: 78 }],
+        gapItems: [
+          { item: '服务经验', note: '无餐饮服务经验，但性格沉稳', severity: 'low' },
+          { item: '高峰时段覆盖', note: '只有晚上有空，无法覆盖午高峰', severity: 'low' },
+        ],
+        employerAdvice: '✅ 可以录用。虽然没有服务经验，但踏实肯干的态度比经验更重要。建议安排 3 天试岗观察其学习能力。',
+      },
+    ]
+  }
+];
+
+/* ================================================================
+   渲染
+   ================================================================ */
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  if (tab === 'student') {
+    event.target.closest('.tab-btn').classList.add('active');
+    $('panel-student').classList.add('active');
+  } else {
+    // 找第二个 tab
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    $('panel-employer').classList.add('active');
+    renderEmployerJobs();
+  }
+}
+
+// ---- 学生端 ----
+function renderStudentApps() {
+  const list = $('studentAppList');
+  list.innerHTML = '';
+  for (const app of MOCK_APPLICATIONS) {
+    const statusClass = `status-${app.status}`;
+    const statusText = { pending: '待审核', approved: '已通过', rejected: '已拒绝' }[app.status];
+    list.innerHTML += `
+      <div class="app-item ${app.status === 'rejected' ? '' : ''}" id="app-${app.id}">
+        <div class="app-job-icon ${app.icon}"><span class="material-symbols-outlined">${iconMap(app.icon)}</span></div>
+        <div class="app-info">
+          <h3>${app.jobTitle}</h3>
+          <p>${app.company} · ${app.salary} · ${app.location}</p>
+        </div>
+        <span class="app-status-badge ${statusClass}">${statusText}</span>
+        <div class="app-action">
+          ${app.status === 'rejected'
+            ? `<button class="btn btn-primary" onclick="showStudentAnalysis(${app.id})"><span class="material-symbols-outlined" style="font-size:14px;">psychology</span>AI 分析原因</button>`
+            : app.status === 'pending'
+              ? `<span class="app-status-badge status-pending" style="font-size:10px;">等待审核中...</span>`
+              : `<span class="app-status-badge status-approved" style="font-size:10px;">恭喜！已通过</span>`
+          }
+        </div>
+      </div>`;
+  }
+}
+function iconMap(k) { return { tech:'code', sales:'trending_up', service:'coffee', other:'work' }[k] || 'work'; }
+
+// 学生端：显示分析结果
+let currentAnalysisId = null;
+
+function showStudentAnalysis(appId) {
+  if (currentAnalysisId === appId) return; // 已展开则跳过
+  currentAnalysisId = appId;
+  const app = MOCK_APPLICATIONS.find(a => a.id === appId);
+  if (!app || !app.gaps) return;
+
+  // 高亮选中项
+  document.querySelectorAll('.app-item').forEach(el => el.classList.remove('selected'));
+  $(`app-${appId}`).classList.add('selected');
+
+  const container = $('studentAnalysisContainer');
+
+  // 构建匹配度颜色
+  const ms = app.matchScore;
+  const gaugeColor = ms >= 70 ? '#10B981' : ms >= 50 ? '#F59E0B' : '#EF4444';
+  const gaugeBg = `conic-gradient(${gaugeColor} ${ms * 3.6}deg, #E2E8F0 ${ms * 3.6}deg)`;
+
+  container.innerHTML = `
+    <div class="analysis-panel">
+      <div class="analysis-header student-side">
+        <span class="material-symbols-outlined" style="color:#2563EB;">psychology</span>
+        <span class="card-header-title">AI 被拒原因分析 — 「${app.jobTitle}」</span>
+        <span style="margin-left:auto;font-size:11px;font-weight:700;color:#2563EB;">匹配度 ${ms}%</span>
+      </div>
+      <div class="card-body">
+
+        <!-- 匹配度仪表盘 -->
+        <div class="match-gauge">
+          <div class="gauge-circle" style="background:${gaugeBg};">
+            <span class="gauge-val" style="color:${gaugeColor};">${ms}</span>
+            <span class="gauge-label">综合匹配度</span>
+          </div>
+          <div class="gauge-detail">
+            <div style="font-size:12px;font-weight:700;margin-bottom:4px;">${ms >= 70 ? '🟢 接近达标，差一点就过了' : ms >= 50 ? '🟡 有一定基础，但差距明显' : '🔴 与岗位要求差距较大'} — ${ms >= 50 ? '改进空间很大！' : '建议调整求职方向'}</div>
+            <div class="gauge-bar-row">
+              <span class="gauge-bar-label">技术栈</span>
+              <div class="gauge-bar-track"><div class="gauge-bar-fill" style="width:${Math.min(ms+10,100)}%;background:#3B82F6;"></div></div>
+            </div>
+            <div class="gauge-bar-row">
+              <span class="gauge-bar-label">项目经验</span>
+              <div class="gauge-bar-track"><div class="gauge-bar-fill" style="width:${Math.max(ms-8,15)}%;background:#8B5CF6;"></div></div>
+            </div>
+            <div class="gauge-bar-row">
+              <span class="gauge-bar-label">软技能</span>
+              <div class="gauge-bar-track"><div class="gauge-bar-fill" style="width:${Math.min(ms+15,95)}%;background:#10B981;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 差距逐项分析 -->
+        <div class="gap-section">
+          <div class="gap-title"><span class="material-symbols-outlined" style="font-size:16px;">rule</span> 逐项差距分析（对比岗位 JD）</div>
+          ${app.gaps.map(g => `
+            <div class="gap-item gap-${g.type}">
+              <span class="gap-icon">${
+                g.type === 'matched' ? '✅' : g.type === 'partial' ? '⚠️' : '❌'
+              }</span>
+              <div>
+                <span class="gap-label">${g.skill}</span><br>
+                <span style="opacity:.85;">${g.reason}</span>
+                ${g.suggestion ? `<div class="gap-tip"><b>💡 改进建议：</b>${g.suggestion}</div>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- 行动建议 -->
+        <div class="gap-section" style="margin-top:14px;">
+          <div class="gap-title"><span class="material-symbols-outlined" style="font-size:16px;">rocket_launch</span> 下一步行动</div>
+          <div class="action-cards">
+            <div class="action-card" style="background:#EBF4FF;border-color:#BFDBFE;">
+              <h4>📝 优化简历</h4>
+              <p>将改进后的技能和学习计划写入简历，突出你的成长性和学习能力。</p>
+            </div>
+            <div class="action-card" style="background:#D1FAE5;border-color:#A7F3D0;">
+              <h4>🎯 补充技能</h4>
+              <p>根据上述差距，制定 2-4 周的学习计划。优先补最关键的短板。</p>
+            </div>
+            <div class="action-card" style="background:#FEF3C7;border-color:#FDE68A;">
+              <h4>🔄 再次投递</h4>
+              <p>改进完成后，重新投递类似岗位。也可以尝试降低一级难度（如从"中级"到"初级"）的岗位。</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>`;
+
+  // 滚动到分析区域
+  container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ---- 企业端 ----
+function renderEmployerJobs() {
+  const container = $('employerJobList');
+  if (!container.children.length) {
+    container.innerHTML = MOCK_EMPLOYER_JOBS.map(job =>
+      `<button class="btn btn-outline" onclick="showEmployerAnalysis(${job.id})" id="jobBtn-${job.id}" style="white-space:normal;text-align:left;padding:10px 16px;">
+        <b>${job.title}</b><br><span style="font-weight:400;color:var(--text-muted);">${job.applicationsCount} 人投递 · ${job.approvedCount} 人通过</span>
+      </button>`
+    ).join('');
+  }
+}
+
+let currentJobId = null;
+function showEmployerAnalysis(jobId) {
+  currentJobId = jobId;
+  const job = MOCK_EMPLOYER_JOBS.find(j => j.id === jobId);
+  if (!job) return;
+
+  // 切换按钮高亮
+  MOCK_EMPLOYER_JOBS.forEach(j => $(`jobBtn-${j.id}`).classList.remove('btn-primary'));
+  $(`jobBtn-${jobId}`).classList.add('btn-primary');
+
+  const container = $('employerAnalysisContainer');
+
+  container.innerHTML = `
+    <div class="analysis-panel">
+      <div class="analysis-header employer-side">
+        <span class="material-symbols-outlined" style="color:#D97706;">group_add</span>
+        <span class="card-header-title">AI 智能调剂推荐 — 「${job.title}」</span>
+        <span style="margin-left:auto;font-size:11px;font-weight:700;color:#D97706;">${job.candidates.length} 位候选人分析完毕</span>
+      </div>
+      <div class="card-body">
+        <div class="info-banner yellow" style="margin-bottom:12px;">
+          <span class="material-symbols-outlined">insights</span>
+          <div>以下按<strong>推荐程度</strong>排序。绿色边框 = 强烈建议面试；黄色边框 = 可考虑（附条件）；每条都包含<strong>匹配详情 + 调剂建议</strong>。</div>
+        </div>
+        ${job.candidates.map(c => `
+          <div class="rec-card ${c.recommendation === 'strong' ? 'recommended' : 'maybe'}" onclick="toggleRecDetail(this)">
+            <div class="rec-avatar">${c.avatar}</div>
+            <div class="rec-body">
+              <div class="rec-name">${c.name} <span style="font-weight:400;color:var(--text-muted);font-size:11px;">${c.school} · ${c.major} · ${c.grade}</span></div>
+              <div class="rec-meta">${c.skills.join(' / ')}</div>
+              <div class="rec-match-bar">
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;"><span>匹配度</span><span style="color:${c.matchScore>=70?'#10B981':c.matchScore>=50?'#F59E0B':'#EF4444'};font-weight:700;">${c.matchScore}%</span></div>
+                <div class="rec-match-bar-track"><div class="rec-match-bar-fill" style="width:${c.matchScore}%;background:${c.matchScore>=70?'#10B981':c.matchScore>=50?'#F59E0B':'#EF4444'};"></div></div>
+              </div>
+              <div class="rec-reason rec-detail-hidden" style="display:none;">
+                <div style="margin-bottom:6px;">
+                  <div style="font-size:11px;font-weight:700;color:var(--success);margin-bottom:3px;">✅ 匹配项</div>
+                  ${c.matchedItems.map(m => `
+                    <div style="display:flex;justify-content:space-between;font-size:11px;margin:1px 0;">
+                      <span>${m.item}</span><span style="color:#065F46;font-weight:600;">${m.score}%</span>
+                    </div>`).join('')}
+                </div>
+                ${c.gapItems.length > 0 ? `
+                <div style="margin-bottom:6px;">
+                  <div style="font-size:11px;font-weight:700;color:#D97706;margin-bottom:3px;">⚠️ 差距项</div>
+                  ${c.gapItems.map(g => `
+                    <div style="font-size:11px;margin:1px 0;display:flex;align-items:center;gap:4px;">
+                      <span style="color:${g.severity==='high'?'#EF4444':'#F59E0B'};">${g.severity==='high'?'🔴':'🟡'}</span>
+                      <b>${g.item}</b>: ${g.note}
+                    </div>`).join('')}
+                </div>` : ''}
+                <div class="info-banner green" style="margin-top:6px;padding:8px 10px;font-size:11px;">
+                  🤖 <b>AI 建议：</b>${c.employerAdvice}
+                </div>
+              </div>
+            </div>
+            <div class="rec-actions">
+              <span class="app-status-badge ${c.recommendation==='strong'?'status-approved':c.recommendation==='maybe'?'status-pending':''}"
+                style="cursor:pointer;white-space:nowrap;">
+                ${c.recommendation==='strong'?'✅ 推荐':'⚠️ 待定'}
+              </span>
+              <button class="btn btn-outline" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();toggleRecDetail(this.closest('.rec-card'))">
+                详情
+              </button>
+            </div>
+          </div>
+        `).join('')}
+
+      </div>
+    </div>`;
+}
+
+function toggleRecDetail(el) {
+  const detail = el.querySelector('.rec-detail-hidden');
+  if (detail) {
+    detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+// 初始化
+renderStudentApps();
+</script>
+
+</body>
+</html>

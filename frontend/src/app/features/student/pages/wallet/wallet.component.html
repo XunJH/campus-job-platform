@@ -1,0 +1,111 @@
+<app-student-shell-header></app-student-shell-header>
+
+<main class="mx-auto max-w-7xl space-y-8 px-6 py-8">
+  <section class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-[#1A365D]">收入记录</h1>
+      <p class="mt-2 text-slate-500">查看录用后的结算状态。当前为只读台账，不接入真实支付。</p>
+    </div>
+    <a
+      routerLink="/student/applications"
+      class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-[#1A365D] no-underline transition-colors hover:bg-slate-50"
+    >
+      <span class="material-symbols-outlined text-[18px]">work_history</span>
+      返回投递记录
+    </a>
+  </section>
+
+  <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <article class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+      <p class="text-sm text-slate-500">已完成工作</p>
+      <p class="mt-3 text-3xl font-bold text-[#1A365D]">{{ summary.total }}</p>
+    </article>
+    <article class="rounded-2xl border border-amber-100 bg-amber-50 p-5">
+      <p class="text-sm text-amber-700">待结算</p>
+      <p class="mt-3 text-3xl font-bold text-amber-700">{{ summary.pending }}</p>
+      <p class="mt-2 text-xs text-amber-600">合计 {{ formatAmount(totalPendingAmount) }}</p>
+    </article>
+    <article class="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
+      <p class="text-sm text-emerald-700">已结算</p>
+      <p class="mt-3 text-3xl font-bold text-emerald-700">{{ summary.paid }}</p>
+      <p class="mt-2 text-xs text-emerald-600">合计 {{ formatAmount(totalPaidAmount) }}</p>
+    </article>
+    <article class="rounded-2xl border border-rose-100 bg-rose-50 p-5">
+      <p class="text-sm text-rose-700">申诉中</p>
+      <p class="mt-3 text-3xl font-bold text-rose-700">{{ summary.disputed }}</p>
+    </article>
+  </section>
+
+  <div *ngIf="errorMessage && !loading" class="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-rose-700">
+    {{ errorMessage }}
+  </div>
+
+  <section *ngIf="loading" class="flex justify-center rounded-2xl border border-slate-100 bg-white p-16">
+    <span class="material-symbols-outlined animate-spin text-4xl text-[#1A365D]">progress_activity</span>
+  </section>
+
+  <section *ngIf="!loading && settlements.length === 0" class="rounded-2xl border border-dashed border-slate-200 bg-white p-16 text-center">
+    <span class="material-symbols-outlined text-6xl text-slate-300">account_balance_wallet</span>
+    <h2 class="mt-4 text-2xl font-bold text-[#1A365D]">还没有收入记录</h2>
+    <p class="mt-2 text-slate-500">当你的申请被企业录用后，系统会自动生成一条待结算记录。</p>
+  </section>
+
+  <section *ngIf="!loading && settlements.length > 0" class="space-y-4">
+    <article *ngFor="let settlement of settlements" class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+      <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+        <div class="min-w-0 flex-1 space-y-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <h2 class="text-2xl font-bold text-[#1A365D]">
+              {{ settlement.job?.title || '岗位信息已失效' }}
+            </h2>
+            <span class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium" [ngClass]="getStatusClass(settlement.status)">
+              {{ getStatusLabel(settlement.status) }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
+            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p class="text-slate-500">企业</p>
+              <p class="mt-2 font-semibold text-[#1A365D]">{{ settlement.employer?.username || '企业信息待补充' }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p class="text-slate-500">结算金额</p>
+              <p class="mt-2 font-semibold text-[#1A365D]">{{ formatAmountWithType(settlement) }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p class="text-slate-500">岗位地点</p>
+              <p class="mt-2 font-semibold text-[#1A365D]">{{ settlement.job?.location || '待定' }}</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 text-sm text-slate-600 md:grid-cols-2">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px] text-slate-400">event_available</span>
+              <span>录用时间：{{ formatDate(settlement.application?.reviewedAt || settlement.createdAt) }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px] text-slate-400">payments</span>
+              <span>结算时间：{{ formatDate(settlement.paidAt) }}</span>
+            </div>
+          </div>
+
+          <div *ngIf="settlement.notes" class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <p class="text-sm text-slate-500">结算备注</p>
+            <p class="mt-2 whitespace-pre-line text-[#1A365D]">{{ settlement.notes }}</p>
+          </div>
+        </div>
+
+        <div class="flex flex-row gap-3 xl:w-44 xl:flex-col">
+          <a
+            *ngIf="settlement.job?.id"
+            [routerLink]="['/student/jobs', settlement.job?.id]"
+            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-[#1A365D] no-underline transition-colors hover:bg-slate-50 xl:w-full"
+          >
+            <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+            查看岗位
+          </a>
+        </div>
+      </div>
+    </article>
+  </section>
+</main>

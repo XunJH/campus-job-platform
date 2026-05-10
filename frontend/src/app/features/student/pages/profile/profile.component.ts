@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { UserService } from '../../../../core/services/user.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { User } from '../../../../models/user.model';
+import { StudentShellHeaderComponent } from '../../../../shared/components/student-shell-header/student-shell-header.component';
 
 interface WorkExperience {
   title: string;
@@ -27,7 +28,7 @@ interface Education {
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, StudentShellHeaderComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
 })
@@ -44,7 +45,7 @@ export class ProfileComponent implements OnInit {
     { id: 'basic', label: '基本信息', icon: 'person' },
     { id: 'education', label: '教育背景', icon: 'school' },
     { id: 'experience', label: '工作经历', icon: 'work' },
-    { id: 'skills', label: '技能与工具', icon: 'code' }
+    { id: 'skills', label: '技能工具', icon: 'code' }
   ];
 
   get workExperienceList(): WorkExperience[] {
@@ -98,7 +99,7 @@ export class ProfileComponent implements OnInit {
   private initForm(user: User): void {
     const profile = user.personalityProfile || {};
     const workExp = profile.workExperience || this.workExperienceList;
-    const eduList = profile.education || this.educationList;
+    const educationList = profile.education || this.educationList;
 
     this.profileForm = this.fb.group({
       nickname: [user.nickname || ''],
@@ -106,33 +107,33 @@ export class ProfileComponent implements OnInit {
       phone: [user.phone || ''],
       avatar: [user.avatar || ''],
       bio: [user.bio || ''],
-      workExperience: this.fb.array(workExp.map((e: WorkExperience) => this.createExperienceGroup(e))),
-      education: this.fb.array(eduList.map((e: Education) => this.createEducationGroup(e))),
+      workExperience: this.fb.array(workExp.map((experience: WorkExperience) => this.createExperienceGroup(experience))),
+      education: this.fb.array(educationList.map((education: Education) => this.createEducationGroup(education))),
       technicalSkills: [(profile.technicalSkills || this.technicalSkills).join('、')],
       tools: [(profile.tools || this.toolsList).join('、')],
       languages: [profile.languages || this.languages]
     });
   }
 
-  private createExperienceGroup(exp?: WorkExperience): FormGroup {
+  private createExperienceGroup(experience?: WorkExperience): FormGroup {
     return this.fb.group({
-      title: [exp?.title || ''],
-      company: [exp?.company || ''],
-      period: [exp?.period || ''],
-      description: [exp?.description || ''],
-      skills: [exp?.skills?.join('、') || '']
+      title: [experience?.title || ''],
+      company: [experience?.company || ''],
+      period: [experience?.period || ''],
+      description: [experience?.description || ''],
+      skills: [experience?.skills?.join('、') || '']
     });
   }
 
-  private createEducationGroup(edu?: Education): FormGroup {
+  private createEducationGroup(education?: Education): FormGroup {
     return this.fb.group({
-      school: [edu?.school || ''],
-      degree: [edu?.degree || ''],
-      gpa: [edu?.gpa || ''],
-      graduationYear: [edu?.graduationYear || ''],
-      status: [edu?.status || '在读'],
-      courses: [edu?.courses || ''],
-      honors: [edu?.honors || '']
+      school: [education?.school || ''],
+      degree: [education?.degree || ''],
+      gpa: [education?.gpa || ''],
+      graduationYear: [education?.graduationYear || ''],
+      status: [education?.status || '在读'],
+      courses: [education?.courses || ''],
+      honors: [education?.honors || '']
     });
   }
 
@@ -182,18 +183,19 @@ export class ProfileComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.profileForm.invalid) return;
+    if (this.profileForm.invalid) {
+      return;
+    }
 
     this.isLoading = true;
 
     const formValue = this.profileForm.value;
-    const workExperience = (formValue.workExperience || []).map((e: any) => ({
-      ...e,
-      skills: e.skills ? e.skills.split('、').map((s: string) => s.trim()).filter(Boolean) : []
+    const workExperience = (formValue.workExperience || []).map((experience: any) => ({
+      ...experience,
+      skills: experience.skills ? experience.skills.split(/[、,，]/).map((item: string) => item.trim()).filter(Boolean) : []
     }));
     const education = formValue.education || [];
 
-    // 保留原有人格画像字段，防止被简历数据覆盖
     const existingProfile = this.user?.personalityProfile || {};
     const updateData = {
       username: formValue.nickname,
@@ -202,13 +204,11 @@ export class ProfileComponent implements OnInit {
       avatar: formValue.avatar,
       bio: formValue.bio,
       personalityProfile: {
-        // 先保留所有原有字段（人格画像 + 可能存在的其他字段）
         ...existingProfile,
-        // 简历字段：更新为新值
         workExperience,
         education,
-        technicalSkills: formValue.technicalSkills ? formValue.technicalSkills.split('、').map((s: string) => s.trim()).filter(Boolean) : [],
-        tools: formValue.tools ? formValue.tools.split('、').map((s: string) => s.trim()).filter(Boolean) : [],
+        technicalSkills: formValue.technicalSkills ? formValue.technicalSkills.split(/[、,，]/).map((item: string) => item.trim()).filter(Boolean) : [],
+        tools: formValue.tools ? formValue.tools.split(/[、,，]/).map((item: string) => item.trim()).filter(Boolean) : [],
         languages: formValue.languages || ''
       }
     };
@@ -228,7 +228,7 @@ export class ProfileComponent implements OnInit {
         this.error = true;
         let msg = '保存失败';
         if (err.error?.errors && Array.isArray(err.error.errors) && err.error.errors.length > 0) {
-          msg = err.error.errors.map((e: any) => e.msg || e.message || JSON.stringify(e)).join('；');
+          msg = err.error.errors.map((item: any) => item.msg || item.message || JSON.stringify(item)).join('；');
         } else {
           msg = err.error?.message || err.message || '保存失败';
         }

@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 模拟面试 - 校园招聘平台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1A365D;
+      --primary-hover: #234876;
+      --primary-light: #F1F5F9;
+      --accent: #3B82F6;
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --border: #E2E8F0;
+      --text: #0F172A;
+      --text-muted: #64748B;
+      --text-light: #94A3B8;
+      --ai-bubble: #EFF6FF;
+      --ai-text: #1E40AF;
+      --user-bubble: #1A365D;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --shadow-sm: 0 1px 3px rgba(26,54,93,.06), 0 1px 2px rgba(26,54,93,.04);
+      --shadow-md: 0 4px 6px -1px rgba(26,54,93,.07), 0 2px 4px -1px rgba(26,54,93,.04);
+      --shadow-lg: 0 10px 15px -3px rgba(26,54,93,.08), 0 4px 6px -2px rgba(26,54,93,.04);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    /* ===== 导航栏 ===== */
+    header {
+      background: var(--primary);
+      height: 60px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .header-logo {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .header-tag {
+      background: rgba(255,255,255,.15);
+      color: rgba(255,255,255,.9);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    .header-api-status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: rgba(255,255,255,.7);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--warning);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.online { background: var(--success); animation: none; }
+    .status-dot.offline { background: #EF4444; animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+
+    /* ===== 主布局 ===== */
+    .main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ===== 页面标题区 ===== */
+    .page-title {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .page-title-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--primary);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .page-title-icon .material-symbols-outlined {
+      color: #fff;
+      font-size: 24px;
+    }
+
+    .page-title-text h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.4px;
+    }
+
+    .page-title-text p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* ===== 卡片基础 ===== */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 18px 22px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-header .material-symbols-outlined {
+      color: var(--primary);
+      font-size: 20px;
+    }
+
+    .card-header-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .card-body { padding: 22px; }
+
+    /* ===== 阶段指示器 ===== */
+    .stages {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .stage {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      position: relative;
+    }
+
+    .stage:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: calc(100% - 108px);
+      height: 2px;
+      background: var(--border);
+      left: 108px;
+    }
+
+    .stage.active::after { background: var(--primary); }
+    .stage.done::after { background: var(--success); }
+
+    .stage-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--border);
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: all .25s;
+    }
+
+    .stage.active .stage-num {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(26,54,93,.3);
+    }
+
+    .stage.done .stage-num {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .stage-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .stage.active .stage-label { color: var(--primary); }
+    .stage.done .stage-label { color: var(--success); }
+
+    /* ===== 配置区域 ===== */
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    .field-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      background: var(--card-bg);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(26,54,93,.08);
+    }
+
+    textarea { resize: vertical; min-height: 72px; }
+
+    /* ===== 岗位快选 ===== */
+    .job-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      color: var(--text-muted);
+      background: var(--bg);
+      transition: all .15s;
+      user-select: none;
+    }
+
+    .chip:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* ===== 按钮 ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      transition: all .18s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(26,54,93,.25);
+    }
+
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(26,54,93,.3); }
+    .btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+    }
+
+    .btn-outline:hover:not(:disabled) { background: var(--primary-light); }
+
+    .btn-danger {
+      background: #FEE2E2;
+      color: #DC2626;
+      border: 1.5px solid #FECACA;
+    }
+
+    .btn-danger:hover:not(:disabled) { background: #FCA5A5; }
+
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+
+    .btn .material-symbols-outlined { font-size: 16px; }
+
+    /* ===== 聊天区 ===== */
+    .chat-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 460px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* 欢迎消息 */
+    .chat-welcome {
+      text-align: center;
+      padding: 30px 0;
+      color: var(--text-muted);
+    }
+
+    .chat-welcome .welcome-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--primary-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+    }
+
+    .chat-welcome .welcome-icon .material-symbols-outlined {
+      color: var(--primary);
+      font-size: 28px;
+    }
+
+    .chat-welcome h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .chat-welcome p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* 消息气泡 */
+    .msg-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      animation: msgIn .25s ease-out;
+    }
+
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-row.user { flex-direction: row-reverse; }
+
+    .msg-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .msg-row.ai .msg-avatar {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .msg-row.user .msg-avatar {
+      background: #E2E8F0;
+      color: var(--text-muted);
+    }
+
+    .msg-content {
+      max-width: 72%;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .msg-row.user .msg-content { align-items: flex-end; }
+
+    .msg-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 0 4px;
+    }
+
+    .msg-bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 13px;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+
+    .msg-row.ai .msg-bubble {
+      background: var(--ai-bubble);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-row.user .msg-bubble {
+      background: var(--user-bubble);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-time {
+      font-size: 10px;
+      color: var(--text-light);
+      padding: 0 4px;
+    }
+
+    /* 打字动画 */
+    .typing-indicator {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      padding: 14px 18px;
+      background: var(--ai-bubble);
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      animation: typingBounce 1.2s infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: .15s; }
+    .typing-dot:nth-child(3) { animation-delay: .3s; }
+
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: .6; }
+      40% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* ===== 输入区 ===== */
+    .chat-input-area {
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .chat-input-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    .chat-input {
+      width: 100%;
+      padding: 11px 16px;
+      padding-right: 44px;
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+      min-height: 44px;
+      max-height: 120px;
+      overflow-y: auto;
+      transition: border-color .2s;
+    }
+
+    .chat-input:focus { border-color: var(--primary); }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all .18s;
+      box-shadow: 0 2px 6px rgba(26,54,93,.25);
+    }
+
+    .send-btn:hover:not(:disabled) { background: var(--primary-hover); transform: scale(1.05); }
+    .send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+    .send-btn .material-symbols-outlined { font-size: 18px; }
+
+    /* ===== 底部工具栏 ===== */
+    .chat-toolbar {
+      padding: 10px 18px 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .quick-reply {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      color: var(--text-muted);
+      background: var(--bg);
+      transition: all .15s;
+    }
+
+    .quick-reply:hover { border-color: var(--accent); color: var(--accent); background: #EFF6FF; }
+
+    /* ===== 评分结果 ===== */
+    .result-wrapper { display: flex; flex-direction: column; gap: 18px; }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .score-item {
+      background: var(--primary-light);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .score-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .score-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .score-value span {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .score-bar-wrap {
+      margin-top: 8px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .score-bar {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--primary);
+      transition: width .6s ease-out;
+    }
+
+    .evaluation-text {
+      background: var(--primary-light);
+      border-radius: var(--radius-sm);
+      padding: 16px 18px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text);
+      white-space: pre-line;
+    }
+
+    /* ===== 状态 Badge ===== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-success { background: #D1FAE5; color: #065F46; }
+    .badge-info { background: #DBEAFE; color: #1D4ED8; }
+    .badge-warning { background: #FEF3C7; color: #92400E; }
+
+    /* ===== 信息提示 ===== */
+    .info-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .info-banner.blue { background: #DBEAFE; color: #1E40AF; }
+    .info-banner.yellow { background: #FEF3C7; color: #92400E; }
+    .info-banner.green { background: #D1FAE5; color: #065F46; }
+
+    .info-banner .material-symbols-outlined { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== API 设置区域 ===== */
+    .api-config {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .api-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--text);
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .api-input:focus { border-color: var(--primary); }
+
+    /* ===== 语音按钮 ===== */
+    .voice-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all .2s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .voice-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .voice-btn.recording {
+      background: #EF4444;
+      border-color: #EF4444;
+      color: #fff;
+      animation: voicePulse 1s infinite;
+      box-shadow: 0 0 0 0 rgba(239,68,68,.4);
+    }
+
+    .voice-btn.listening {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+    }
+
+    @keyframes voicePulse {
+      0%   { box-shadow: 0 0 0 0 rgba(239,68,68,.5); }
+      70%  { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+      100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    }
+
+    /* 语音状态提示条 */
+    .voice-status {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(239,68,68,.08);
+      border-top: 1px solid rgba(239,68,68,.15);
+      font-size: 12px;
+      color: #EF4444;
+      font-weight: 600;
+    }
+
+    .voice-status.active { display: flex; }
+
+    .voice-wave {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      height: 16px;
+    }
+
+    .voice-wave span {
+      display: block;
+      width: 3px;
+      background: #EF4444;
+      border-radius: 2px;
+      animation: waveBar 0.8s infinite ease-in-out;
+    }
+
+    .voice-wave span:nth-child(1) { height: 6px; animation-delay: 0s; }
+    .voice-wave span:nth-child(2) { height: 12px; animation-delay: 0.1s; }
+    .voice-wave span:nth-child(3) { height: 16px; animation-delay: 0.2s; }
+    .voice-wave span:nth-child(4) { height: 10px; animation-delay: 0.3s; }
+    .voice-wave span:nth-child(5) { height: 6px; animation-delay: 0.4s; }
+
+    @keyframes waveBar {
+      0%, 100% { transform: scaleY(0.5); }
+      50%       { transform: scaleY(1); }
+    }
+
+    /* ===== 实时预警横幅 ===== */
+    .warning-banner {
+      display: none;
+      align-items: flex-start; gap: 8px;
+      background: #FEF3C7; border: 1px solid #F59E0B;
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      margin: 0 0 8px 0; font-size: 12px; color: #92400E;
+      line-height: 1.5;
+    }
+    .warning-banner.show { display: flex; }
+    .warning-banner .material-symbols-outlined { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .warning-banner .warn-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .warning-banner .warn-tag {
+      background: #FEF3C7; color: #92400E;
+      border: 1px solid #F59E0B;
+      border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 600;
+    }
+
+    /* ===== 分隔线 ===== */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0;
+    }
+
+    /* ===== 页面状态切换 ===== */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ===== 消息轮次计数 ===== */
+    .round-badge {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+
+    /* ===== 响应式 ===== */
+    @media (max-width: 600px) {
+      .config-grid { grid-template-columns: 1fr; }
+      .score-grid { grid-template-columns: 1fr 1fr; }
+      .stages { gap: 0; }
+      .stage-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<header>
+  <div class="header-inner">
+    <span class="header-logo">校园招聘</span>
+    <span class="header-tag">AI 模拟面试</span>
+    <div class="header-api-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">检测中...</span>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- 页面标题 -->
+  <div class="page-title">
+    <div class="page-title-icon">
+      <span class="material-symbols-outlined">mic</span>
+    </div>
+    <div class="page-title-text">
+      <h1>AI 模拟面试</h1>
+      <p>选择目标岗位，与AI面试官进行真实对话练习，获取专业反馈与评分</p>
+    </div>
+  </div>
+
+  <!-- 阶段指示器 -->
+  <div class="card">
+    <div class="card-body" style="padding: 16px 22px;">
+      <div class="stages">
+        <div class="stage" id="stage1">
+          <div class="stage-num">1</div>
+          <div class="stage-label">配置岗位</div>
+        </div>
+        <div class="stage" id="stage2">
+          <div class="stage-num">2</div>
+          <div class="stage-label">模拟面试</div>
+        </div>
+        <div class="stage" id="stage3">
+          <div class="stage-num">3</div>
+          <div class="stage-label">查看评分</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 视图1: 配置岗位 ===== -->
+  <div class="view active" id="view-config">
+    <div class="card">
+      <div class="card-header">
+        <span class="material-symbols-outlined">settings</span>
+        <span class="card-header-title">面试配置</span>
+      </div>
+      <div class="card-body">
+        <!-- AI自动出题说明 -->
+        <div class="info-banner blue" style="margin-bottom:18px;">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          <div>只需输入<strong>任意岗位名称</strong>，AI面试官会自动理解岗位要求并出针对性题目，无需手动填写岗位描述。</div>
+        </div>
+
+        <div class="config-grid">
+          <div class="field-group full">
+            <label>目标岗位 *（任意填写，无限制）</label>
+            <div style="position:relative;">
+              <input type="text" id="jobTitle" placeholder="例如：咖啡师、UI设计实习生、仓储管理员、直播助手..." style="padding-right:44px;" oninput="onJobTitleInput()" />
+              <span class="material-symbols-outlined" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-light);font-size:18px;pointer-events:none;" id="jobTitleIcon">edit</span>
+            </div>
+            <div style="font-size:11px;color:var(--text-light);margin-top:4px;">💡 支持所有行业岗位，AI会自动生成匹配的面试问题</div>
+          </div>
+          <div class="field-group">
+            <label>薪资范围（可选）</label>
+            <input type="text" id="salaryRange" placeholder="例如：时薪 20-30 元" />
+          </div>
+          <div class="field-group">
+            <label>面试难度</label>
+            <select id="difficulty">
+              <option value="easy">入门级（应届/无经验）</option>
+              <option value="normal" selected>标准（有一定基础）</option>
+              <option value="hard">进阶（有实习/项目经验）</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- API配置 -->
+        <div class="divider" style="margin: 18px 0;"></div>
+        <div style="margin-bottom: 14px;">
+          <label style="display:block; margin-bottom:8px;">后端接口地址</label>
+          <div class="api-config">
+            <input type="text" class="api-input" id="apiBase" value="http://localhost:8000" placeholder="http://localhost:8000" />
+            <button class="btn btn-outline" onclick="testConnection()">
+              <span class="material-symbols-outlined">wifi</span>
+              检测连接
+            </button>
+          </div>
+        </div>
+
+        <div id="configTip" class="info-banner blue" style="margin-bottom:16px;">
+          <span class="material-symbols-outlined">info</span>
+          <div>需先启动 FastAPI 后端 (<code>uvicorn app.main:app --reload --port 8000</code>)。如未启动，面试会使用<strong>内置 Mock 模式</strong>，不影响演示体验。</div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="btn btn-primary" onclick="startInterview()">
+            <span class="material-symbols-outlined">play_arrow</span>
+            开始面试
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 视图2: 面试对话 ===== -->
+  <div class="view" id="view-interview">
+    <div class="card">
+      <!-- 顶部信息栏 -->
+      <div style="padding: 14px 20px; background: var(--primary-light); border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
+          <span class="material-symbols-outlined" style="color:var(--primary); font-size:18px;">work</span>
+          <span style="font-size:13px; font-weight:700; color:var(--primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="interviewJobTitle">-</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="badge badge-info" id="roundBadge">第 0 轮</span>
+          <button class="btn btn-danger" style="padding:6px 14px; font-size:12px;" onclick="endInterview()">
+            <span class="material-symbols-outlined" style="font-size:14px;">stop_circle</span>
+            结束面试
+          </button>
+        </div>
+      </div>
+
+      <!-- 消息区 -->
+      <div class="chat-wrapper">
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-welcome" id="chatWelcome">
+            <div class="welcome-icon">
+              <span class="material-symbols-outlined">smart_toy</span>
+            </div>
+            <h3>面试即将开始</h3>
+            <p>AI面试官正在准备中，请稍候...</p>
+          </div>
+        </div>
+
+        <!-- 实时预警横幅 -->
+        <div class="warning-banner" id="warningBanner">
+          <span class="material-symbols-outlined">warning</span>
+          <div>
+            <strong>⚠️ 面试预警</strong>
+            <div id="warningText"></div>
+            <div class="warn-tags" id="warningTags"></div>
+          </div>
+        </div>
+
+        <!-- 快捷回复 -->
+        <div class="chat-toolbar" id="quickReplies">
+          <span class="quick-reply" onclick="useQuickReply(this)">请先让我自我介绍</span>
+          <span class="quick-reply" onclick="useQuickReply(this)">我有相关实习经验</span>
+          <span class="quick-reply" onclick="useQuickReply(this)">我在学校做过类似项目</span>
+          <span class="quick-reply" onclick="useQuickReply(this)">能否详细说明要求？</span>
+        </div>
+
+        <!-- 语音状态提示 -->
+        <div class="voice-status" id="voiceStatus">
+          <div class="voice-wave">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <span id="voiceStatusText">正在录音，松开结束...</span>
+        </div>
+
+        <!-- 输入区 -->
+        <div class="chat-input-area">
+          <div class="chat-input-wrap">
+            <textarea
+              class="chat-input"
+              id="chatInput"
+              placeholder="输入你的回答，或按住麦克风说话..."
+              rows="1"
+              onkeydown="handleKeyDown(event)"
+              oninput="autoResize(this)"
+            ></textarea>
+          </div>
+          <button class="voice-btn" id="voiceBtn"
+            onmousedown="startVoice(event)"
+            onmouseup="stopVoice(event)"
+            ontouchstart="startVoice(event)"
+            ontouchend="stopVoice(event)"
+            title="按住说话">
+            <span class="material-symbols-outlined" id="voiceIcon">mic</span>
+          </button>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+            <span class="material-symbols-outlined">send</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 视图3: 评分结果 ===== -->
+  <div class="view" id="view-result">
+    <div class="card">
+      <div class="card-header">
+        <span class="material-symbols-outlined">grade</span>
+        <span class="card-header-title">面试评价报告</span>
+        <span class="badge badge-success" style="margin-left:auto;" id="resultJobBadge">-</span>
+      </div>
+      <div class="card-body">
+        <!-- 评分卡片 -->
+        <div style="margin-bottom:18px;">
+          <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;">📊 四维评分</div>
+          <div class="score-grid" id="scoreGrid">
+            <!-- 由JS动态生成 -->
+          </div>
+        </div>
+
+        <div class="divider" style="margin:16px 0;"></div>
+
+        <!-- 风险预警区块 -->
+        <div id="riskWarningCard" style="display:none; margin-bottom:16px;">
+          <div style="font-size:12px; font-weight:700; color:#92400E; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">⚠️ 风险预警</div>
+          <div id="riskWarningText" style="background:#FEF3C7; border:1px solid #F59E0B; border-radius:var(--radius-sm); padding:12px 14px; font-size:12px; color:#92400E; line-height:1.6;"></div>
+        </div>
+
+        <!-- 综合评价文本 -->
+        <div style="margin-bottom:16px;">
+          <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">📝 综合评价</div>
+          <div class="evaluation-text" id="evaluationText">加载中...</div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+          <button class="btn btn-outline" onclick="restartInterview()">
+            <span class="material-symbols-outlined">replay</span>
+            再次面试
+          </button>
+          <button class="btn btn-primary" onclick="goToConfig()">
+            <span class="material-symbols-outlined">tune</span>
+            换个岗位
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 对话历史回顾 -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header">
+        <span class="material-symbols-outlined">forum</span>
+        <span class="card-header-title">本轮对话回顾</span>
+      </div>
+      <div class="card-body" style="padding:14px;">
+        <div class="chat-messages" id="historyMessages" style="height:300px; padding:0;"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ============================================================
+   状态管理
+   ============================================================ */
+const state = {
+  jobTitle: '',
+  difficulty: 'normal',
+  history: [],   // [{role:'assistant'|'user', content:'...'}]
+  rounds: 0,
+  apiBase: 'http://localhost:8000',
+  apiOnline: false,
+};
+
+/* ============================================================
+   工具函数
+   ============================================================ */
+const $ = id => document.getElementById(id);
+
+function now() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $(`view-${name}`).classList.add('active');
+}
+
+function updateStage(active) {
+  for (let i = 1; i <= 3; i++) {
+    const el = $(`stage${i}`);
+    el.classList.remove('active', 'done');
+    if (i < active) el.classList.add('done');
+    else if (i === active) el.classList.add('active');
+  }
+}
+
+/* ============================================================
+   API 连接检测
+   ============================================================ */
+async function testConnection() {
+  const base = $('apiBase').value.trim() || 'http://localhost:8000';
+  state.apiBase = base;
+
+  $('statusDot').className = 'status-dot';
+  $('statusText').textContent = '检测中...';
+
+  try {
+    const r = await fetch(`${base}/health`, { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      $('statusDot').className = 'status-dot online';
+      $('statusText').textContent = '后端在线';
+      state.apiOnline = true;
+      $('configTip').className = 'info-banner green';
+      $('configTip').innerHTML = '<span class="material-symbols-outlined">check_circle</span><div>后端连接成功！将使用真实 AI 接口进行面试。</div>';
+    } else {
+      throw new Error('non-ok');
+    }
+  } catch {
+    $('statusDot').className = 'status-dot offline';
+    $('statusText').textContent = '后端离线';
+    state.apiOnline = false;
+    $('configTip').className = 'info-banner yellow';
+    $('configTip').innerHTML = '<span class="material-symbols-outlined">warning</span><div>后端未启动，将使用<strong> Mock 模式</strong>演示（内置预设回复，体验完整流程）。</div>';
+  }
+}
+
+// 页面加载时自动检测
+window.addEventListener('DOMContentLoaded', () => {
+  testConnection();
+  updateStage(1);
+});
+
+/* ============================================================
+   岗位输入变化回调
+   ============================================================ */
+function onJobTitleInput() {
+  const val = $('jobTitle').value.trim();
+  const icon = $('jobTitleIcon');
+  if (val) {
+    icon.textContent = 'check_circle';
+    icon.style.color = 'var(--success)';
+  } else {
+    icon.textContent = 'edit';
+    icon.style.color = 'var(--text-light)';
+  }
+}
+
+/* ============================================================
+   Mock 数据（后端离线时使用）—— 支持任意岗位动态生成
+   ============================================================ */
+function getMockStart(title) {
+  return {
+    opening: `您好！我是今天的AI面试官，很高兴与您交流。\n\n今天我们将围绕「${title}」岗位展开一场模拟面试，我会根据这个岗位的实际要求向您提问，希望您放轻松、真实作答。\n\n首先，请您做一个简单的自我介绍，包括你的基本情况、相关经历，以及为什么想应聘「${title}」这个岗位？`,
+    status: 'in_progress',
+    session_id: `mock_${Date.now()}`,
+  };
+}
+
+// 动态 Mock 题库 —— 根据岗位名关键词自适应选题
+function getMockChat(message, round) {
+  const title = state.jobTitle || '该岗位';
+  const difficulty = state.difficulty || 'normal';
+
+  // 通用题库（按轮次）
+  const genericQs = {
+    easy: [
+      `谢谢你的介绍！请问你平时是如何学习与「${title}」相关的知识或技能的？有没有印象深刻的学习经历？`,
+      `了解了！如果你第一天上岗，面对一项你不太会的任务，你会怎么处理？`,
+      `很好。最后想问：你觉得自己做「${title}」最大的优势是什么？又有哪些需要提升的地方？`,
+    ],
+    normal: [
+      `感谢介绍！在你看来，做好「${title}」这个岗位最核心的能力是什么？你目前具备了哪些？`,
+      `有意思！能举一个你在学习或生活中遇到困难，通过自己解决问题的具体案例吗？`,
+      `理解了。如果在工作中需要同时处理多个优先级不同的任务，你会如何规划和执行？`,
+      `好的。最后，你对「${title}」这个岗位未来的发展方向有什么了解？你的个人规划是什么？`,
+    ],
+    hard: [
+      `谢谢介绍。「${title}」岗位对专业能力要求较高，请具体说说你最有代表性的一段相关经历，以及你在其中承担的角色和产出。`,
+      `很好。你在那段经历中遇到过什么技术或协作上的瓶颈？你是如何识别问题根因并推动解决的？`,
+      `了解了。请谈谈你对「${title}」岗位行业现状的认知，以及你认为未来1-2年内这个岗位会面临哪些挑战？`,
+      `最后，如果给你充分的资源，你认为自己能在「${title}」岗位上做出的最大增量价值是什么？`,
+    ],
+  };
+
+  const qs = genericQs[difficulty] || genericQs.normal;
+  const idx = Math.min(round - 1, qs.length - 1);
+  return { reply: qs[idx], status: 'in_progress' };
+}
+
+function getMockEnd() {
+  const title = state.jobTitle || '该岗位';
+  return {
+    evaluation: `整体印象：候选人展现了对「${title}」岗位的基本认知，表达较为流畅，能够结合自身经历作答，态度积极主动。
+
+各项评分：
+   - 表达清晰度：8分
+   - 内容相关性：7分
+   - 专业理解度：7分
+   - 综合印象：8分
+
+改进建议：
+1. 在回答「${title}」相关专业问题时，可结合更多具体数据或案例，增强说服力。
+2. 可以提前深入了解「${title}」岗位的行业动态和典型工作场景，在面试中体现更强的岗位匹配感。
+3. 建议练习STAR法则（情境-任务-行动-结果）来组织回答，逻辑更清晰有力。`,
+    status: 'completed',
+  };
+}
+
+/* ============================================================
+   预警检测引擎 —— 实时检测 + 报告汇总
+   ============================================================ */
+
+// 风险关键词库
+const RISK_PATTERNS = {
+  // 内容风险
+  template: /(?:我是一个.*?的人|我性格开朗|吃苦耐劳|认真负责|团队协作能力强)/i,
+  tooShort: (msg) => msg.replace(/\s/g, '').length < 15,
+  offTopic: null, // 由上下文判断，这里用简单规则
+
+  // 态度风险
+  negative: /(?:随便|无所谓|不知道啊|不想说|烦死了|没意思)/,
+  complain: /(?:前公司|以前那个|之前那个).*?(?:垃圾|傻X|坑|烂|恶心|变态|奇葩)/,
+
+  // 安全/诚信风险
+  privacy: /(?:身份证|银行卡|家庭住址|身份证号|卡号|\d{15,19})/,
+  dishonest: /(?:其实我没做过|那是编的|瞎说的|随便编的|骗你的)/,
+
+  // 薪资风险
+  salaryHigh: /(?:月薪.*?[5-9]万|日薪.*?[5-9]百|时薪.*?[1-9]百)/,
+};
+
+// 实时预警检测（每次用户发送消息后调用）
+function detectWarning(message) {
+  const warnings = [];
+  const patterns = RISK_PATTERNS;
+
+  // 模板化检测
+  if (patterns.template.test(message)) {
+    warnings.push({
+      type: 'A', level: '中',
+      text: '⚠️ 检测到模板化套话——建议用真实经历替代通用表述',
+      tag: '模板化回答',
+      category: '内容',
+    });
+  }
+
+  // 过于简短
+  if (patterns.tooShort(message)) {
+    warnings.push({
+      type: 'A', level: '低',
+      text: '⚠️ 回答过于简短——请展开说明，让面试官更好了解你',
+      tag: '回答过短',
+      category: '内容',
+    });
+  }
+
+  // 消极态度
+  if (patterns.negative.test(message)) {
+    warnings.push({
+      type: 'B', level: '高',
+      text: '🔴 检测到消极/敷衍态度信号——请注意保持积极态度',
+      tag: '态度消极',
+      category: '态度',
+    });
+  }
+
+  // 抱怨/负面评价
+  if (patterns.complain.test(message)) {
+    warnings.push({
+      type: 'B', level: '严重',
+      text: '🔴 检测到对前雇主/学校的负面评价——面试中应保持专业形象',
+      tag: '负面言论',
+      category: '态度',
+    });
+  }
+
+  // 隐私泄露
+  if (patterns.privacy.test(message)) {
+    warnings.push({
+      type: 'C', level: '严重',
+      text: '🚨 请勿在面试中透露身份证号、住址、银行卡等隐私信息！',
+      tag: '隐私泄露',
+      category: '安全',
+    });
+  }
+
+  // 不诚实信号
+  if (patterns.dishonest.test(message)) {
+    warnings.push({
+      type: 'B', level: '严重',
+      text: '🔴 检测到不诚实信号——诚实是面试的基本原则',
+      tag: '诚信问题',
+      category: '诚信',
+    });
+  }
+
+  return warnings;
+}
+
+// 显示实时预警横幅
+function showWarningBanner(warnings) {
+  if (!warnings.length) {
+    $('warningBanner').classList.remove('show');
+    return;
+  }
+  $('warningBanner').classList.add('show');
+  $('warningText').innerHTML = warnings.map(w => w.text).join('<br>');
+  $('warningTags').innerHTML = warnings.map(w =>
+    `<span class="warn-tag" style="background:${
+      w.level === '严重' ? '#FEE2E2;color:#DC2626;border:#DC2626' :
+      w.level === '高' ? '#FEF3C7;color:#D97706;border:#D97706' :
+      '#DBEAFE;color:#2563EB;border:#2563EB'
+    }">${w.tag}</span>`
+  ).join('');
+
+  // 10秒后自动隐藏
+  setTimeout(() => $('warningBanner').classList.remove('show'), 10000);
+}
+
+// 汇总全对话历史的风险报告（结束时调用）
+function generateRiskReport() {
+  const allWarnings = [];
+  for (const h of state.history) {
+    if (h.role === 'user') {
+      const ws = detectWarning(h.content);
+      ws.forEach(w => { w.quote = h.content.slice(0, 40) + (h.content.length > 40 ? '...' : ''); });
+      allWarnings.push(...ws);
+    }
+  }
+
+  if (!allWarnings.length) {
+    return {
+      risk_warnings: [],
+      pass_probability: state.rounds >= 4 ? '高(>75%)' : '中(50-75%)',
+      summary: '本场面试未检测到明显风险信号，整体表现良好。'
+    };
+  }
+
+  // 去重+合并同类
+  const uniqueWarnings = {};
+  for (const w of allWarnings) {
+    const key = `${w.type}_${w.tag}`;
+    if (!uniqueWarnings[key]) uniqueWarnings[key] = w;
+    uniqueWarnings[key].count = (uniqueWarnings[key].count || 0) + 1;
+  }
+
+  const riskList = Object.values(uniqueWarnings).map(w => ({
+    type: w.level === '严重' ? '高危' : w.level === '高' ? '中危' : '低危',
+    category: w.category,
+    description: `[出现${w.count}次] ${w.text}`,
+    suggestion: w.category === '安全' ?
+      '⛔ 绝不在任何非必要场合透露个人敏感信息' :
+      w.category === '态度' ?
+      '💡 面试中保持积极专业的态度是基础要求' :
+      w.category === '内容' ?
+      '📝 用真实具体的事例代替空话套话，效果会好很多' :
+      '✅ 保持诚实，不知道就说不知道'
+  }));
+
+  const highCount = riskList.filter(r => r.type === '高危').length;
+  const midCount = riskList.filter(r => r.type === '中危').length;
+
+  return {
+    risk_warnings: riskList,
+    pass_probability:
+      highCount > 0 ? '低(<50%)' :
+      midCount > 0 ? '中(50-75%)' : '高(>75%)',
+    summary:
+      highCount > 0 ? `⚠️ 本场检测到 ${highCount} 项高危信号，需重点关注！` :
+      midCount > 0 ? `ℹ️ 本场检测到 ${midCount} 项中危信号，建议改进。` :
+      '✅ 有少量低危提醒，整体表现尚可。'
+  };
+}
+
+/* ============================================================
+   API 调用（含 Mock 降级）
+   ============================================================ */
+async function apiPost(path, body) {
+  const base = state.apiBase;
+  try {
+    const r = await fetch(`${base}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } catch (e) {
+    // 后端不通 → 返回 null，由调用方决定降级
+    console.warn('[API] 请求失败，降级到 Mock 模式', path, e.message);
+    return null;
+  }
+}
+
+/* ============================================================
+   面试流程
+   ============================================================ */
+
+// 开始面试
+async function startInterview() {
+  const title = $('jobTitle').value.trim();
+  if (!title) {
+    $('jobTitle').focus();
+    $('jobTitle').style.borderColor = '#EF4444';
+    setTimeout(() => $('jobTitle').style.borderColor = '', 2000);
+    return;
+  }
+
+  state.jobTitle = title;
+  state.difficulty = $('difficulty') ? $('difficulty').value : 'normal';
+  state.history = [];
+  state.rounds = 0;
+
+  // 切换视图
+  showView('interview');
+  updateStage(2);
+  $('interviewJobTitle').textContent = title;
+  $('roundBadge').textContent = '第 0 轮';
+
+  // 清空聊天
+  const msgs = $('chatMessages');
+  msgs.innerHTML = '';
+
+  // 显示 loading
+  const loadingId = appendMsg('ai', null, true);
+
+  // 调用后端 or Mock
+  const res = await apiPost('/interview/start', {
+    job_title: state.jobTitle,
+    difficulty: state.difficulty,
+  });
+
+  const data = res ? (res.data || {}) : getMockStart(state.jobTitle);
+  removeLoading(loadingId);
+
+  const opening = data.opening || '您好，欢迎参加本次面试，请先做一个自我介绍。';
+  appendMsg('ai', opening);
+  state.history.push({ role: 'assistant', content: opening });
+
+  // 激活输入
+  $('chatInput').disabled = false;
+  $('chatInput').focus();
+  updateSendBtn();
+}
+
+// 发送消息
+async function sendMessage() {
+  const input = $('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  // 清空输入
+  input.value = '';
+  input.style.height = '';
+  updateSendBtn();
+
+  // 显示用户消息
+  appendMsg('user', msg);
+  state.history.push({ role: 'user', content: msg });
+  state.rounds++;
+  $('roundBadge').textContent = `第 ${state.rounds} 轮`;
+
+  // ★★★ 实时预警检测 ★★★
+  const warnings = detectWarning(msg);
+  showWarningBanner(warnings);
+
+  // Loading
+  const loadingId = appendMsg('ai', null, true);
+
+  // 调用后端
+  const res = await apiPost('/interview/chat', {
+    job_title: state.jobTitle,
+    message: msg,
+    history: state.history.slice(-10),
+  });
+
+  const data = res ? (res.data || {}) : getMockChat(msg, state.rounds);
+  removeLoading(loadingId);
+
+  // 后端返回的预警（如果后端在线）
+  if (data.warning) {
+    const backendWarnings = [data.warning];
+    showWarningBanner([...warnings, ...backendWarnings]);
+  }
+
+  const reply = data.reply || '感谢你的回答，我们继续下一个问题。';
+  appendMsg('ai', reply);
+  state.history.push({ role: 'assistant', content: reply });
+
+  // 5轮后提示可以结束
+  if (state.rounds >= 5) {
+    const tip = document.createElement('div');
+    tip.className = 'round-badge';
+    tip.textContent = `— 已完成 ${state.rounds} 轮对话，可点击「结束面试」获取评分 —`;
+    tip.style.margin = '6px 0';
+    $('chatMessages').appendChild(tip);
+    scrollBottom();
+  }
+}
+
+// 结束面试
+async function endInterview() {
+  if (state.history.length < 2) {
+    alert('请先完成至少一轮对话再结束面试。');
+    return;
+  }
+
+  // 切换视图
+  showView('result');
+  updateStage(3);
+  $('resultJobBadge').textContent = state.jobTitle;
+
+  $('evaluationText').textContent = '正在生成综合评价，请稍候...';
+  $('scoreGrid').innerHTML = '';
+
+  // 调用后端
+  const res = await apiPost('/interview/end', {
+    job_title: state.jobTitle,
+    history: state.history,
+  });
+
+  // 后端现在返回结构化 evaluation 对象
+  const data = res ? (res.data || {}) : null;
+  const evaluation = data && data.evaluation ? data.evaluation : getMockEndEval();
+
+  // 渲染结构化评分
+  renderStructuredScores(evaluation);
+
+  // 显示整体评价文本
+  $('evaluationText').textContent = evaluation.overall_evaluation || '暂无评价';
+
+  // ★★★ 渲染风险预警报告 ★★★
+  renderRiskReport(evaluation);
+
+  // 渲染对话历史
+  renderHistory();
+}
+
+// 重新面试（保持同岗位）
+async function restartInterview() {
+  await startInterview();
+}
+
+// 换岗位
+function goToConfig() {
+  showView('config');
+  updateStage(1);
+}
+
+/* ============================================================
+   结构化评分渲染（后端返回 JSON 时使用）
+   ============================================================ */
+function renderStructuredScores(evaluation) {
+  const grid = $('scoreGrid');
+  grid.innerHTML = '';
+
+  // evaluation.scores: { "表达清晰度": 8, ... }
+  // evaluation.score_reasons: { "表达清晰度": "理由...", ... }
+  const scores = evaluation.scores || {};
+  const reasons = evaluation.score_reasons || {};
+
+  const dimensionOrder = ['表达清晰度', '内容相关性', '专业理解度', '综合印象'];
+
+  dimensionOrder.forEach(label => {
+    const score = scores[label];
+    const reason = reasons[label] || '';
+    const val = (score !== null && score !== undefined) ? score : '—';
+    const num = Number(val);
+    const pct = !isNaN(num) ? Math.round((num / 10) * 100) : 0;
+    const color = pct >= 80 ? '#10B981' : pct >= 60 ? '#F59E0B' : '#EF4444';
+
+    grid.innerHTML += `
+      <div class="score-item">
+        <div class="score-label">${label}</div>
+        <div class="score-value" style="color:${color};">${val}<span> / 10</span></div>
+        <div class="score-bar-wrap">
+          <div class="score-bar" style="width:${pct}%; background:${color};"></div>
+        </div>
+        ${reason ? `<div style="font-size:11px;color:#6B7280;margin-top:2px;">${reason}</div>` : ''}
+      </div>
+    `;
+  });
+
+  // 显示改进建议
+  const suggestions = evaluation.suggestions || [];
+  if (suggestions.length > 0) {
+    let suggEl = document.getElementById('suggestionList');
+    if (!suggEl) {
+      const container = $('evaluationText').parentElement;
+      suggEl = document.createElement('div');
+      suggEl.id = 'suggestionList';
+      suggEl.style = 'margin-top:12px;';
+      container.appendChild(suggEl);
+    }
+    suggEl.innerHTML = `<div style="font-size:12px;font-weight:700;color:#1E3A5F;margin-bottom:6px;">💡 改进建议</div>` +
+      suggestions.map(s => `<div style="font-size:12px;color:#374151;padding:3px 0;">• ${s}</div>`).join('');
+  }
+}
+
+/* ============================================================
+   风险预警报告渲染
+   ============================================================ */
+function renderRiskReport(evaluation) {
+  const card = $('riskWarningCard');
+  const textEl = $('riskWarningText');
+
+  // 后端返回的 risk_warnings（优先）或本地引擎生成
+  let riskData = evaluation.risk_warnings;
+  let passProb = evaluation.pass_probability;
+  let summary = evaluation.summary;
+
+  // Mock 模式：用本地引擎
+  if (!riskData || !Array.isArray(riskData) || riskData.length === 0) {
+    const report = generateRiskReport();
+    riskData = report.risk_warnings;
+    passProb = report.pass_probability;
+    summary = report.summary;
+  }
+
+  if (!riskData || riskData.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+
+  // 通过率标签颜色
+  const probColor = passProb.includes('高') ? '#10B981' :
+                    passProb.includes('中') ? '#F59E0B' : '#EF4444';
+
+  textEl.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-weight:700;">
+      <span>📊 预估通过率：</span>
+      <span style="color:${probColor}; font-size:14px;">${passProb}</span>
+    </div>
+    <div style="font-size:12px; margin-bottom:10px; color:#92400E;">${summary}</div>
+    ${riskData.map(w => {
+      const bg = w.type === '高危' ? '#FEE2E2' : w.type === '中危' ? '#FEF3C7' : '#DBEAFE';
+      const border = w.type === '高危' ? '#DC2626' : w.type === '中危' ? '#D97706' : '#2563EB';
+      const color = w.type === '高危' ? '#DC2626' : w.type === '中危' ? '#92400E' : '#1E40AF';
+      return `
+        <div style="background:${bg}; border-left:3px solid ${border}; border-radius:4px; padding:8px 12px; margin-bottom:8px; font-size:11.5px;">
+          <div style="font-weight:700;color:${color};margin-bottom:2px;">
+            ${w.type} · ${w.category}
+          </div>
+          <div style="color:#374151;line-height:1.5;margin-bottom:3px;">${w.description}</div>
+          <div style="color:${color};font-weight:600;">💡 ${w.suggestion}</div>
+        </div>`;
+    }).join('')}
+  `;
+}
+
+/* ============================================================
+   消息渲染
+   ============================================================ */
+let msgIdCounter = 0;
+
+function appendMsg(role, content, isLoading = false) {
+  const welcome = $('chatWelcome');
+  if (welcome) welcome.remove();
+
+  const id = `msg-${++msgIdCounter}`;
+  const container = $('chatMessages');
+
+  if (isLoading) {
+    container.innerHTML += `
+      <div class="msg-row ai" id="${id}">
+        <div class="msg-avatar">AI</div>
+        <div class="msg-content">
+          <div class="msg-name">AI面试官</div>
+          <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    const formatted = (content || '').replace(/\n/g, '<br>');
+    if (role === 'ai') {
+      container.innerHTML += `
+        <div class="msg-row ai" id="${id}">
+          <div class="msg-avatar">AI</div>
+          <div class="msg-content">
+            <div class="msg-name">AI面试官</div>
+            <div class="msg-bubble">${formatted}</div>
+            <div class="msg-time">${now()}</div>
+          </div>
+        </div>`;
+    } else {
+      container.innerHTML += `
+        <div class="msg-row user" id="${id}">
+          <div class="msg-avatar">我</div>
+          <div class="msg-content">
+            <div class="msg-name">你</div>
+            <div class="msg-bubble">${formatted}</div>
+            <div class="msg-time">${now()}</div>
+          </div>
+        </div>`;
+    }
+  }
+
+  scrollBottom();
+  return id;
+}
+
+function removeLoading(id) {
+  const el = $(id);
+  if (el) el.remove();
+}
+
+function scrollBottom() {
+  const el = $('chatMessages');
+  if (el) setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
+}
+
+function renderHistory() {
+  const container = $('historyMessages');
+  container.innerHTML = '';
+  state.history.forEach(m => {
+    const role = m.role === 'assistant' ? 'ai' : 'user';
+    const formatted = m.content.replace(/\n/g, '<br>');
+    if (role === 'ai') {
+      container.innerHTML += `
+        <div class="msg-row ai">
+          <div class="msg-avatar">AI</div>
+          <div class="msg-content">
+            <div class="msg-bubble">${formatted}</div>
+          </div>
+        </div>`;
+    } else {
+      container.innerHTML += `
+        <div class="msg-row user">
+          <div class="msg-avatar">我</div>
+          <div class="msg-content">
+            <div class="msg-bubble">${formatted}</div>
+          </div>
+        </div>`;
+    }
+  });
+  setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
+}
+
+/* ============================================================
+   输入处理
+   ============================================================ */
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  updateSendBtn();
+}
+
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!$('sendBtn').disabled) sendMessage();
+  }
+}
+
+function updateSendBtn() {
+  const input = $('chatInput');
+  $('sendBtn').disabled = !input.value.trim();
+}
+
+$('chatInput') && $('chatInput').addEventListener('input', updateSendBtn);
+
+function useQuickReply(el) {
+  $('chatInput').value = el.textContent;
+  autoResize($('chatInput'));
+  updateSendBtn();
+  $('chatInput').focus();
+}
+
+/* ============================================================
+   语音输入（Push-to-Talk）
+   ============================================================ */
+let recognition = null;
+let voiceActive = false;
+let voiceResult = '';
+
+function initSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return null;
+
+  const r = new SpeechRecognition();
+  r.lang = 'zh-CN';
+  r.continuous = true;
+  r.interimResults = true;
+
+  r.onresult = (e) => {
+    let interim = '';
+    let final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    voiceResult += final;
+    // 实时显示中间结果
+    const input = $('chatInput');
+    input.value = (voiceResult + interim).trim();
+    autoResize(input);
+    updateSendBtn();
+    $('voiceStatusText').textContent = `正在识别："${(voiceResult + interim).slice(0, 20)}..."`;
+  };
+
+  r.onerror = (e) => {
+    console.warn('[Speech] 错误：', e.error);
+    if (e.error === 'not-allowed') {
+      showVoiceError('麦克风权限被拒绝，请在浏览器设置中允许访问麦克风');
+    } else if (e.error === 'no-speech') {
+      // 静音正常，忽略
+    } else {
+      showVoiceError(`识别出错（${e.error}），请重试`);
+    }
+    stopVoiceUI();
+  };
+
+  r.onend = () => {
+    if (voiceActive) {
+      // 录音被外部打断，更新UI
+      stopVoiceUI();
+    }
+  };
+
+  return r;
+}
+
+function showVoiceError(msg) {
+  const status = $('voiceStatus');
+  status.classList.add('active');
+  status.style.background = 'rgba(239,68,68,.1)';
+  $('voiceStatusText').textContent = msg;
+  setTimeout(() => {
+    status.classList.remove('active');
+    status.style.background = '';
+  }, 3000);
+}
+
+function startVoice(e) {
+  e.preventDefault();
+  if (voiceActive) return;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showVoiceError('你的浏览器不支持语音识别，请使用 Chrome 或 Edge');
+    return;
+  }
+
+  voiceActive = true;
+  voiceResult = '';
+
+  // 记住当前输入框里的旧内容
+  const existing = $('chatInput').value.trim();
+  if (existing) voiceResult = existing + ' ';
+
+  recognition = initSpeechRecognition();
+  if (!recognition) return;
+
+  try {
+    recognition.start();
+  } catch (err) {
+    voiceActive = false;
+    showVoiceError('无法启动麦克风，请检查权限');
+    return;
+  }
+
+  // 更新UI
+  const btn = $('voiceBtn');
+  const icon = $('voiceIcon');
+  btn.classList.add('recording');
+  icon.textContent = 'mic';
+  $('voiceStatus').classList.add('active');
+  $('voiceStatusText').textContent = '正在录音，松开结束...';
+}
+
+function stopVoice(e) {
+  e.preventDefault();
+  if (!voiceActive) return;
+  voiceActive = false;
+
+  if (recognition) {
+    recognition.stop();
+    recognition = null;
+  }
+
+  stopVoiceUI();
+
+  // 填入最终结果
+  const input = $('chatInput');
+  const final = input.value.trim();
+  if (final) {
+    autoResize(input);
+    updateSendBtn();
+    input.focus();
+  }
+}
+
+function stopVoiceUI() {
+  const btn = $('voiceBtn');
+  const icon = $('voiceIcon');
+  btn.classList.remove('recording', 'listening');
+  icon.textContent = 'mic';
+
+  const status = $('voiceStatus');
+  // 短暂显示"识别完成"再隐藏
+  const resultText = $('chatInput').value.trim();
+  if (resultText) {
+    $('voiceStatusText').textContent = `✓ 识别完成，已填入输入框`;
+    status.style.background = 'rgba(16,185,129,.08)';
+    status.style.color = 'var(--success)';
+    status.style.borderTopColor = 'rgba(16,185,129,.2)';
+    setTimeout(() => {
+      status.classList.remove('active');
+      status.style.background = '';
+      status.style.color = '';
+      status.style.borderTopColor = '';
+    }, 1500);
+  } else {
+    status.classList.remove('active');
+  }
+}
+
+// 阻止触摸设备长按菜单干扰
+$('voiceBtn') && $('voiceBtn').addEventListener('contextmenu', e => e.preventDefault());
+
+</script>
+</body>
+</html>

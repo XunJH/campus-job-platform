@@ -7,11 +7,12 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { VerificationService, VerificationStatus } from '../../../../core/services/verification.service';
 import { JobService, EmployerStats, Job } from '../../../../core/services/job.service';
 import { User } from '../../../../models/user.model';
+import { EmployerShellSidebarComponent } from '../../../../shared/components/employer-shell-sidebar/employer-shell-sidebar.component';
 
 @Component({
   selector: 'app-employer-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, EmployerShellSidebarComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
 })
@@ -21,13 +22,19 @@ export class EmployerProfileComponent implements OnInit {
   isEditing = false;
   user: User | null = null;
   verification: VerificationStatus | null = null;
-  stats: EmployerStats = { activeJobsCount: 0, totalJobsCount: 0, recentJobs: [], totalApplications: 0, pendingApplications: 0, recentApplications: [] };
+  stats: EmployerStats = {
+    activeJobsCount: 0,
+    totalJobsCount: 0,
+    recentJobs: [],
+    totalApplications: 0,
+    pendingApplications: 0,
+    recentApplications: []
+  };
   message = '';
   error = false;
 
-  // Default/placeholder data for fields not yet populated
   defaultIndustry = '互联网 / 科技';
-  defaultScale = '50-200人';
+  defaultScale = '50-200 人';
   defaultRating = 4.8;
   defaultReviews = 12;
 
@@ -56,15 +63,15 @@ export class EmployerProfileComponent implements OnInit {
       error: () => {
         this.isLoading = false;
         this.error = true;
-        this.message = '加载用户信息失败';
+        this.message = '加载企业资料失败。';
       }
     });
   }
 
   private loadVerificationAndStats(): void {
     this.verificationService.getStatus().subscribe({
-      next: (vRes) => {
-        this.verification = vRes.data;
+      next: (response) => {
+        this.verification = response.data;
         this.initFormWithVerification();
         this.loadStats();
       },
@@ -78,9 +85,9 @@ export class EmployerProfileComponent implements OnInit {
 
   private loadStats(): void {
     this.jobService.getEmployerStats().subscribe({
-      next: (sRes) => {
+      next: (response) => {
         this.isLoading = false;
-        this.stats = sRes.data;
+        this.stats = response.data;
       },
       error: () => {
         this.isLoading = false;
@@ -105,14 +112,15 @@ export class EmployerProfileComponent implements OnInit {
 
   private initFormWithVerification(): void {
     if (!this.profileForm || !this.verification) return;
-    const v = this.verification;
+
+    const verification = this.verification;
     this.profileForm.patchValue({
-      companyName: v.companyName || this.profileForm.value.companyName || '',
-      city: v.city || '',
-      address: v.address || '',
-      industry: v.industry || '',
-      scale: v.scale || '',
-      website: v.website || ''
+      companyName: verification.companyName || this.profileForm.value.companyName || '',
+      city: verification.city || '',
+      address: verification.address || '',
+      industry: verification.industry || '',
+      scale: verification.scale || '',
+      website: verification.website || ''
     });
   }
 
@@ -121,16 +129,50 @@ export class EmployerProfileComponent implements OnInit {
   }
 
   get joinedAt(): string {
-    if (this.user?.createdAt) {
-      const d = new Date(this.user.createdAt);
-      return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+    if (!this.user?.createdAt) {
+      return '--';
     }
-    return '--';
+
+    const date = new Date(this.user.createdAt);
+    return `${date.getFullYear()}年${date.getMonth() + 1}月`;
   }
 
   get lastActiveAt(): string {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const date = new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  getVerificationBadge(): { label: string; className: string } {
+    switch (this.verification?.status) {
+      case 'approved':
+        return { label: '已认证', className: 'bg-emerald-100 text-emerald-700' };
+      case 'pending':
+        return { label: '审核中', className: 'bg-amber-100 text-amber-700' };
+      case 'rejected':
+        return { label: '未通过', className: 'bg-rose-100 text-rose-700' };
+      default:
+        return { label: '未提交', className: 'bg-slate-100 text-slate-700' };
+    }
+  }
+
+  getRecentJobStatusLabel(job: Job): string {
+    if (job.status === 'active' && job.auditStatus === 'approved') {
+      return '招聘中';
+    }
+    if (job.auditStatus === 'pending') {
+      return '待审核';
+    }
+    if (job.auditStatus === 'rejected') {
+      return '审核拒绝';
+    }
+    return '未开放';
+  }
+
+  formatRecentJobMeta(job: Job): string {
+    const salary = `￥${Number(job.salary || 0)}`;
+    const views = job.views || 0;
+    const applications = job.applicationsCount || 0;
+    return `${job.location || '地点待定'} · ${salary} · ${views} 次浏览 · ${applications} 份申请`;
   }
 
   toggleEdit(): void {
@@ -148,6 +190,7 @@ export class EmployerProfileComponent implements OnInit {
 
   onSubmit(): void {
     if (this.profileForm.invalid) return;
+
     this.isLoading = true;
     const formValue = this.profileForm.value;
     const updateData = {
@@ -157,11 +200,12 @@ export class EmployerProfileComponent implements OnInit {
       avatar: formValue.avatar,
       bio: formValue.bio
     };
+
     this.userService.updateProfile(updateData).subscribe({
       next: (res) => {
         this.isLoading = false;
         this.error = false;
-        this.message = '保存成功';
+        this.message = '保存成功。';
         this.isEditing = false;
         const mappedUser = { ...res.data, nickname: res.data.username || '' } as User;
         this.user = mappedUser;
@@ -171,13 +215,13 @@ export class EmployerProfileComponent implements OnInit {
       error: (err) => {
         this.isLoading = false;
         this.error = true;
-        let msg = '保存失败';
+        let message = '保存失败。';
         if (err.error?.errors && Array.isArray(err.error.errors) && err.error.errors.length > 0) {
-          msg = err.error.errors.map((e: any) => e.msg || e.message || JSON.stringify(e)).join('；');
+          message = err.error.errors.map((item: any) => item.msg || item.message || JSON.stringify(item)).join('；');
         } else {
-          msg = err.error?.message || err.message || '保存失败';
+          message = err.error?.message || err.message || '保存失败。';
         }
-        this.message = msg;
+        this.message = message;
       }
     });
   }

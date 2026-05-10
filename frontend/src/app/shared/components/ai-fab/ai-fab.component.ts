@@ -529,7 +529,7 @@ export class AiFabComponent implements OnInit {
       error: () => {
         this.messages.push({
           role: 'assistant',
-          content: '网络连接异常，请检查AI后端是否启动（端口8000）',
+          content: '网络连接异常，请检查 AI 服务是否已启动',
           time: this.getTime()
         });
         this.isLoading = false;

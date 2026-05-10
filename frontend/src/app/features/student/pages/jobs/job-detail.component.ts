@@ -3,15 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { JobService, Job } from '../../../../core/services/job.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { StudentShellHeaderComponent } from '../../../../shared/components/student-shell-header/student-shell-header.component';
 
-/**
- * @功能 学生端岗位详情页
- * @说明 展示单个岗位的详细信息，包含AI匹配度、企业信息、申请功能
- */
 @Component({
   selector: 'app-job-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, StudentShellHeaderComponent],
   templateUrl: './job-detail.component.html',
   styleUrls: ['./job-detail.component.scss']
 })
@@ -21,6 +18,7 @@ export class JobDetailComponent implements OnInit {
   errorMessage = '';
   saved = false;
   applied = false;
+  applicationStatus: 'pending' | 'approved' | 'rejected' | 'withdrawn' | null = null;
   applyLoading = false;
   saveLoading = false;
   matchScore: number | null = null;
@@ -36,14 +34,16 @@ export class JobDetailComponent implements OnInit {
     const jobId = this.route.snapshot.paramMap.get('id');
     if (jobId) {
       this.loadJob(+jobId);
-    } else {
-      this.errorMessage = '岗位ID无效';
+      return;
     }
+
+    this.errorMessage = '岗位 ID 无效。';
   }
 
   loadJob(id: number): void {
     this.loading = true;
     this.errorMessage = '';
+
     this.jobService.getJobById(id).subscribe({
       next: (res) => {
         if (res.success && res.data) {
@@ -53,12 +53,12 @@ export class JobDetailComponent implements OnInit {
             this.checkBookmarked(id);
           }
         } else {
-          this.errorMessage = '获取岗位详情失败';
+          this.errorMessage = '获取岗位详情失败。';
         }
         this.loading = false;
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || '网络错误，请稍后重试';
+        this.errorMessage = err.error?.message || '网络错误，请稍后重试。';
         this.loading = false;
       }
     });
@@ -66,14 +66,23 @@ export class JobDetailComponent implements OnInit {
 
   private checkApplied(id: number): void {
     this.jobService.checkApplied(id).subscribe({
-      next: (res) => { if (res.success) this.applied = res.data.applied; },
+      next: (res) => {
+        if (res.success) {
+          this.applied = res.data.applied;
+          this.applicationStatus = (res.data.status as 'pending' | 'approved' | 'rejected' | 'withdrawn' | null) ?? null;
+        }
+      },
       error: () => {}
     });
   }
 
   private checkBookmarked(id: number): void {
     this.jobService.checkBookmarked(id).subscribe({
-      next: (res) => { if (res.success) this.saved = res.data.bookmarked; },
+      next: (res) => {
+        if (res.success) {
+          this.saved = res.data.bookmarked;
+        }
+      },
       error: () => {}
     });
   }
@@ -83,7 +92,11 @@ export class JobDetailComponent implements OnInit {
       this.router.navigate(['/auth/login']);
       return;
     }
-    if (!this.job) return;
+
+    if (!this.job) {
+      return;
+    }
+
     this.saveLoading = true;
     this.jobService.toggleBookmark(this.job.id).subscribe({
       next: (res) => {
@@ -92,7 +105,9 @@ export class JobDetailComponent implements OnInit {
         }
         this.saveLoading = false;
       },
-      error: () => { this.saveLoading = false; }
+      error: () => {
+        this.saveLoading = false;
+      }
     });
   }
 
@@ -101,32 +116,46 @@ export class JobDetailComponent implements OnInit {
       this.router.navigate(['/auth/login']);
       return;
     }
-    if (!this.job || this.applied) return;
+
+    if (!this.job || this.applied) {
+      return;
+    }
+
     this.applyLoading = true;
     this.jobService.applyJob(this.job.id).subscribe({
       next: (res) => {
         if (res.success) {
           this.applied = true;
-          if (this.job) this.job.applicationsCount = (this.job.applicationsCount || 0) + 1;
+          this.applicationStatus = 'pending';
+          this.job!.applicationsCount = (this.job!.applicationsCount || 0) + 1;
         } else {
-          this.errorMessage = res.message || '申请失败';
+          this.errorMessage = res.message || '申请失败。';
         }
         this.applyLoading = false;
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || '申请失败，请稍后重试';
+        this.errorMessage = err.error?.message || '申请失败，请稍后重试。';
         this.applyLoading = false;
       }
     });
   }
 
   get requirementsList(): string[] {
-    if (!this.job?.requirements) return [];
-    return this.job.requirements.split('\n').filter(r => r.trim());
+    if (!this.job?.requirements) {
+      return [];
+    }
+
+    return this.job.requirements
+      .split('\n')
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 
   formatSalary(): string {
-    if (!this.job) return '薪资面议';
+    if (!this.job) {
+      return '薪资面议';
+    }
+
     const typeMap: Record<string, string> = {
       hourly: '时薪',
       daily: '日薪',
@@ -134,7 +163,7 @@ export class JobDetailComponent implements OnInit {
       monthly: '月薪'
     };
     const typeLabel = typeMap[this.job.salaryType] || '薪资';
-    return `${typeLabel} ¥${this.job.salary}`;
+    return `${typeLabel} ￥${this.job.salary}`;
   }
 
   formatJobType(jobType?: string): string {
@@ -147,9 +176,31 @@ export class JobDetailComponent implements OnInit {
     return map[jobType || ''] || jobType || '面议';
   }
 
-  formatDate(dateStr: string | undefined): string {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  formatDate(dateStr?: string): string {
+    if (!dateStr) {
+      return '';
+    }
+
+    const date = new Date(dateStr);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  getApplyButtonLabel(): string {
+    if (this.applyLoading) {
+      return '提交中...';
+    }
+
+    if (!this.applicationStatus) {
+      return '立即申请';
+    }
+
+    const statusLabelMap: Record<string, string> = {
+      pending: '已申请',
+      approved: '已通过',
+      rejected: '已拒绝',
+      withdrawn: '已撤回'
+    };
+
+    return statusLabelMap[this.applicationStatus] || '已申请';
   }
 }

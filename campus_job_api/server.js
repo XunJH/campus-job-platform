@@ -5,33 +5,54 @@ const compression = require('compression');
 const morgan = require('morgan');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+
 require('dotenv').config();
 
-// 数据库配置
 const { sequelize, testConnection } = require('./config/database');
-
-// 路由导入
 const authRoutes = require('./routes/authRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const userRoutes = require('./routes/userRoutes');
 const verificationRoutes = require('./routes/verificationRoutes');
 
-// 创建Express应用
 const app = express();
+const PORT = Number(process.env.PORT) || 3001;
+const apiVersion = 'v1';
+const apiPrefix = `/api/${apiVersion}`;
+let server;
 
-// Swagger 配置
-const swaggerOptions = {
+const splitCsv = (value) => value
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? splitCsv(process.env.ALLOWED_ORIGINS)
+  : [
+      'http://localhost:3000',
+      'http://localhost:4200',
+      'http://localhost:4201',
+      'http://localhost:4202',
+      'http://localhost:4204'
+    ];
+
+const publicServerOrigin = (
+  process.env.PUBLIC_SERVER_ORIGIN ||
+  `http://localhost:${PORT}`
+).replace(/\/+$/, '');
+const publicApiBaseUrl = `${publicServerOrigin}${apiPrefix}`;
+
+const swaggerSpec = swaggerJsdoc({
   definition: {
     openapi: '3.0.0',
     info: {
       title: '校园兼职平台 API',
       version: '1.0.0',
-      description: '校园智能兼职服务平台后端 API 文档'
+      description: '校园智能兼职服务平台后端 API 文档。'
     },
     servers: [
       {
-        url: 'http://localhost:3001/api/v1',
-        description: '本地开发服务器'
+        url: publicApiBaseUrl,
+        description: '当前 API 服务地址'
       }
     ],
     components: {
@@ -45,63 +66,46 @@ const swaggerOptions = {
     }
   },
   apis: ['./routes/*.js', './controllers/*.js']
-};
+});
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-
-// 安全中间件
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
+      imgSrc: ["'self'", 'data:', 'https:']
+    }
+  }
 }));
 
-// CORS配置
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:3000', 'http://localhost:4200', 'http://localhost:4201', 'http://localhost:4202', 'http://localhost:4204'];
-const corsOptions = {
+app.use(cors({
   origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   optionsSuccessStatus: 204
-};
-app.use(cors(corsOptions));
-
-// 解析JSON请求体
-app.use(express.json({ limit: '1mb' }));
-
-// 解析URL编码的请求体
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-
-// 压缩响应
-app.use(compression());
-
-// 请求日志
-app.use(morgan('combined', {
-  skip: (req, res) => process.env.NODE_ENV === 'test'
 }));
 
-// 根路径路由
-app.get('/', (req, res) => {
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(compression());
+app.use(morgan('combined', {
+  skip: () => process.env.NODE_ENV === 'test'
+}));
+
+app.get('/', (_req, res) => {
   res.status(200).json({
     success: true,
     message: '校园兼职平台 API 服务',
     version: '1.0.0',
-    docs: 'http://localhost:3001/api-docs',
-    health: 'http://localhost:3001/health',
-    api: 'http://localhost:3001/api/v1'
+    docs: `${publicServerOrigin}/api-docs`,
+    health: `${publicServerOrigin}/health`,
+    api: publicApiBaseUrl
   });
 });
 
-// 健康检查路由
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
@@ -109,50 +113,40 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API路由版本前缀
-const apiVersion = 'v1';
-const apiPrefix = `/api/${apiVersion}`;
-
-// Swagger 文档路由（生产环境禁用）
 if (process.env.NODE_ENV !== 'production') {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  app.get('/api-docs.json', (req, res) => {
+  app.get('/api-docs.json', (_req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerSpec);
   });
 }
 
-// 注册路由
 app.use(`${apiPrefix}/auth`, authRoutes);
 app.use(`${apiPrefix}/jobs`, jobRoutes);
 app.use(`${apiPrefix}/users`, userRoutes);
 app.use(`${apiPrefix}/verification`, verificationRoutes);
 
-// 404处理
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: `路由 ${req.originalUrl} 不存在`
   });
 });
 
-// 全局错误处理中间件
-app.use((err, req, res, next) => {
+app.use((err, _req, res, _next) => {
   console.error('Error:', err);
 
-  // 模型验证错误
   if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') {
     return res.status(400).json({
       success: false,
-      message: '数据验证失败',
-      errors: err.errors ? err.errors.map(e => ({
-        field: e.path,
-        message: e.message
+      message: '数据校验失败',
+      errors: err.errors ? err.errors.map((item) => ({
+        field: item.path,
+        message: item.message
       })) : []
     });
   }
 
-  // JWT错误
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({
       success: false,
@@ -167,8 +161,7 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Sequelize错误
-  if (err.name.includes('Sequelize')) {
+  if (typeof err.name === 'string' && err.name.includes('Sequelize')) {
     return res.status(500).json({
       success: false,
       message: '数据库操作错误',
@@ -176,64 +169,63 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // 其他错误
   const statusCode = err.statusCode || 500;
   const message = err.message || '服务器内部错误';
 
-  res.status(statusCode).json({
+  return res.status(statusCode).json({
     success: false,
     message,
     ...(process.env.NODE_ENV === 'development' && { error: err.stack })
   });
 });
 
-// 启动服务器
-const PORT = process.env.PORT || 3000;
-
 const startServer = async () => {
   try {
-    // 测试数据库连接
     await testConnection();
 
-    // 同步数据库模型（仅开发环境，且不使用 alter 以防止数据丢失）
     if (process.env.NODE_ENV === 'development') {
       await sequelize.sync({ force: false, alter: false });
       console.log('数据库模型同步完成');
     }
 
-    // 启动服务器
-    app.listen(PORT, () => {
-      console.log(`🚀 服务器启动成功！`);
-      console.log(`📡 服务地址: http://localhost:${PORT}`);
-      console.log(`📖 API文档: http://localhost:${PORT}/api-docs`);
-      console.log(`💚 健康检查: http://localhost:${PORT}/health`);
-      console.log(`⚙️ 环境配置: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`📊 数据库: ${process.env.DB_NAME || 'campus_job_platform'}`);
+    server = app.listen(PORT, () => {
+      console.log('服务启动成功');
+      console.log(`服务地址: ${publicServerOrigin}`);
+      console.log(`API 文档: ${publicServerOrigin}/api-docs`);
+      console.log(`健康检查: ${publicServerOrigin}/health`);
+      console.log(`环境配置: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`数据库: ${process.env.DB_NAME || 'campus_job_platform'}`);
     });
   } catch (error) {
-    console.error('服务器启动失败:', error);
+    console.error('服务器启动失败', error);
     process.exit(1);
   }
 };
 
-// 优雅关闭
-process.on('SIGTERM', () => {
-  console.log('接收到SIGTERM信号，准备关闭服务器...');
-  sequelize.close().then(() => {
+const closeServer = (signal) => {
+  console.log(`接收到 ${signal} 信号，准备关闭服务...`);
+
+  const closeDatabase = () => sequelize.close().then(() => {
     console.log('数据库连接已关闭');
     process.exit(0);
   });
-});
 
-process.on('SIGINT', () => {
-  console.log('接收到SIGINT信号，准备关闭服务器...');
-  sequelize.close().then(() => {
-    console.log('数据库连接已关闭');
-    process.exit(0);
-  });
-});
+  if (server) {
+    server.close(() => {
+      closeDatabase();
+    });
+    return;
+  }
 
-// 启动服务器
-startServer();
+  closeDatabase();
+};
+
+process.on('SIGTERM', () => closeServer('SIGTERM'));
+process.on('SIGINT', () => closeServer('SIGINT'));
+
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = app;
+module.exports.startServer = startServer;

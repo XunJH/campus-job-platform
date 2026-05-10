@@ -12,12 +12,11 @@ import { AuthService } from '../../../../core/services/auth.service';
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnInit {
-  
   loginForm!: FormGroup;
   isLoading = false;
   errorMessage = '';
   showPassword = false;
-  returnUrl: string = '/';
+  returnUrl = '/';
 
   constructor(
     private fb: FormBuilder,
@@ -29,7 +28,7 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     this.initForm();
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-    
+
     if (this.authService.isAuthenticated()) {
       const user = this.authService.getCurrentUser();
       if (user) {
@@ -48,7 +47,7 @@ export class LoginComponent implements OnInit {
 
   onSubmit(): void {
     this.loginForm.markAllAsTouched();
-    
+
     if (this.loginForm.invalid) {
       return;
     }
@@ -65,7 +64,7 @@ export class LoginComponent implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        this.errorMessage = error.message || '登录失败，请检查用户名和密码';
+        this.errorMessage = error.message || '登录失败，请检查用户名和密码。';
       }
     });
   }
@@ -75,16 +74,15 @@ export class LoginComponent implements OnInit {
       this.router.navigate([this.returnUrl]);
       return;
     }
-    
+
     const normalizedRole = role.toLowerCase().trim();
-    
     const routes: Record<string, string> = {
-      'student': '/student/jobs',
-      'employer': '/employer/dashboard'
+      student: '/student/jobs',
+      employer: '/employer/dashboard'
     };
-    
+
     const targetRoute = routes[normalizedRole];
-    
+
     if (targetRoute) {
       this.router.navigate([targetRoute]);
     } else {

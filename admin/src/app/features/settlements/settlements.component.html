@@ -1,0 +1,154 @@
+<div class="max-w-7xl mx-auto space-y-6">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+    <div>
+      <nav class="flex gap-2 text-caption text-on-surface-variant mb-2">
+        <span>管理后台</span>
+        <span class="material-symbols-outlined text-sm">chevron_right</span>
+        <span>账目查询</span>
+      </nav>
+      <h2 class="font-h1 text-h1 text-primary">账目记录</h2>
+      <p class="font-body-md text-on-surface-variant mt-1">查看学生结算台账，核对待结算、已结算和争议中的记录。</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <select
+        [(ngModel)]="statusFilter"
+        (change)="onFilterChange()"
+        class="text-sm border-slate-200 rounded-lg py-2.5 pl-3 pr-10 focus:ring-primary focus:border-primary outline-none"
+      >
+        <option value="">全部状态</option>
+        <option value="pending">待结算</option>
+        <option value="paid">已结算</option>
+        <option value="disputed">争议中</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div class="bg-white p-6 rounded-xl shadow-card border border-slate-100">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-on-surface-variant font-caption text-caption uppercase">账目总数</span>
+        <div class="p-2 bg-primary-fixed rounded-lg text-primary">
+          <span class="material-symbols-outlined text-xl">receipt_long</span>
+        </div>
+      </div>
+      <div class="text-2xl font-bold text-primary">{{ summary.total | number }}</div>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow-card border border-slate-100">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-on-surface-variant font-caption text-caption uppercase">待结算</span>
+        <div class="p-2 bg-orange-50 rounded-lg text-orange-600">
+          <span class="material-symbols-outlined text-xl">pending_actions</span>
+        </div>
+      </div>
+      <div class="text-2xl font-bold text-primary">{{ summary.pending | number }}</div>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow-card border border-slate-100">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-on-surface-variant font-caption text-caption uppercase">已结算</span>
+        <div class="p-2 bg-green-50 rounded-lg text-green-600">
+          <span class="material-symbols-outlined text-xl">payments</span>
+        </div>
+      </div>
+      <div class="text-2xl font-bold text-primary">{{ summary.paid | number }}</div>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow-card border border-slate-100">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-on-surface-variant font-caption text-caption uppercase">争议中</span>
+        <div class="p-2 bg-red-50 rounded-lg text-red-600">
+          <span class="material-symbols-outlined text-xl">warning</span>
+        </div>
+      </div>
+      <div class="text-2xl font-bold text-primary">{{ summary.disputed | number }}</div>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="flex items-center justify-center py-20">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+
+  <div *ngIf="!isLoading" class="bg-white rounded-xl shadow-card border border-slate-50 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low text-on-surface-variant">
+            <th class="px-6 py-4 font-button text-caption uppercase tracking-widest">学生</th>
+            <th class="px-6 py-4 font-button text-caption uppercase tracking-widest">企业 / 岗位</th>
+            <th class="px-6 py-4 font-button text-caption uppercase tracking-widest">金额</th>
+            <th class="px-6 py-4 font-button text-caption uppercase tracking-widest">状态</th>
+            <th class="px-6 py-4 font-button text-caption uppercase tracking-widest">结算时间</th>
+            <th class="px-6 py-4 font-button text-caption uppercase tracking-widest">处理人</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr *ngFor="let settlement of settlements" class="hover:bg-slate-50/50 transition-colors">
+            <td class="px-6 py-5">
+              <div>
+                <span class="font-h2 text-base text-primary block">{{ settlement.student?.username || '未命名学生' }}</span>
+                <span class="text-xs text-slate-400">{{ settlement.student?.email || settlement.student?.phone || '-' }}</span>
+              </div>
+            </td>
+            <td class="px-6 py-5">
+              <div>
+                <span class="font-h2 text-base text-primary block">{{ settlement.job?.title || '岗位信息已失效' }}</span>
+                <span class="text-xs text-slate-400">{{ settlement.employer?.username || '未知企业' }}</span>
+              </div>
+            </td>
+            <td class="px-6 py-5">
+              <span class="font-body-md text-on-surface-variant">{{ formatAmountWithType(settlement) }}</span>
+            </td>
+            <td class="px-6 py-5">
+              <span class="px-3 py-1 rounded-full text-xs font-bold" [ngClass]="getStatusClass(settlement.status)">
+                {{ getStatusText(settlement.status) }}
+              </span>
+            </td>
+            <td class="px-6 py-5">
+              <span class="font-body-md text-on-surface-variant">{{ formatDate(settlement.paidAt || settlement.updatedAt || settlement.createdAt) }}</span>
+            </td>
+            <td class="px-6 py-5">
+              <span class="font-body-md text-on-surface-variant">{{ settlement.processor?.username || '-' }}</span>
+            </td>
+          </tr>
+          <tr *ngIf="settlements.length === 0">
+            <td colspan="6" class="px-6 py-12 text-center font-body-md text-gray-400">
+              暂无账目数据
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="px-6 py-4 bg-surface-container-low border-t border-slate-100 flex items-center justify-between">
+      <span class="text-caption text-on-surface-variant">显示 {{ settlements.length }} 条，共 {{ total }} 条</span>
+      <div class="flex gap-2">
+        <button
+          (click)="goToPage(page - 1)"
+          [disabled]="page <= 1"
+          class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-white transition-colors disabled:opacity-40"
+        >
+          <span class="material-symbols-outlined text-sm">chevron_left</span>
+        </button>
+        <button
+          *ngFor="let p of [].constructor(totalPages > 5 ? 5 : totalPages); let i = index"
+          (click)="goToPage(i + 1)"
+          class="w-8 h-8 rounded flex items-center justify-center text-sm font-bold transition-colors"
+          [class.bg-primary]="page === i + 1"
+          [class.text-white]="page === i + 1"
+          [class.border]="page !== i + 1"
+          [class.border-outline-variant]="page !== i + 1"
+          [class.text-on-surface-variant]="page !== i + 1"
+          [class.hover:bg-white]="page !== i + 1"
+        >
+          {{ i + 1 }}
+        </button>
+        <button
+          (click)="goToPage(page + 1)"
+          [disabled]="page >= totalPages"
+          class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-white transition-colors disabled:opacity-40"
+        >
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

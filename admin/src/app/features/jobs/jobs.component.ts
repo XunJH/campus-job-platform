@@ -154,6 +154,39 @@ export class JobsComponent implements OnInit {
     return map[status] || 'bg-gray-100 text-gray-700';
   }
 
+  getFraudRiskLabel(job: any): string {
+    const level = job?.fraudCheckResult?.risk_level;
+    if (level === 'high') return '高风险';
+    if (level === 'medium') return '中风险';
+    if (level === 'low') return '低风险';
+    return '未分析';
+  }
+
+  getFraudRiskClass(job: any): string {
+    const level = job?.fraudCheckResult?.risk_level;
+    if (level === 'high') return 'bg-red-100 text-red-700';
+    if (level === 'medium') return 'bg-orange-100 text-orange-700';
+    if (level === 'low') return 'bg-green-100 text-green-700';
+    return 'bg-gray-100 text-gray-700';
+  }
+
+  getFraudRiskSummary(job: any): string {
+    const fraudResult = job?.fraudCheckResult;
+    if (!fraudResult) {
+      return '尚未生成 AI 风险分析';
+    }
+
+    if (Array.isArray(fraudResult.warning_signs) && fraudResult.warning_signs.length > 0) {
+      return fraudResult.warning_signs[0];
+    }
+
+    if (fraudResult.recommendation) {
+      return fraudResult.recommendation;
+    }
+
+    return '未发现明显风险提示';
+  }
+
   getJobTypeIcon(jobType: string): string {
     const map: Record<string, string> = {
       part_time: 'schedule',

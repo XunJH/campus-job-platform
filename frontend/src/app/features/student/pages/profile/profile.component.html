@@ -1,392 +1,313 @@
-<!-- Top Navigation Bar -->
-<header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
-  <div class="flex justify-between items-center w-full px-6 py-3 max-w-7xl mx-auto font-['Manrope'] antialiased">
-    <div class="flex items-center gap-8">
-      <span class="text-xl font-bold text-[#1A365D]">校园招聘</span>
-      <nav class="hidden md:flex items-center gap-6">
-        <a routerLink="/student/jobs" class="text-slate-600 hover:text-[#1A365D] transition-colors duration-200 no-underline">岗位</a>
-        <a routerLink="/student/applications" class="text-slate-600 hover:text-[#1A365D] transition-colors duration-200 no-underline">我的投递</a>
-        <a routerLink="/student/profile" class="text-[#1A365D] font-bold border-b-2 border-[#1A365D] pb-1 no-underline">个人资料</a>
-      </nav>
-    </div>
-    <div class="flex items-center gap-4">
-      <button class="p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors active:scale-95 duration-200">
-        <span class="material-symbols-outlined">notifications</span>
-      </button>
-      <button (click)="logout()" class="p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors active:scale-95 duration-200" title="退出登录">
-        <span class="material-symbols-outlined">logout</span>
-      </button>
-    </div>
+<app-student-shell-header></app-student-shell-header>
+
+<main *ngIf="!isEditing" class="mx-auto max-w-7xl px-6 py-8">
+  <div *ngIf="message" class="mb-6 rounded-xl px-4 py-3 text-sm"
+    [class.border]="true"
+    [class.bg-green-50]="!error"
+    [class.border-green-100]="!error"
+    [class.text-green-700]="!error"
+    [class.bg-rose-50]="error"
+    [class.border-rose-100]="error"
+    [class.text-rose-700]="error">
+    {{ message }}
   </div>
-</header>
 
-<!-- ==================== 展示模式 ==================== -->
-<main *ngIf="!isEditing" class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-  <!-- Left Column -->
-  <aside class="lg:col-span-4 space-y-8">
-    <!-- Basic Info Card -->
-    <section class="bg-white rounded-xl p-6 shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100">
-      <div class="flex flex-col items-center text-center">
-        <div class="relative mb-4">
-          <img *ngIf="user?.avatar" [src]="user!.avatar" alt="头像" class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md">
-          <div *ngIf="!user?.avatar" class="w-32 h-32 rounded-full bg-[#1A365D] flex items-center justify-center border-4 border-white shadow-md">
-            <span class="material-symbols-outlined text-5xl text-white">person</span>
+  <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
+    <aside class="space-y-6 lg:col-span-4">
+      <section class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div class="flex flex-col items-center text-center">
+          <div class="mb-4">
+            <img *ngIf="user?.avatar" [src]="user!.avatar" alt="头像" class="h-28 w-28 rounded-full object-cover" />
+            <div *ngIf="!user?.avatar" class="flex h-28 w-28 items-center justify-center rounded-full bg-[#1A365D] text-white">
+              <span class="material-symbols-outlined text-5xl">person</span>
+            </div>
           </div>
-          <span class="absolute bottom-1 right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-white"></span>
-        </div>
-        <h1 class="text-2xl font-bold text-[#1A365D] mb-1">{{ user?.nickname || user?.username || 'User' }}</h1>
-        <p class="text-slate-500 mb-4">{{ user?.bio || 'Student User' }}</p>
-        <div class="w-full space-y-3 pt-4 border-t border-slate-50 text-left">
-          <div class="flex items-center gap-3 text-slate-600">
-            <span class="material-symbols-outlined text-[#1A365D]/70">mail</span>
-            <span>{{ user?.email || 'No email set' }}</span>
-          </div>
-          <div class="flex items-center gap-3 text-slate-600">
-            <span class="material-symbols-outlined text-[#1A365D]/70">phone</span>
-            <span>{{ user?.phone || 'No phone set' }}</span>
-          </div>
-          <div class="flex items-center gap-3 text-slate-600">
-            <span class="material-symbols-outlined text-[#1A365D]/70">badge</span>
-            <span>{{ user?.role === 'student' ? '学生' : user?.role === 'employer' ? '企业' : '管理员' }}</span>
-          </div>
-        </div>
-        <button class="mt-6 w-full py-3 bg-[#1A365D] text-white rounded-xl font-semibold hover:opacity-90 transition-all active:scale-95">
-          下载简历
-        </button>
-      </div>
-    </section>
+          <h1 class="text-2xl font-bold text-[#1A365D]">{{ user?.nickname || user?.username || '学生用户' }}</h1>
+          <p class="mt-2 text-slate-500">{{ user?.bio || '暂未填写个人简介' }}</p>
 
-    <!-- AI Personality Card -->
-    <!-- 有完整数据：展示结果 -->
-    <section *ngIf="user?.personalityProfileCompletedAt && (user?.personalityProfile?.tags?.length || user?.personalityProfile?.summary)" class="bg-white rounded-xl p-6 shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2">
+          <div class="mt-6 w-full space-y-3 border-t border-slate-100 pt-4 text-left text-sm">
+            <div class="flex items-center gap-3 text-slate-600">
+              <span class="material-symbols-outlined text-[#1A365D]">mail</span>
+              <span>{{ user?.email || '未填写邮箱' }}</span>
+            </div>
+            <div class="flex items-center gap-3 text-slate-600">
+              <span class="material-symbols-outlined text-[#1A365D]">phone</span>
+              <span>{{ user?.phone || '未填写电话' }}</span>
+            </div>
+            <div class="flex items-center gap-3 text-slate-600">
+              <span class="material-symbols-outlined text-[#1A365D]">badge</span>
+              <span>{{ user?.role === 'student' ? '学生' : user?.role === 'employer' ? '企业' : '管理员' }}</span>
+            </div>
+          </div>
+
+          <div class="mt-6 flex w-full gap-3">
+            <button type="button" (click)="toggleEdit()" class="flex-1 rounded-xl bg-[#1A365D] px-4 py-3 text-sm font-semibold text-white hover:opacity-90">
+              编辑资料
+            </button>
+            <button type="button" (click)="startPersonalityTest()" class="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50">
+              AI 测评
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center gap-2">
           <span class="material-symbols-outlined text-[#1A365D]">psychology</span>
-          <h2 class="text-lg font-bold text-[#1A365D]">AI 人格画像</h2>
+          <h2 class="text-xl font-bold text-[#1A365D]">人格画像</h2>
         </div>
-        <button (click)="startPersonalityTest()" class="text-xs text-[#1A365D] underline hover:no-underline">重新测试</button>
-      </div>
-      <div class="flex flex-wrap gap-2 mb-4">
-        <span *ngFor="let tag of user?.personalityProfile?.tags || []" class="px-3 py-1 bg-blue-50 text-[#1A365D] rounded-full text-xs font-medium">{{ tag }}</span>
-      </div>
-      <p class="text-sm text-slate-500 italic leading-relaxed">
-        "{{ user?.personalityProfile?.summary }}"
-      </p>
-    </section>
 
-    <!-- 未完成或数据为空：显示入口 -->
-    <section *ngIf="!user?.personalityProfileCompletedAt || !(user?.personalityProfile?.tags?.length || user?.personalityProfile?.summary)" class="bg-white rounded-xl p-6 shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100 text-center">
-      <div class="flex items-center gap-2 mb-4 justify-center">
-        <span class="material-symbols-outlined text-[#1A365D]">psychology</span>
-        <h2 class="text-lg font-bold text-[#1A365D]">AI 人格画像</h2>
-      </div>
-      <p class="text-sm text-slate-500 mb-4">完成人格测试，获取AI驱动的职业洞察和岗位匹配建议</p>
-      <button (click)="startPersonalityTest()" class="w-full py-3 bg-[#1A365D] text-white rounded-xl font-semibold hover:opacity-90 transition-all active:scale-95">
-        {{ user?.personalityProfileCompletedAt ? '重新测试' : '开始测试' }}
-      </button>
-    </section>
-  </aside>
-
-  <!-- Right Column -->
-  <div class="lg:col-span-8 space-y-8">
-    <!-- Alerts -->
-    <div *ngIf="message" class="p-4 rounded-lg text-sm font-medium" [class.bg-green-50]="!error" [class.text-green-600]="!error" [class.bg-red-50]="error" [class.text-red-600]="error">
-      {{ message }}
-    </div>
-
-    <!-- Education Section -->
-    <section class="bg-white rounded-xl p-6 shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100">
-      <div class="flex items-center gap-2 mb-6">
-        <span class="material-symbols-outlined text-[#1A365D]">school</span>
-        <h2 class="text-lg font-bold text-[#1A365D]">教育背景</h2>
-      </div>
-      <div *ngIf="educationList.length === 0" class="text-center py-8 text-slate-400">
-        <span class="material-symbols-outlined text-4xl mb-2">school</span>
-        <p>暂无教育背景信息，点击编辑添加</p>
-      </div>
-      <div *ngFor="let edu of educationList" class="flex gap-6 mb-6 last:mb-0">
-        <div class="w-16 h-16 bg-slate-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-slate-100">
-          <span class="material-symbols-outlined text-[#1A365D] text-3xl">account_balance</span>
-        </div>
-        <div class="flex-1">
-          <div class="flex justify-between items-start mb-1">
-            <h3 class="text-base font-bold text-[#1A365D]">{{ edu.school }}</h3>
-            <span class="text-xs px-3 py-1 bg-green-50 text-green-700 rounded-full">{{ edu.status }}</span>
+        <ng-container *ngIf="user?.personalityProfileCompletedAt && (user?.personalityProfile?.tags?.length || user?.personalityProfile?.summary); else emptyProfile">
+          <div class="flex flex-wrap gap-2">
+            <span *ngFor="let tag of user?.personalityProfile?.tags || []" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-[#1A365D]">
+              {{ tag }}
+            </span>
           </div>
-          <p class="text-[#1A365D] font-medium mb-1">{{ edu.degree }}</p>
-          <p class="text-slate-500 text-sm mb-4">GPA: {{ edu.gpa }} · {{ edu.graduationYear }}</p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="p-3 bg-slate-50 rounded-lg">
-              <p class="text-xs text-slate-500 uppercase">核心课程</p>
-              <p class="text-sm text-[#1A365D]">{{ edu.courses }}</p>
+          <p class="mt-4 leading-7 text-slate-600">{{ user?.personalityProfile?.summary }}</p>
+        </ng-container>
+
+        <ng-template #emptyProfile>
+          <p class="text-sm text-slate-500">还没有完成人格测评，建议先去 AI 页面完成画像分析。</p>
+        </ng-template>
+      </section>
+    </aside>
+
+    <section class="space-y-6 lg:col-span-8">
+      <article class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#1A365D]">school</span>
+          <h2 class="text-xl font-bold text-[#1A365D]">教育背景</h2>
+        </div>
+
+        <div *ngIf="educationList.length === 0" class="rounded-xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
+          暂无教育背景信息
+        </div>
+
+        <div *ngFor="let education of educationList" class="mb-4 rounded-xl border border-slate-100 bg-slate-50 p-4 last:mb-0">
+          <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h3 class="font-semibold text-[#1A365D]">{{ education.school }}</h3>
+              <p class="mt-1 text-sm text-slate-600">{{ education.degree }}</p>
             </div>
-            <div class="p-3 bg-slate-50 rounded-lg">
-              <p class="text-xs text-slate-500 uppercase">荣誉</p>
-              <p class="text-sm text-[#1A365D]">{{ edu.honors }}</p>
-            </div>
+            <span class="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">{{ education.status }}</span>
+          </div>
+          <div class="mt-3 grid grid-cols-1 gap-3 text-sm text-slate-600 md:grid-cols-2">
+            <p>GPA：{{ education.gpa || '暂无' }}</p>
+            <p>毕业年份：{{ education.graduationYear || '暂无' }}</p>
+            <p>核心课程：{{ education.courses || '暂无' }}</p>
+            <p>荣誉奖项：{{ education.honors || '暂无' }}</p>
           </div>
         </div>
-      </div>
-    </section>
+      </article>
 
-    <!-- Experience Section -->
-    <section class="bg-white rounded-xl p-6 shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100">
-      <div class="flex items-center gap-2 mb-8">
-        <span class="material-symbols-outlined text-[#1A365D]">work</span>
-        <h2 class="text-lg font-bold text-[#1A365D]">工作与项目经历</h2>
-      </div>
-      <div *ngIf="workExperienceList.length === 0" class="text-center py-8 text-slate-400">
-        <span class="material-symbols-outlined text-4xl mb-2">work</span>
-        <p>暂无工作经历信息，点击编辑添加</p>
-      </div>
-      <div class="space-y-10 relative before:content-[''] before:absolute before:left-[31px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
-        <div *ngFor="let exp of workExperienceList; let i = index" class="relative pl-16">
-          <div class="absolute left-0 top-0 w-16 h-16 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 overflow-hidden"
-               [class.bg-white]="i % 2 === 0" [style.background-color]="i % 2 !== 0 ? '#1A365D' : null">
-            <span class="material-symbols-outlined text-3xl" [style.color]="i % 2 !== 0 ? '#ffffff' : '#1A365D'">{{ i % 2 === 0 ? 'cloud' : 'code' }}</span>
-          </div>
-          <div class="bg-slate-50 rounded-xl p-6 hover:bg-white hover:shadow-lg transition-all border border-transparent hover:border-slate-100">
-            <div class="flex flex-col md:flex-row md:items-center justify-between mb-2">
-              <h3 class="text-base font-bold text-[#1A365D]">{{ exp.title }}</h3>
-              <span class="text-xs text-slate-500">{{ exp.period }}</span>
-            </div>
-            <p class="text-[#1A365D] font-medium mb-3">{{ exp.company }}</p>
-            <p *ngIf="exp.description" class="text-slate-500 mb-4">{{ exp.description }}</p>
-            <div *ngIf="exp.skills?.length" class="flex flex-wrap gap-2">
-              <span *ngFor="let skill of exp.skills" class="px-2 py-1 border border-slate-200 text-[10px] font-bold text-slate-500 rounded uppercase">{{ skill }}</span>
-            </div>
-          </div>
+      <article class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#1A365D]">work</span>
+          <h2 class="text-xl font-bold text-[#1A365D]">工作与项目经历</h2>
         </div>
-      </div>
-    </section>
 
-    <!-- Skills Bento Grid -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Technical Skills -->
-      <div class="md:col-span-2 bg-white rounded-xl p-6 shadow-[0_4px_6px_-1px_rgba(26,54,93,0.05)] border border-slate-100">
-        <h2 class="text-lg font-bold text-[#1A365D] mb-6">技术技能</h2>
-        <div *ngIf="technicalSkills.length === 0" class="text-center py-6 text-slate-400">
-          <p>暂无技术技能信息，点击编辑添加</p>
+        <div *ngIf="workExperienceList.length === 0" class="rounded-xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
+          暂无工作或项目经历
         </div>
-        <div class="flex flex-wrap gap-3">
-          <div *ngFor="let skill of technicalSkills" class="flex items-center gap-2 px-4 py-2 bg-[#1A365D] text-white rounded-lg font-semibold text-sm">
-            <span>{{ skill }}</span>
-            <span class="w-2 h-2 rounded-full bg-green-400"></span>
+
+        <div *ngFor="let experience of workExperienceList" class="mb-4 rounded-xl border border-slate-100 bg-slate-50 p-4 last:mb-0">
+          <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h3 class="font-semibold text-[#1A365D]">{{ experience.title }}</h3>
+              <p class="mt-1 text-sm text-slate-600">{{ experience.company }}</p>
+            </div>
+            <span class="text-sm text-slate-500">{{ experience.period }}</span>
+          </div>
+          <p *ngIf="experience.description" class="mt-3 leading-7 text-slate-600">{{ experience.description }}</p>
+          <div *ngIf="experience.skills?.length" class="mt-3 flex flex-wrap gap-2">
+            <span *ngFor="let skill of experience.skills" class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+              {{ skill }}
+            </span>
           </div>
         </div>
-      </div>
-      <!-- Tools & Languages -->
-      <div class="bg-[#1A365D] text-white rounded-xl p-6 shadow-[0_10px_15px_-3px_rgba(26,54,93,0.1)] flex flex-col justify-between">
-        <div>
-          <h2 class="text-lg font-bold mb-4 text-white">工具</h2>
-          <ul *ngIf="toolsList.length > 0" class="space-y-2 opacity-90">
-            <li *ngFor="let tool of toolsList">{{ tool }}</li>
-          </ul>
-          <p *ngIf="toolsList.length === 0" class="opacity-70 text-sm">暂无工具信息</p>
+      </article>
+
+      <article class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+          <h2 class="mb-4 text-xl font-bold text-[#1A365D]">技术技能</h2>
+          <div *ngIf="technicalSkills.length > 0; else emptySkills" class="flex flex-wrap gap-2">
+            <span *ngFor="let skill of technicalSkills" class="rounded-full bg-[#1A365D] px-3 py-1 text-xs font-medium text-white">
+              {{ skill }}
+            </span>
+          </div>
+          <ng-template #emptySkills>
+            <p class="text-sm text-slate-500">暂无技术技能信息</p>
+          </ng-template>
         </div>
-        <div class="pt-4 mt-4 border-t border-white/20">
-          <p class="text-xs uppercase tracking-wider opacity-90 text-white">语言能力</p>
-          <p class="text-sm mt-1">{{ languages || '未填写' }}</p>
+
+        <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+          <h2 class="mb-4 text-xl font-bold text-[#1A365D]">工具与语言</h2>
+          <p class="text-sm font-medium text-slate-600">工具</p>
+          <div *ngIf="toolsList.length > 0; else emptyTools" class="mt-2 flex flex-wrap gap-2">
+            <span *ngFor="let tool of toolsList" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+              {{ tool }}
+            </span>
+          </div>
+          <ng-template #emptyTools>
+            <p class="mt-2 text-sm text-slate-500">暂无工具信息</p>
+          </ng-template>
+
+          <p class="mt-4 text-sm font-medium text-slate-600">语言能力</p>
+          <p class="mt-2 text-slate-600">{{ languages || '暂无语言能力信息' }}</p>
         </div>
-      </div>
+      </article>
     </section>
   </div>
 </main>
 
-<!-- ==================== 编辑模式 ==================== -->
-<div *ngIf="isEditing" class="fixed inset-0 z-[60] flex bg-white pt-14">
-  <!-- Left Sidebar -->
-  <aside class="w-64 bg-slate-50 border-r border-slate-200 flex flex-col">
-    <div class="p-6 border-b border-slate-200">
-      <h2 class="text-lg font-bold text-[#1A365D]">编辑简历</h2>
-      <p class="text-xs text-slate-500 mt-1">选择模块进行编辑</p>
-    </div>
-    <nav class="flex-1 p-4 space-y-1">
-      <button *ngFor="let sec of sections" (click)="selectSection(sec.id)"
-        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all !border-0 outline-none"
-        [style.background-color]="activeSection === sec.id ? '#1A365D' : null"
-        [class.text-white]="activeSection === sec.id"
-        [class.text-slate-600]="activeSection !== sec.id"
-        [class.hover:bg-slate-100]="activeSection !== sec.id">
-        <span class="material-symbols-outlined text-[18px]">{{ sec.icon }}</span>
-        {{ sec.label }}
-      </button>
-    </nav>
-    <div class="p-4 border-t border-slate-200 space-y-2">
-      <button (click)="onSubmit()" [disabled]="isLoading"
-        class="w-full py-2.5 bg-[#1A365D] text-white rounded-lg font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50">
-        <span *ngIf="!isLoading">保存</span>
-        <span *ngIf="isLoading">保存中...</span>
-      </button>
-      <button (click)="toggleEdit()"
-        class="w-full py-2.5 border border-slate-200 text-slate-600 rounded-lg font-semibold text-sm hover:bg-slate-50 transition-all">
-        取消
-      </button>
-    </div>
-  </aside>
+<main *ngIf="isEditing" class="mx-auto max-w-6xl px-6 py-8">
+  <form [formGroup]="profileForm" class="grid grid-cols-1 gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
+    <aside class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div class="mb-4">
+        <h2 class="text-lg font-bold text-[#1A365D]">编辑资料</h2>
+        <p class="mt-1 text-xs text-slate-500">按模块逐项完善你的简历信息。</p>
+      </div>
 
-  <!-- Right Content -->
-  <main class="flex-1 bg-white overflow-auto">
-    <form [formGroup]="profileForm" class="max-w-3xl mx-auto p-8 space-y-8">
+      <div class="space-y-2">
+        <button type="button" (click)="selectSection('basic')" class="w-full rounded-xl px-4 py-3 text-left text-sm font-medium transition-colors"
+          [class.bg-[#1A365D]]="activeSection === 'basic'"
+          [class.text-white]="activeSection === 'basic'"
+          [class.bg-slate-50]="activeSection !== 'basic'"
+          [class.text-slate-600]="activeSection !== 'basic'">
+          基本信息
+        </button>
+        <button type="button" (click)="selectSection('education')" class="w-full rounded-xl px-4 py-3 text-left text-sm font-medium transition-colors"
+          [class.bg-[#1A365D]]="activeSection === 'education'"
+          [class.text-white]="activeSection === 'education'"
+          [class.bg-slate-50]="activeSection !== 'education'"
+          [class.text-slate-600]="activeSection !== 'education'">
+          教育背景
+        </button>
+        <button type="button" (click)="selectSection('experience')" class="w-full rounded-xl px-4 py-3 text-left text-sm font-medium transition-colors"
+          [class.bg-[#1A365D]]="activeSection === 'experience'"
+          [class.text-white]="activeSection === 'experience'"
+          [class.bg-slate-50]="activeSection !== 'experience'"
+          [class.text-slate-600]="activeSection !== 'experience'">
+          工作经历
+        </button>
+        <button type="button" (click)="selectSection('skills')" class="w-full rounded-xl px-4 py-3 text-left text-sm font-medium transition-colors"
+          [class.bg-[#1A365D]]="activeSection === 'skills'"
+          [class.text-white]="activeSection === 'skills'"
+          [class.bg-slate-50]="activeSection !== 'skills'"
+          [class.text-slate-600]="activeSection !== 'skills'">
+          技能工具
+        </button>
+      </div>
 
-      <!-- ===== 基本信息 ===== -->
+      <div class="mt-6 space-y-2 border-t border-slate-100 pt-4">
+        <button type="button" (click)="onSubmit()" [disabled]="isLoading" class="w-full rounded-xl bg-[#1A365D] px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
+          {{ isLoading ? '保存中...' : '保存资料' }}
+        </button>
+        <button type="button" (click)="toggleEdit()" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50">
+          取消
+        </button>
+      </div>
+    </aside>
+
+    <section class="rounded-2xl border border-slate-100 bg-white p-8 shadow-sm">
       <div *ngIf="activeSection === 'basic'" class="space-y-6">
-        <h3 class="text-xl font-bold text-[#1A365D]">基本信息</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-slate-700">姓名</label>
-            <input type="text" formControlName="nickname" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-[#1A365D] focus:ring-2 focus:ring-[#1A365D]/10 outline-none bg-slate-50/50 text-sm">
+        <h3 class="text-2xl font-bold text-[#1A365D]">基本信息</h3>
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div>
+            <label class="mb-2 block text-sm font-medium text-slate-700">姓名</label>
+            <input type="text" formControlName="nickname" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" />
           </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-slate-700">邮箱</label>
-            <input type="email" formControlName="email" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-[#1A365D] focus:ring-2 focus:ring-[#1A365D]/10 outline-none bg-slate-50/50 text-sm">
+          <div>
+            <label class="mb-2 block text-sm font-medium text-slate-700">邮箱</label>
+            <input type="email" formControlName="email" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" />
           </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-slate-700">电话</label>
-            <input type="text" formControlName="phone" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-[#1A365D] focus:ring-2 focus:ring-[#1A365D]/10 outline-none bg-slate-50/50 text-sm">
+          <div>
+            <label class="mb-2 block text-sm font-medium text-slate-700">电话</label>
+            <input type="text" formControlName="phone" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" />
           </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-slate-700">头像 URL</label>
-            <input type="text" formControlName="avatar" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-[#1A365D] focus:ring-2 focus:ring-[#1A365D]/10 outline-none bg-slate-50/50 text-sm">
+          <div>
+            <label class="mb-2 block text-sm font-medium text-slate-700">头像链接</label>
+            <input type="text" formControlName="avatar" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" />
           </div>
         </div>
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-slate-700">个人简介</label>
-          <textarea formControlName="bio" rows="4" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-[#1A365D] focus:ring-2 focus:ring-[#1A365D]/10 outline-none bg-slate-50/50 text-sm"></textarea>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-slate-700">个人简介</label>
+          <textarea formControlName="bio" rows="4" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"></textarea>
         </div>
       </div>
 
-      <!-- ===== 教育背景 ===== -->
       <div *ngIf="activeSection === 'education'" class="space-y-6">
         <div class="flex items-center justify-between">
-          <h3 class="text-xl font-bold text-[#1A365D]">教育背景</h3>
-          <button type="button" (click)="addEducation()"
-            class="flex items-center gap-1 px-4 py-2 text-sm font-medium text-[#1A365D] bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-            <span class="material-symbols-outlined text-[18px]">add</span>
-            添加教育经历
+          <h3 class="text-2xl font-bold text-[#1A365D]">教育背景</h3>
+          <button type="button" (click)="addEducation()" class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-[#1A365D] hover:bg-slate-200">
+            新增教育经历
           </button>
         </div>
-        <div formArrayName="education" class="space-y-6">
-          <div *ngFor="let edu of educationArray.controls; let i = index" [formGroupName]="i"
-            class="bg-slate-50 rounded-xl p-6 border border-slate-100">
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-sm font-bold text-slate-500">经历 {{ i + 1 }}</span>
-              <button type="button" (click)="removeEducation(i)"
-                class="text-red-500 hover:text-red-700 text-sm flex items-center gap-1">
-                <span class="material-symbols-outlined text-[18px]">delete</span>
-                删除
-              </button>
+
+        <div formArrayName="education" class="space-y-4">
+          <div *ngFor="let education of educationArray.controls; let i = index" [formGroupName]="i" class="rounded-xl border border-slate-100 bg-slate-50 p-5">
+            <div class="mb-4 flex items-center justify-between">
+              <span class="text-sm font-medium text-slate-500">教育经历 {{ i + 1 }}</span>
+              <button type="button" (click)="removeEducation(i)" class="text-sm font-medium text-rose-600">删除</button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="space-y-2">
-                <label class="text-xs font-medium text-slate-600">学校名称</label>
-                <input type="text" formControlName="school" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm">
-              </div>
-              <div class="space-y-2">
-                <label class="text-xs font-medium text-slate-600">学位</label>
-                <input type="text" formControlName="degree" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm">
-              </div>
-              <div class="space-y-2">
-                <label class="text-xs font-medium text-slate-600">GPA</label>
-                <input type="text" formControlName="gpa" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm">
-              </div>
-              <div class="space-y-2">
-                <label class="text-xs font-medium text-slate-600">毕业年份</label>
-                <input type="text" formControlName="graduationYear" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm">
-              </div>
-              <div class="space-y-2">
-                <label class="text-xs font-medium text-slate-600">状态</label>
-                <select formControlName="status" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm">
-                  <option value="在读">在读</option>
-                  <option value="已毕业">已毕业</option>
-                </select>
-              </div>
-              <div class="space-y-2">
-                <label class="text-xs font-medium text-slate-600">核心课程</label>
-                <input type="text" formControlName="courses" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm">
-              </div>
-              <div class="md:col-span-2 space-y-2">
-                <label class="text-xs font-medium text-slate-600">荣誉</label>
-                <input type="text" formControlName="honors" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm">
-              </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <input type="text" formControlName="school" class="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="学校名称" />
+              <input type="text" formControlName="degree" class="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="学位 / 专业" />
+              <input type="text" formControlName="gpa" class="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="GPA" />
+              <input type="text" formControlName="graduationYear" class="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="毕业年份" />
+              <select formControlName="status" class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#1A365D]">
+                <option value="在读">在读</option>
+                <option value="已毕业">已毕业</option>
+              </select>
+              <input type="text" formControlName="courses" class="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="核心课程" />
+              <textarea formControlName="honors" rows="3" class="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D] md:col-span-2" placeholder="荣誉奖项"></textarea>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ===== 工作经历 ===== -->
       <div *ngIf="activeSection === 'experience'" class="space-y-6">
         <div class="flex items-center justify-between">
-          <h3 class="text-xl font-bold text-[#1A365D]">工作经历</h3>
-          <button type="button" (click)="addExperience()"
-            class="flex items-center gap-1 px-4 py-2 text-sm font-medium text-[#1A365D] bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-            <span class="material-symbols-outlined text-[18px]">add</span>
-            添加工作经历
+          <h3 class="text-2xl font-bold text-[#1A365D]">工作与项目经历</h3>
+          <button type="button" (click)="addExperience()" class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-[#1A365D] hover:bg-slate-200">
+            新增经历
           </button>
         </div>
-        <div formArrayName="workExperience" class="space-y-6">
-          <div *ngFor="let exp of workExperienceArray.controls; let i = index" [formGroupName]="i"
-            class="bg-slate-50 rounded-xl p-6 border border-slate-100">
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-sm font-bold text-slate-500">经历 {{ i + 1 }}</span>
-              <button type="button" (click)="removeExperience(i)"
-                class="text-red-500 hover:text-red-700 text-sm flex items-center gap-1">
-                <span class="material-symbols-outlined text-[18px]">delete</span>
-                删除
-              </button>
+
+        <div formArrayName="workExperience" class="space-y-4">
+          <div *ngFor="let experience of workExperienceArray.controls; let i = index" [formGroupName]="i" class="rounded-xl border border-slate-100 bg-slate-50 p-5">
+            <div class="mb-4 flex items-center justify-between">
+              <span class="text-sm font-medium text-slate-500">工作经历 {{ i + 1 }}</span>
+              <button type="button" (click)="removeExperience(i)" class="text-sm font-medium text-rose-600">删除</button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="space-y-2">
-                <label class="text-xs font-medium text-slate-600">职位</label>
-                <input type="text" formControlName="title" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm">
-              </div>
-              <div class="space-y-2">
-                <label class="text-xs font-medium text-slate-600">公司/项目</label>
-                <input type="text" formControlName="company" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm">
-              </div>
-              <div class="space-y-2">
-                <label class="text-xs font-medium text-slate-600">时间段</label>
-                <input type="text" formControlName="period" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm">
-              </div>
-              <div class="space-y-2">
-                <label class="text-xs font-medium text-slate-600">技能标签（用"、"分隔）</label>
-                <input type="text" formControlName="skills" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm">
-              </div>
-              <div class="md:col-span-2 space-y-2">
-                <label class="text-xs font-medium text-slate-600">工作描述</label>
-                <textarea formControlName="description" rows="3" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1A365D] outline-none bg-white text-sm"></textarea>
-              </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <input type="text" formControlName="title" class="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="职位 / 角色" />
+              <input type="text" formControlName="company" class="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="公司 / 项目" />
+              <input type="text" formControlName="period" class="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="时间段" />
+              <input type="text" formControlName="skills" class="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="技能标签，使用顿号分隔" />
+              <textarea formControlName="description" rows="4" class="rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D] md:col-span-2" placeholder="经历描述"></textarea>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ===== 技能与工具 ===== -->
       <div *ngIf="activeSection === 'skills'" class="space-y-6">
-        <h3 class="text-xl font-bold text-[#1A365D]">技能与工具</h3>
-        <div class="space-y-4">
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-slate-700">技术技能（用"、"分隔，如：Python、React、Node.js）</label>
-            <input type="text" formControlName="technicalSkills" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-[#1A365D] focus:ring-2 focus:ring-[#1A365D]/10 outline-none bg-slate-50/50 text-sm">
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-slate-700">工具（用"、"分隔，如：Git、VS Code、Jira）</label>
-            <input type="text" formControlName="tools" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-[#1A365D] focus:ring-2 focus:ring-[#1A365D]/10 outline-none bg-slate-50/50 text-sm">
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-slate-700">语言能力</label>
-            <input type="text" formControlName="languages" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-[#1A365D] focus:ring-2 focus:ring-[#1A365D]/10 outline-none bg-slate-50/50 text-sm">
-          </div>
+        <h3 class="text-2xl font-bold text-[#1A365D]">技能与工具</h3>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-slate-700">技术技能</label>
+          <input type="text" formControlName="technicalSkills" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="如：Python、React、Node.js" />
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-slate-700">工具</label>
+          <input type="text" formControlName="tools" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="如：Git、VS Code、Figma" />
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-slate-700">语言能力</label>
+          <input type="text" formControlName="languages" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="如：英语 CET-6" />
         </div>
       </div>
-
-    </form>
-  </main>
-</div>
-
-<!-- Edit FAB -->
-<button *ngIf="!isEditing" (click)="toggleEdit()"
-  class="fixed bottom-8 right-8 z-50 bg-[#1A365D] text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:opacity-90 transition-all active:scale-95 flex items-center gap-2">
-  <span class="material-symbols-outlined">edit</span>
-  编辑资料
-</button>
+    </section>
+  </form>
+</main>

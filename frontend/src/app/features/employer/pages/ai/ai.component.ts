@@ -4,40 +4,27 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { AiApiService } from '../../../../core/services/ai-api.service';
+import { EmployerShellSidebarComponent } from '../../../../shared/components/employer-shell-sidebar/employer-shell-sidebar.component';
 
-/**
- * @功能 企业端AI助手页面
- * @说明 集成3个AI功能：企业版对话助手、反向推荐（岗位→学生）、智能JD生成
- */
 @Component({
   selector: 'app-employer-ai',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, EmployerShellSidebarComponent],
   templateUrl: './ai.component.html',
   styleUrls: ['./ai.component.scss']
 })
 export class EmployerAiComponent implements OnInit {
-  /** 当前激活的功能Tab */
-  activeTab = 'chat';
+  activeTab: 'chat' | 'reverse' = 'chat';
 
-  /** ===== 企业版对话 ===== */
   chatMessages: { role: string; content: string }[] = [];
   chatInput = '';
   chatLoading = false;
 
-  /** ===== 反向推荐 ===== */
   jobTitleInput = '';
   jobTagsInput = '';
   jobRequirementsInput = '';
   reverseResults: any[] = [];
   reverseLoading = false;
-
-  /** ===== 智能JD生成 ===== */
-  jdJobTitle = '';
-  jdKeywords = '';
-  jdCompanyType = '';
-  jdResult: any = null;
-  jdLoading = false;
 
   constructor(
     private authService: AuthService,
@@ -47,28 +34,29 @@ export class EmployerAiComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // 从queryParams读取tab参数，支持侧边栏直接跳转
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       const tab = params['tab'];
-      if (tab && ['chat', 'reverse', 'jd'].includes(tab)) {
+      if (tab === 'reverse' || tab === 'chat') {
         this.activeTab = tab;
+      } else {
+        this.activeTab = 'chat';
       }
     });
   }
 
   private getUserId(): string {
     const user = this.authService.getCurrentUser();
-    return user?.id || 'employer';
+    return String(user?.id || 'employer');
   }
 
-  switchTab(tab: string): void {
+  switchTab(tab: 'chat' | 'reverse'): void {
     this.activeTab = tab;
   }
 
-  // ==================== 企业版对话 ====================
-
   sendChat(): void {
-    if (!this.chatInput.trim() || this.chatLoading) return;
+    if (!this.chatInput.trim() || this.chatLoading) {
+      return;
+    }
 
     const message = this.chatInput.trim();
     this.chatMessages.push({ role: 'user', content: message });
@@ -77,27 +65,35 @@ export class EmployerAiComponent implements OnInit {
 
     this.aiApi.employerChat(this.getUserId(), message, 'hr', this.chatMessages.slice(-10)).subscribe({
       next: (res) => {
-        this.chatMessages.push({ role: 'assistant', content: res.data?.reply || '抱歉，我暂时无法回复。' });
+        this.chatMessages.push({
+          role: 'assistant',
+          content: res.data?.reply || '抱歉，我暂时无法给出建议，请稍后再试。'
+        });
         this.chatLoading = false;
       },
       error: () => {
-        this.chatMessages.push({ role: 'assistant', content: '网络错误，请稍后再试。' });
+        this.chatMessages.push({
+          role: 'assistant',
+          content: '网络异常，请稍后再试。'
+        });
         this.chatLoading = false;
       }
     });
   }
 
-  // ==================== 反向推荐 ====================
-
   reverseRecommend(): void {
-    if (!this.jobTitleInput.trim()) return;
+    if (!this.jobTitleInput.trim()) {
+      return;
+    }
+
     this.reverseLoading = true;
 
     const tags = this.jobTagsInput
-      ? this.jobTagsInput.split(/[,，、]/).map(s => s.trim()).filter(s => s)
+      ? this.jobTagsInput.split(/[，,、]/).map((item) => item.trim()).filter(Boolean)
       : [];
+
     const requirements = this.jobRequirementsInput
-      ? this.jobRequirementsInput.split(/[,，、]/).map(s => s.trim()).filter(s => s)
+      ? this.jobRequirementsInput.split(/[，,、]/).map((item) => item.trim()).filter(Boolean)
       : [];
 
     this.aiApi.reverseRecommend(this.jobTitleInput.trim(), tags, requirements, 5).subscribe({
@@ -111,45 +107,8 @@ export class EmployerAiComponent implements OnInit {
     });
   }
 
-  // ==================== JD生成 ====================
-
-  generateJd(): void {
-    if (!this.jdJobTitle.trim()) return;
-    this.jdLoading = true;
-
-    const keywords = this.jdKeywords
-      ? this.jdKeywords.split(/[,，、]/).map(s => s.trim()).filter(s => s)
-      : [];
-
-    this.aiApi.generateJd(this.jdJobTitle.trim(), keywords, this.jdCompanyType.trim()).subscribe({
-      next: (res) => {
-        this.jdResult = res.data || res;
-        this.jdLoading = false;
-      },
-      error: () => {
-        this.jdLoading = false;
-      }
-    });
-  }
-
-  copyJd(): void {
-    if (!this.jdResult) return;
-    const text = this.formatJdText(this.jdResult);
-    navigator.clipboard.writeText(text).then(() => {
-      alert('JD已复制到剪贴板！');
-    });
-  }
-
-  private formatJdText(jd: any): string {
-    let text = `【${jd.title}】\n\n`;
-    text += `薪资范围：${jd.salary_range || '面议'}\n`;
-    text += `工作时间：${jd.work_hours || '协商'}\n`;
-    text += `工作地点：${jd.location || '校内/线上'}\n\n`;
-    text += `岗位职责：\n${(jd.responsibilities || []).map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}\n\n`;
-    text += `任职要求：\n${(jd.requirements || []).map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}\n\n`;
-    text += `福利待遇：\n${(jd.benefits || []).map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}\n\n`;
-    if (jd.highlights) text += `亮点：${jd.highlights}\n`;
-    return text;
+  formatArray(value: string[] | null | undefined): string {
+    return Array.isArray(value) && value.length ? value.join('、') : '暂无';
   }
 
   logout(): void {

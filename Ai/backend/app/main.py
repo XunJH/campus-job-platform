@@ -7,7 +7,7 @@ FastAPI 主程序入口
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
-from .api import personality, matching, chat, verification, interview, career, jd
+from .api import personality, matching, chat, verification, resume, employer, career, review, interview, jd, chat_warning
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -19,20 +19,24 @@ app = FastAPI(
 # 配置CORS，允许前端访问
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # 注册路由
-app.include_router(personality.router)
-app.include_router(matching.router)
-app.include_router(chat.router)
-app.include_router(verification.router)
-app.include_router(interview.router)
-app.include_router(career.router)
-app.include_router(jd.router)
+app.include_router(personality.router)   # 人格画像
+app.include_router(matching.router)       # AI匹配
+app.include_router(chat.router)           # AI聊天助手
+app.include_router(verification.router)   # 风险审核
+app.include_router(resume.router)        # 简历 AI（优化/拒信分析/动态更新）
+app.include_router(employer.router)      # 企业端 AI（JD优化）
+app.include_router(career.router)        # 职业辅助 AI（合同审核）
+app.include_router(interview.router)      # 模拟面试
+app.include_router(jd.router)            # JD 分析
+app.include_router(review.router)         # 互评 AI（学生评企业/企业评学生/口碑摘要）
+app.include_router(chat_warning.router)   # 聊天风险预警
 
 
 @app.get("/")

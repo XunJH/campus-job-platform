@@ -1,0 +1,120 @@
+<aside class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-gray-100 bg-white p-4 shadow-[4px_0_6px_-1px_rgba(26,54,93,0.05)]">
+  <div class="mb-4 flex items-center gap-3 px-2 py-4">
+    <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
+      <span class="material-symbols-outlined">domain</span>
+    </div>
+    <div>
+      <h1 class="text-lg font-black text-primary">企业招聘台</h1>
+      <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">招聘工作台</p>
+    </div>
+  </div>
+
+  <nav class="flex flex-1 flex-col gap-1">
+    <a
+      routerLink="/employer/dashboard"
+      class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
+      [class.bg-blue-50]="isActive('dashboard')"
+      [class.text-primary]="isActive('dashboard')"
+      [class.text-gray-500]="!isActive('dashboard')"
+      [class.hover:bg-gray-50]="!isActive('dashboard')"
+      [class.hover:translate-x-1]="!isActive('dashboard')"
+    >
+      <span class="material-symbols-outlined">dashboard</span>
+      工作台
+    </a>
+    <a
+      routerLink="/employer/jobs/post"
+      class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
+      [class.bg-blue-50]="isActive('post-job')"
+      [class.text-primary]="isActive('post-job')"
+      [class.text-gray-500]="!isActive('post-job')"
+      [class.hover:bg-gray-50]="!isActive('post-job')"
+      [class.hover:translate-x-1]="!isActive('post-job')"
+    >
+      <span class="material-symbols-outlined">add_circle</span>
+      发布岗位
+    </a>
+    <a
+      routerLink="/employer/jobs"
+      class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
+      [class.bg-blue-50]="isActive('jobs')"
+      [class.text-primary]="isActive('jobs')"
+      [class.text-gray-500]="!isActive('jobs')"
+      [class.hover:bg-gray-50]="!isActive('jobs')"
+      [class.hover:translate-x-1]="!isActive('jobs')"
+    >
+      <span class="material-symbols-outlined">work</span>
+      职位管理
+    </a>
+    <a
+      routerLink="/employer/applications"
+      class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
+      [class.bg-blue-50]="isActive('applications')"
+      [class.text-primary]="isActive('applications')"
+      [class.text-gray-500]="!isActive('applications')"
+      [class.hover:bg-gray-50]="!isActive('applications')"
+      [class.hover:translate-x-1]="!isActive('applications')"
+    >
+      <span class="material-symbols-outlined">group</span>
+      申请管理
+    </a>
+    <a
+      routerLink="/employer/wallet"
+      class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
+      [class.bg-blue-50]="isActive('wallet')"
+      [class.text-primary]="isActive('wallet')"
+      [class.text-gray-500]="!isActive('wallet')"
+      [class.hover:bg-gray-50]="!isActive('wallet')"
+      [class.hover:translate-x-1]="!isActive('wallet')"
+    >
+      <span class="material-symbols-outlined">payments</span>
+      结算管理
+    </a>
+    <a
+      routerLink="/employer/ai"
+      class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
+      [class.bg-blue-50]="isActive('ai')"
+      [class.text-primary]="isActive('ai')"
+      [class.text-gray-500]="!isActive('ai')"
+      [class.hover:bg-gray-50]="!isActive('ai')"
+      [class.hover:translate-x-1]="!isActive('ai')"
+    >
+      <span class="material-symbols-outlined">auto_awesome</span>
+      AI 助手
+    </a>
+    <a
+      routerLink="/employer/profile"
+      class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
+      [class.bg-blue-50]="isActive('profile')"
+      [class.text-primary]="isActive('profile')"
+      [class.text-gray-500]="!isActive('profile')"
+      [class.hover:bg-gray-50]="!isActive('profile')"
+      [class.hover:translate-x-1]="!isActive('profile')"
+    >
+      <span class="material-symbols-outlined">domain</span>
+      企业资料
+    </a>
+  </nav>
+
+  <div class="border-t border-gray-50 pt-4">
+    <a
+      routerLink="/employer/verification"
+      class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
+      [class.bg-blue-50]="isActive('verification')"
+      [class.text-primary]="isActive('verification')"
+      [class.text-gray-500]="!isActive('verification')"
+      [class.hover:bg-gray-50]="!isActive('verification')"
+    >
+      <span class="material-symbols-outlined">verified</span>
+      企业认证
+    </a>
+    <button
+      type="button"
+      (click)="logout()"
+      class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-error transition-all hover:bg-red-50"
+    >
+      <span class="material-symbols-outlined">logout</span>
+      退出登录
+    </button>
+  </div>
+</aside>

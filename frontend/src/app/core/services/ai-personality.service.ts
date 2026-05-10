@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, catchError } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface PersonalityQuestion {
   id: number;
@@ -31,7 +32,7 @@ export interface QuestionnaireResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AiPersonalityService {
-  private readonly AI_API_URL = 'http://localhost:8000';
+  private readonly AI_API_URL = environment.aiBaseUrl;
 
   constructor(private http: HttpClient) {}
 

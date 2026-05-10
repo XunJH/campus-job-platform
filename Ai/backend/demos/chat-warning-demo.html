@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>聊天风险预警演示 - 校园招聘平台</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+<style>
+  :root {
+    --primary: #1A365D;
+    --primary-light: #EBF4FF;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --card-bg: #fff;
+    --border: #E2E8F0;
+    --text: #1F2937;
+    --text-muted: #6B7280;
+    --text-light: #9CA3AF;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Manrope', system-ui, sans-serif;
+    background: #F1F5F9;
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* 导航栏 */
+  header {
+    background: var(--primary);
+    color: #fff;
+    padding: 14px 24px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 2px 8px rgba(26,54,93,.25);
+  }
+  .header-inner { max-width: 960px; width: 100%; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .header-logo { font-size: 16px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-tag { background: rgba(255,255,255,.15); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  .header-tag.danger { background: var(--danger); animation: pulse-danger 2s infinite; }
+  @keyframes pulse-danger { 0%,100%{opacity:1} 50%{opacity:.7} }
+
+  /* 主容器 */
+  .main { max-width: 960px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* 说明卡片 */
+  .intro-card {
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+    border: 1px solid #F59E0B;
+    border-radius: var(--radius); padding: 18px 22px;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .intro-card .material-symbols-outlined { font-size: 28px; color: #D97706; flex-shrink: 0; }
+  .intro-card h2 { font-size: 15px; color: #92400E; margin-bottom: 6px; }
+  .intro-card p { font-size: 13px; color: #92400E; line-height: 1.5; }
+
+  /* 聊天区域 */
+  .chat-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .chat-header {
+    padding: 14px 20px; background: var(--primary); color: #fff;
+    display: flex; align-items: center; gap: 10px; justify-content: space-between;
+  }
+  .chat-header-left { display: flex; align-items: center; gap: 8px; }
+  .chat-header-name { font-size: 14px; font-weight: 700; }
+  .chat-header-role { font-size: 11px; opacity: .75; background: rgba(255,255,255,.15); padding: 2px 8px; border-radius: 10px; }
+  .risk-badge { background: var(--danger); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px; animation: pulse-danger 1.5s infinite; }
+
+  /* 预警横幅（实时） */
+  .warning-banner-live {
+    display: none; align-items: flex-start; gap: 8px;
+    background: #FEF2F2; border-bottom: 1px solid #FECACA;
+    padding: 10px 16px; font-size: 12px; color: #991B1B; line-height: 1.5;
+  }
+  .warning-banner-live.show { display: flex; }
+  .warning-banner-live .material-symbols-outlined { font-size: 20px; color: #DC2626; flex-shrink: 0; }
+  .warn-tags-live { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .warn-tag-live {
+    background: #DC2626; color: #fff;
+    border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 600;
+  }
+
+  /* 消息区 */
+  .chat-messages { height: 420px; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .msg-row { display: flex; gap: 10px; align-items: flex-start; max-width: 85%; }
+  .msg-row.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .msg-row.ai .msg-avatar { background: var(--primary); }
+  .msg-row.user .msg-avatar { background: var(--success); }
+  .msg-bubble {
+    padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.55; word-break: break-word;
+  }
+  .msg-row.ai .msg-bubble { background: #F1F5F9; border-top-left-radius: 4px; color: var(--text); }
+  .msg-row.user .msg-bubble { background: var(--primary); color: #fff; border-top-right-radius: 4px; }
+  .msg-time { font-size: 10px; color: var(--text-light); margin-top: 3px; }
+  .msg-row.user .msg-time { text-align: right; }
+
+  /* 输入区 */
+  .input-area {
+    padding: 14px 16px; border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: flex-end;
+    background: #FAFBFC;
+  }
+  .input-wrap { flex: 1; position: relative; }
+  .chat-input {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); font-family: inherit; font-size: 13px;
+    resize: none; outline: none; transition: border-color .2s; line-height: 1.4;
+  }
+  .chat-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,54,93,.06); }
+  .send-btn {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--primary); color: #fff; border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform .15s, box-shadow .2s; flex-shrink: 0;
+  }
+  .send-btn:hover { transform: scale(1.05); box-shadow: 0 2px 8px rgba(26,54,93,.3); }
+  .send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+  /* 预设消息按钮 */
+  .preset-area { padding: 12px 16px 8px; border-top: 1px solid var(--border); }
+  .preset-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .preset-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+  .preset-btn {
+    font-size: 11px; padding: 5px 12px; border-radius: 20px; cursor: pointer;
+    border: 1px solid var(--border); background: #fff; color: var(--text);
+    transition: all .15s; font-family: inherit;
+  }
+  .preset-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .preset-btn.risk-btn:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+  /* 底部风险汇总 */
+  .risk-summary-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .risk-summary-header { padding: 14px 20px; background: #FEF2F2; border-bottom: 1px solid #FECACA; display: flex; align-items: center; gap: 8px; }
+  .risk-summary-header .material-symbols-outlined { color: #DC2626; }
+  .risk-summary-header span { font-size: 14px; font-weight: 700; color: #991B1B; }
+  .risk-summary-body { padding: 16px 20px; }
+  .risk-item {
+    display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px;
+    border-radius: var(--radius-sm); margin-bottom: 8px;
+    font-size: 12px; line-height: 1.5;
+  }
+  .risk-item:last-child { margin-bottom: 0; }
+  .risk-item.high { background: #FEF2F2; border-left: 3px solid #DC2626; }
+  .risk-item.mid { background: #FFFBEB; border-left: 3px solid #F59E0B; }
+  .risk-item.low { background: #EFF6FF; border-left: 3px solid #3B82F6; }
+  .risk-icon { font-size: 18px; flex-shrink: 0; }
+  .risk-item-text b { font-weight: 700; }
+  .risk-item-tip { font-size: 11px; margin-top: 3px; opacity: .8; }
+
+  /* 空状态 */
+  .empty-state {
+    text-align: center; padding: 40px 20px; color: var(--text-light);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="material-symbols-outlined">shield</span>
+    <span class="header-logo">聊天安全预警系统</span>
+    <span class="header-tag danger">演示模式</span>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- 功能说明 -->
+  <div class="intro-card">
+    <span class="material-symbols-outlined">info</span>
+    <div>
+      <h2>🛡️ 聊天风险预警功能演示</h2>
+      <p>此页面模拟学生与企业商家的真实聊天场景。当商家发送的消息包含<strong>诈骗/诱导/隐私索取/违规内容</strong>时，AI会实时检测并在顶部显示预警横幅，同时底部汇总所有风险记录。点击下方预设按钮可模拟各种风险场景。</p>
+    </div>
+  </div>
+
+  <!-- 聊天窗口 -->
+  <div class="chat-card">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <span class="material-symbols-outlined" style="font-size:18px;">store</span>
+        <div>
+          <span class="chat-header-name">星巴克（万达广场店）</span>
+          <span class="chat-header-role">企业 · 咖啡师招聘</span>
+        </div>
+      </div>
+      <span class="risk-badge" id="liveRiskBadge" style="display:none;">⚠️ 实时预警中</span>
+    </div>
+
+    <!-- 实时预警横幅 -->
+    <div class="warning-banner-live" id="warningBannerLive">
+      <span class="material-symbols-outlined">warning</span>
+      <div>
+        <strong id="warningTextLive"></strong>
+        <div class="warn-tags-live" id="warningTagsLive"></div>
+      </div>
+    </div>
+
+    <!-- 消息列表 -->
+    <div class="chat-messages" id="chatMessages">
+      <!-- 初始欢迎 -->
+      <div class="msg-row ai">
+        <div class="msg-avatar"><span class="material-symbols-outlined" style="font-size:16px;">store</span></div>
+        <div>
+          <div class="msg-bubble">你好同学！看到你投了我们的咖啡师岗位，想和你聊聊。你之前有做过咖啡相关的兼职吗？</div>
+          <div class="msg-time">14:02 商家</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 预设消息（快速测试不同风险场景） -->
+    <div class="preset-area">
+      <div class="preset-label">🎭 模拟商家行为（点击发送）</div>
+      <div class="preset-btns">
+        <button class="preset-btn risk-btn" onclick="sendPreset('scam')">💰 要求先交押金/培训费</button>
+        <button class="preset-btn risk-btn" onclick="sendPreset('privacy')">🪪 索要身份证照片</button>
+        <button class="preset-btn risk-btn" onclick="sendPreset('offsite')">📱 引导加微信私聊</button>
+        <button class="preset-btn risk-btn" onclick="sendPreset('salary')">💸 承诺超高薪资</button>
+        <button class="preset-btn risk-btn" onclick="sendPreset('urgency')">🔥 制造紧迫感催促</button>
+        <button class="preset-btn" onclick="sendPreset('normal')">✅ 正常沟通（无风险）</button>
+      </div>
+    </div>
+
+    <!-- 输入框 -->
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea class="chat-input" id="chatInputDemo"
+          placeholder="输入商家消息...或直接点上方预设按钮测试"
+          rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCustom();}"
+        ></textarea>
+      </div>
+      <button class="send-btn" onclick="sendCustom()" id="sendBtnDemo">
+        <span class="material-symbols-outlined" style="font-size:18px;">send</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 风险汇总面板 -->
+  <div class="risk-summary-card" id="riskSummaryCard" style="display:none;">
+    <div class="risk-summary-header">
+      <span class="material-symbols-outlined">report_problem</span>
+      <span>本次会话风险汇总</span>
+      <span style="margin-left:auto;font-size:12px;color:#991B1B;" id="riskCountBadge">0 条预警</span>
+    </div>
+    <div class="risk-summary-body" id="riskListBody"></div>
+  </div>
+
+  <!-- 使用说明 -->
+  <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
+    <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">📋 预警规则说明</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px;">
+      <div style="color:#DC2626;"><b>🔴 高危：</b>要求交钱、索要身份证、引导线下见面</div>
+      <div style="color:#D97706;"><b>🟡 中危：</b>引导站外沟通、夸大薪资承诺</div>
+      <div style="color:#2563EB;"><b>🔵 低危：</b>制造紧迫感催促、过度索要个人信息</div>
+      <div style="color:#10B981;"><b>🟢 安全：</b>正常岗位询问、时间协调等</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// 状态
+let msgId = 0;
+
+// ================================================================
+// 风险检测引擎 —— 模拟 AI 实时分析
+// ================================================================
+const RISK_RULES = [
+  // 🔴 高危
+  {
+    patterns: [/押金|培训费|报名费|保证金|工装费|建档费|手续费|交钱先|先交.*?元|转账.*?入职|付款.*?录用/i],
+    type: '高危', category: '金钱诈骗', icon: '🚨',
+    title: '要求缴纳费用',
+    tip: '正规兼职绝不会在入职前收取任何费用！如遇请立即举报。',
+    color: '#DC2626'
+  },
+  {
+    patterns: [/身份证|身份证照|身份证正反面|手持身份证|学生证原件|银行卡号|卡密/i],
+    type: '高危', category: '隐私窃取', icon: '🆔',
+    title: '索要敏感证件',
+    tip: '绝不要向任何人提供身份证/银行卡照片！这可能导致身份被盗用。',
+    color: '#DC2626'
+  },
+  {
+    patterns: [/加我微信|加v|加V|扫码加|私聊|转QQ|线下见|面谈|来我们公司|去店里|地址是/i],
+    type: '高危', category: '站外引流', icon: '↗️',
+    title: '引导站外沟通',
+    tip: '请勿脱离平台私下联系！平台聊天记录可作为维权证据。',
+    color: '#DC2626'
+  },
+
+  // 🟡 中危
+  {
+    patterns: [/日薪.*?[5-9]百|月薪过万|轻松过万|月入.*?[5-9]万|高薪|待遇超好|包吃住还发/i],
+    type: '中危', category: '虚假薪资', icon: '💰',
+    title: '薪资异常偏高',
+    tip: '远超市场水平的薪资往往是诈骗诱饵，请核实岗位真实性。',
+    color: '#D97706'
+  },
+  {
+    patterns: [/马上|立即|今天之内|名额有限|仅剩.*?个|错过就没|抓紧|赶紧|速来|现在就/i],
+    type: '中危', category: '心理施压', icon: '⏰',
+    title: '制造紧迫感',
+    tip: '真正的招聘不会用紧迫感逼你做决定，请保持冷静判断。',
+    color: '#D97706'
+  },
+
+  // 🔵 低危
+  {
+    patterns: [/家庭住址|父母电话|紧急联系人|学校宿舍号|室友信息/i],
+    type: '低危', category: '过度收集信息', icon: '📋',
+    title: '过度索取个人信息',
+    tip: '非必要情况下无需提供过多个人及家庭信息。',
+    color: '#2563FB'
+  },
+  {
+    patterns: [/先试试|不签合同|没有合同|现金结算|不走平台/i],
+    type: '低危', category: '规避监管', icon: '⚠️',
+    title: '暗示绕过正规流程',
+    tip: '无合同/不走平台的用工关系不受劳动法保护，权益难以保障。',
+    color: '#2563FB'
+  },
+];
+
+function detectChatRisk(message) {
+  const hits = [];
+  for (const rule of RISK_RULES) {
+    for (const pattern of rule.patterns) {
+      if (pattern.test(message)) {
+        hits.push({
+          type: rule.type,
+          category: rule.category,
+          icon: rule.icon,
+          title: rule.title,
+          description: `「${message.slice(0, 40)}${message.length > 40 ? '...' : ''}」`,
+          tip: rule.tip,
+          color: rule.color,
+          time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        });
+        break; // 一个规则只命中一次
+      }
+    }
+  }
+  return hits;
+}
+
+// ================================================================
+// 预设场景数据
+// ================================================================
+const PRESETS = {
+  scam: [
+    "好的，你条件不错！不过入职前需要先交200元培训费和100元服装押金，这是公司规定，工作满一个月会退给你。",
+    "对的对的，这个钱不多的，主要是为了确保你能稳定工作嘛。你现在微信还是支付宝方便？我先给你个账号。",
+  ],
+  privacy: [
+    "好的同学，那麻烦你拍一张身份证正反面的照片发给我，我们需要录入系统办入职手续。",
+    "嗯对的，最好再拍一张手持身份证的照片，公司要求的，放心我们不会外传。",
+  ],
+  offsite: [
+    "这样吧，文字聊不太方便，你加我微信吧：xbk_cafe_2026，我在微信上跟你详细说岗位要求和薪资。",
+    "平台上有些话不方便说，加了微信我给你看我们店里的环境和工作时间安排。",
+  ],
+  salary: [
+    "我们这里咖啡师时薪80-120元，做得好一个月能拿6000+，比外面高很多的！而且还有提成。",
+    "是的，只要肯干，月入过万很正常的。很多学生都做到了。你要不要今天就来看看？",
+  ],
+  urgency: [
+    "这个岗位很抢手的，今天已经有5个人问过了，只剩1个名额了，你要的话我现在就帮你留。",
+    "对，经理说了今天就截止了，明天就招满了。你要不要赶紧把资料发过来？",
+  ],
+  normal: [
+    "没问题，那你明天下午有空吗？可以来店里试岗一下，看看环境适不适合你。",
+    "好的，我们店营业时间是早7点到晚10点，你可以选一个时间段来试试。",
+  ],
+};
+
+let presetStep = {};
+
+function sendPreset(key) {
+  const msgs = PRESETS[key];
+  if (!msgs) return;
+
+  // 初始化该 key 的步数
+  if (presetStep[key] === undefined) presetStep[key] = 0;
+  if (presetStep[key] >= msgs.length) presetStep[key] = 0;
+
+  const text = msgs[presetStep[key]];
+  appendMessage(text, 'merchant');
+  presetStep[key]++;
+}
+
+function sendCustom() {
+  const input = $('chatInputDemo');
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = '';
+  appendMessage(val, 'merchant');
+}
+
+// ================================================================
+// 消息渲染 + 预警触发
+// ================================================================
+function appendMessage(text, role) {
+  const container = $('chatMessages');
+
+  if (role === 'merchant') {
+    container.innerHTML += `
+      <div class="msg-row ai">
+        <div class="msg-avatar"><span class="material-symbols-outlined" style="font-size:16px;">store</span></div>
+        <div>
+          <div class="msg-bubble">${escapeHtml(text).replace(/\n/g,'<br>')}</div>
+          <div class="msg-time">${new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})} 商家</div>
+        </div>
+      </div>`;
+  } else {
+    container.innerHTML += `
+      <div class="msg-row user">
+        <div class="msg-avatar">👤</div>
+        <div>
+          <div class="msg-bubble">${escapeHtml(text)}</div>
+          <div class="msg-time">${new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})} 我</div>
+        </div>
+      </div>`;
+  }
+
+  container.scrollTop = container.scrollHeight;
+
+  // ★★★ 只对商家消息进行风险检测 ★★★
+  if (role === 'merchant') {
+    setTimeout(() => {
+      const risks = detectChatRisk(text);
+      if (risks.length > 0) {
+        showLiveWarning(risks);
+        addToRiskSummary(risks, text);
+      } else {
+        hideLiveWarning();
+      }
+    }, 400); // 模拟AI检测延迟
+  }
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// 实时预警横幅
+function showLiveWarning(risks) {
+  $('warningBannerLive').classList.add('show');
+  $('liveRiskBadge').style.display = '';
+  $('warningTextLive').innerHTML = risks.map(r =>
+    `${r.icon} <b>${r.type}</b> [${r.category}] ${r.title}`
+  ).join('<br>');
+  $('warningTagsLive').innerHTML = risks.map(r =>
+    `<span class="warn-tag-live">${r.category}</span>`
+  ).join('');
+
+  // 高危时加红色边框到整个聊天卡片
+  if (risks.some(r => r.type === '高危')) {
+    document.querySelector('.chat-card').style.boxShadow = '0 0 0 2px #DC2626, 0 4px 12px rgba(220,38,38,.15)';
+  }
+
+  // 8秒后隐藏横幅（但保留红色边框）
+  setTimeout(() => {
+    $('warningBannerLive').classList.remove('show');
+  }, 8000);
+}
+
+function hideLiveWarning() {
+  $('warningBannerLive').classList.remove('show');
+  document.querySelector('.chat-card').style.boxShadow = '';
+}
+
+// 风险汇总面板
+const allRisks = [];
+
+function addToRiskSummary(risks, originalMsg) {
+  allRisks.push(...risks);
+
+  $('riskSummaryCard').style.display = '';
+  $('riskCountBadge').textContent = `${allRisks.length} 条预警`;
+
+  const body = $('riskListBody');
+  body.innerHTML = '';
+
+  // 按 type 排序：高危→中危→低危
+  const sorted = [...allRisks].sort((a, b) => {
+    const order = {'高危': 0, '中危': 1, '低危': 2};
+    return order[a.type] - order[b.type];
+  });
+
+  for (const r of sorted) {
+    const cls = r.type === '高危' ? 'high' : r.type === '中危' ? 'mid' : 'low';
+    body.innerHTML += `
+      <div class="risk-item ${cls}">
+        <span class="risk-icon">${r.icon}</span>
+        <div class="risk-item-text">
+          <b>${r.type} · ${r.category}</b> — ${r.title}<br>
+          <span style="opacity:.7;">原文：${escapeHtml(r.description)}</span>
+          <div class="risk-item-tip">${r.tip}</div>
+        </div>
+      </div>`;
+  }
+}
+</script>
+
+</body>
+</html>
