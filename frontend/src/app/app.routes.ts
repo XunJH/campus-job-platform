@@ -56,6 +56,11 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'student/messages',
+    loadComponent: () => import('./features/student/pages/messages/messages.component').then(c => c.StudentMessagesComponent),
+    canActivate: [AuthGuard]
+  },
+  {
     path: 'student/resume',
     loadComponent: () => import('./features/student/pages/profile/profile.component').then(c => c.ProfileComponent),
     canActivate: [AuthGuard]
@@ -83,6 +88,11 @@ export const routes: Routes = [
   {
     path: 'employer/applications',
     loadComponent: () => import('./features/employer/pages/applications/applications.component').then(c => c.EmployerApplicationsComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'employer/messages',
+    loadComponent: () => import('./features/employer/pages/messages/messages.component').then(c => c.EmployerMessagesComponent),
     canActivate: [AuthGuard]
   },
   {

@@ -5,7 +5,7 @@
     </div>
     <div>
       <h1 class="text-lg font-black text-primary">企业招聘台</h1>
-      <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">招聘工作台</p>
+      <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">RECRUITMENT DESK</p>
     </div>
   </div>
 
@@ -44,7 +44,7 @@
       [class.hover:translate-x-1]="!isActive('jobs')"
     >
       <span class="material-symbols-outlined">work</span>
-      职位管理
+      岗位管理
     </a>
     <a
       routerLink="/employer/applications"
@@ -57,6 +57,23 @@
     >
       <span class="material-symbols-outlined">group</span>
       申请管理
+    </a>
+    <a
+      routerLink="/employer/messages"
+      class="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
+      [class.bg-blue-50]="isActive('messages')"
+      [class.text-primary]="isActive('messages')"
+      [class.text-gray-500]="!isActive('messages')"
+      [class.hover:bg-gray-50]="!isActive('messages')"
+      [class.hover:translate-x-1]="!isActive('messages')"
+    >
+      <span class="flex items-center gap-3">
+        <span class="material-symbols-outlined">chat</span>
+        沟通渠道
+      </span>
+      <span *ngIf="unreadCount > 0" class="inline-flex min-w-[22px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+        {{ unreadCount > 99 ? '99+' : unreadCount }}
+      </span>
     </a>
     <a
       routerLink="/employer/wallet"

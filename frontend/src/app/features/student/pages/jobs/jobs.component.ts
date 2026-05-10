@@ -25,6 +25,7 @@ export class JobsComponent implements OnInit {
   jobs: Job[] = [];
   loading = false;
   errorMessage = '';
+
   searchKeyword = '';
   minSalary = 0;
   selectedCategories: string[] = [];
@@ -36,6 +37,11 @@ export class JobsComponent implements OnInit {
   limit = 8;
   total = 0;
   totalPages = 0;
+
+  batchApplyLoading = false;
+  batchApplyMessage = '';
+  batchApplyError = false;
+  readonly maxBatchApplyCount = 100;
 
   categories = ['技术类', '教学类', '配送类', '营销类'];
   workLocations = [
@@ -79,29 +85,42 @@ export class JobsComponent implements OnInit {
     });
 
     this.route.queryParams.subscribe((params) => {
-      if (params['search']) {
-        this.searchKeyword = params['search'];
-      }
+      this.searchKeyword = params['search'] || '';
       this.loadJobs();
     });
+  }
+
+  get canBatchApply(): boolean {
+    return this.jobs.length > 0 && !this.loading && !this.batchApplyLoading;
+  }
+
+  private getActiveFilterArgs(): {
+    category?: string;
+    salaryType?: string;
+    effectiveMinSalary?: number;
+  } {
+    return {
+      category: this.selectedCategories.length > 0 ? this.selectedCategories.join(',') : undefined,
+      salaryType: this.selectedSalaryTypes.length > 0 ? this.selectedSalaryTypes.join(',') : undefined,
+      effectiveMinSalary: this.minSalary > 0 ? this.minSalary : undefined
+    };
   }
 
   loadJobs(): void {
     this.loading = true;
     this.errorMessage = '';
-    const category = this.selectedCategories.length > 0 ? this.selectedCategories.join(',') : undefined;
-    const salaryType = this.selectedSalaryTypes.length > 0 ? this.selectedSalaryTypes.join(',') : undefined;
-    const effectiveMinSalary = this.minSalary > 0 ? this.minSalary : undefined;
+
+    const filters = this.getActiveFilterArgs();
 
     this.jobService.getJobs(
       this.page,
       this.limit,
       this.searchKeyword || undefined,
-      effectiveMinSalary,
+      filters.effectiveMinSalary,
       this.selectedWorkLocation || undefined,
-      category,
+      filters.category,
       this.selectedJobType || undefined,
-      salaryType
+      filters.salaryType
     ).subscribe({
       next: (res) => {
         if (res.success && res.data) {
@@ -109,12 +128,12 @@ export class JobsComponent implements OnInit {
           this.total = res.data.pagination?.total || 0;
           this.totalPages = res.data.pagination?.totalPages || 0;
         } else {
-          this.errorMessage = '获取岗位列表失败';
+          this.errorMessage = '获取岗位列表失败。';
         }
         this.loading = false;
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || '网络错误，请稍后重试';
+        this.errorMessage = err.error?.message || '网络错误，请稍后重试。';
         this.loading = false;
       }
     });
@@ -122,11 +141,13 @@ export class JobsComponent implements OnInit {
 
   onSearch(): void {
     this.page = 1;
+    this.batchApplyMessage = '';
     this.loadJobs();
   }
 
   onFilterChange(): void {
     this.page = 1;
+    this.batchApplyMessage = '';
     this.loadJobs();
   }
 
@@ -168,6 +189,7 @@ export class JobsComponent implements OnInit {
     this.selectedWorkLocation = '';
     this.selectedSalaryTypes = [];
     this.page = 1;
+    this.batchApplyMessage = '';
     this.loadJobs();
   }
 
@@ -183,6 +205,91 @@ export class JobsComponent implements OnInit {
       this.page += 1;
       this.loadJobs();
     }
+  }
+
+  applyFilteredJobs(): void {
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    if (this.total === 0 || this.batchApplyLoading) {
+      return;
+    }
+
+    this.batchApplyLoading = true;
+    this.batchApplyError = false;
+    this.batchApplyMessage = '';
+
+    const filters = this.getActiveFilterArgs();
+    const batchLimit = Math.min(this.total, this.maxBatchApplyCount);
+
+    this.jobService.getJobs(
+      1,
+      batchLimit,
+      this.searchKeyword || undefined,
+      filters.effectiveMinSalary,
+      this.selectedWorkLocation || undefined,
+      filters.category,
+      this.selectedJobType || undefined,
+      filters.salaryType
+    ).subscribe({
+      next: (res) => {
+        const targetJobs = res.success && res.data ? (res.data.jobs || []) : [];
+        const jobIds = targetJobs.map((job) => job.id);
+
+        if (jobIds.length === 0) {
+          this.batchApplyLoading = false;
+          this.batchApplyError = true;
+          this.batchApplyMessage = '当前筛选结果中没有可投递的岗位。';
+          return;
+        }
+
+        this.jobService.batchApplyJobs(jobIds).subscribe({
+          next: (applyRes) => {
+            const data = applyRes.data;
+            const detail: string[] = [];
+
+            if (data.skippedCount) {
+              detail.push(`跳过 ${data.skippedCount} 个`);
+            }
+
+            if (data.failedCount) {
+              detail.push(`失败 ${data.failedCount} 个`);
+            }
+
+            if (this.total > this.maxBatchApplyCount) {
+              detail.push(`本次只处理前 ${this.maxBatchApplyCount} 个筛选结果`);
+            }
+
+            const firstResumeHint = data.results.find((item) => item.message.includes('简历图片'));
+            if (data.successCount === 0 && firstResumeHint) {
+              this.batchApplyError = true;
+              this.batchApplyMessage = `${firstResumeHint.message}。请先去个人资料上传简历图片。`;
+            } else {
+              this.batchApplyError = data.successCount === 0;
+              this.batchApplyMessage = [
+                `已成功投递 ${data.successCount} 个岗位`,
+                detail.length ? detail.join('，') : ''
+              ].filter(Boolean).join('；');
+            }
+
+            this.batchApplyLoading = false;
+            this.loadJobs();
+          },
+          error: (err) => {
+            this.batchApplyLoading = false;
+            this.batchApplyError = true;
+            this.batchApplyMessage = err.error?.message || '批量投递失败，请稍后重试。';
+          }
+        });
+      },
+      error: (err) => {
+        this.batchApplyLoading = false;
+        this.batchApplyError = true;
+        this.batchApplyMessage = err.error?.message || '读取筛选结果失败，请稍后重试。';
+      }
+    });
   }
 
   formatSalary(job: Job): string {
@@ -241,8 +348,7 @@ export class JobsComponent implements OnInit {
     let matchCount = 0;
 
     for (const suitableJob of suitableJobs) {
-      const keyword = suitableJob.toLowerCase();
-      if (jobText.includes(keyword)) {
+      if (jobText.includes(String(suitableJob).toLowerCase())) {
         matchCount += 1;
       }
     }
@@ -261,10 +367,5 @@ export class JobsComponent implements OnInit {
     }
 
     return `${40 + (base % 10)}%`;
-  }
-
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/auth/login']);
   }
 }

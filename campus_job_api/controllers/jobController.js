@@ -1,7 +1,7 @@
 const { Op } = require('sequelize');
 const Job = require('../models/Job');
 const User = require('../models/User');
-const { sequelize, Verification, Application, Bookmark, Settlement } = require('../models');
+const { sequelize, Verification, Application, Bookmark, Conversation, ConversationMessage, ConversationParticipantState, Settlement } = require('../models');
 const { checkFraud } = require('../services/aiService');
 const { sanitizeFields, sanitizeText } = require('../utils/sanitize');
 
@@ -176,6 +176,97 @@ const ensureSettlementForApprovedApplication = async (application, transaction) 
   }
 
   return Settlement.create(settlementPayload, { transaction });
+};
+
+const buildConversationPreview = (coverLetter, hasResume) => {
+  if (coverLetter) {
+    return sanitizeText(coverLetter).slice(0, 120);
+  }
+
+  if (hasResume) {
+    return '已发送简历图片';
+  }
+
+  return '已发起岗位沟通';
+};
+
+const createApplicationConversation = async ({
+  application,
+  student,
+  job,
+  coverLetter,
+  resumeUrl,
+  transaction
+}) => {
+  const preview = buildConversationPreview(coverLetter, Boolean(resumeUrl));
+  const now = new Date();
+  const conversation = await Conversation.create({
+    applicationId: application.id,
+    jobId: job.id,
+    studentId: student.id,
+    employerId: job.employerId,
+    lastMessagePreview: preview,
+    lastMessageAt: now
+  }, { transaction });
+
+  let initialUnreadCount = 0;
+  let lastMessageAt = now;
+
+  if (resumeUrl) {
+    const resumeMessage = await ConversationMessage.create({
+      conversationId: conversation.id,
+      senderId: student.id,
+      senderRole: 'student',
+      messageType: 'resume',
+      content: `${student.username} 已投递该岗位，并发送了简历图片。`,
+      attachmentUrl: resumeUrl
+    }, { transaction });
+    lastMessageAt = resumeMessage.createdAt;
+    initialUnreadCount += 1;
+  }
+
+  if (coverLetter) {
+    const coverLetterMessage = await ConversationMessage.create({
+      conversationId: conversation.id,
+      senderId: student.id,
+      senderRole: 'student',
+      messageType: 'text',
+      content: coverLetter
+    }, { transaction });
+    lastMessageAt = coverLetterMessage.createdAt;
+    initialUnreadCount += 1;
+  } else if (!resumeUrl) {
+    const systemMessage = await ConversationMessage.create({
+      conversationId: conversation.id,
+      senderId: student.id,
+      senderRole: 'student',
+      messageType: 'system',
+      content: `${student.username} 已投递该岗位。`
+    }, { transaction });
+    lastMessageAt = systemMessage.createdAt;
+    initialUnreadCount += 1;
+  }
+
+  await conversation.update({ lastMessageAt }, { transaction });
+
+  await ConversationParticipantState.bulkCreate([
+    {
+      conversationId: conversation.id,
+      userId: student.id,
+      role: 'student',
+      unreadCount: 0,
+      lastReadAt: lastMessageAt
+    },
+    {
+      conversationId: conversation.id,
+      userId: job.employerId,
+      role: 'employer',
+      unreadCount: initialUnreadCount,
+      lastReadAt: null
+    }
+  ], { transaction });
+
+  return conversation;
 };
 
 exports.createJob = async (req, res) => {
@@ -881,6 +972,94 @@ exports.getEmployerStats = async (req, res) => {
   }
 };
 
+const applyJobForStudent = async ({
+  studentId,
+  jobId,
+  coverLetter,
+  transaction
+}) => {
+  const job = await Job.findByPk(jobId, {
+    transaction,
+    lock: transaction.LOCK.UPDATE
+  });
+
+  if (!job) {
+    const error = new Error('岗位不存在');
+    error.status = 404;
+    throw error;
+  }
+
+  if (job.auditStatus !== 'approved') {
+    const error = new Error('该岗位尚未通过审核');
+    error.status = 400;
+    throw error;
+  }
+
+  if (job.status !== 'active') {
+    const error = new Error('该岗位当前不可申请');
+    error.status = 400;
+    throw error;
+  }
+
+  if (job.deadline && new Date(job.deadline) <= new Date()) {
+    const error = new Error('该岗位申请已截止');
+    error.status = 400;
+    throw error;
+  }
+
+  const student = await User.findByPk(studentId, {
+    attributes: ['id', 'username', 'personalityProfile'],
+    transaction,
+    lock: transaction.LOCK.UPDATE
+  });
+
+  if (!student) {
+    const error = new Error('学生账号不存在');
+    error.status = 404;
+    throw error;
+  }
+
+  const resumeUrl = student.personalityProfile?.resumeImage || null;
+  if (!resumeUrl) {
+    const error = new Error('请先在个人资料中上传简历图片后再投递');
+    error.status = 400;
+    throw error;
+  }
+
+  const existing = await Application.findOne({
+    where: { studentId, jobId },
+    transaction,
+    lock: transaction.LOCK.UPDATE
+  });
+
+  if (existing) {
+    const error = new Error('你已经申请过该岗位');
+    error.status = 409;
+    throw error;
+  }
+
+  const application = await Application.create({
+    studentId,
+    jobId,
+    coverLetter,
+    resume: resumeUrl,
+    status: 'pending'
+  }, { transaction });
+
+  await job.increment('applicationsCount', { by: 1, transaction });
+
+  await createApplicationConversation({
+    application,
+    student,
+    job,
+    coverLetter,
+    resumeUrl,
+    transaction
+  });
+
+  return application;
+};
+
 exports.applyJob = async (req, res) => {
   try {
     const studentId = parseInt(req.user.id, 10);
@@ -917,6 +1096,25 @@ exports.applyJob = async (req, res) => {
         throw error;
       }
 
+      const student = await User.findByPk(studentId, {
+        attributes: ['id', 'username', 'personalityProfile'],
+        transaction,
+        lock: transaction.LOCK.UPDATE
+      });
+
+      if (!student) {
+        const error = new Error('学生账号不存在');
+        error.status = 404;
+        throw error;
+      }
+
+      const resumeUrl = student.personalityProfile?.resumeImage || null;
+      if (!resumeUrl) {
+        const error = new Error('请先在个人资料中上传简历图片后再投递');
+        error.status = 400;
+        throw error;
+      }
+
       const existing = await Application.findOne({
         where: { studentId, jobId },
         transaction,
@@ -933,10 +1131,20 @@ exports.applyJob = async (req, res) => {
         studentId,
         jobId,
         coverLetter,
+        resume: resumeUrl,
         status: 'pending'
       }, { transaction });
 
       await job.increment('applicationsCount', { by: 1, transaction });
+
+      await createApplicationConversation({
+        application,
+        student,
+        job,
+        coverLetter,
+        resumeUrl,
+        transaction
+      });
 
       return application;
     });
@@ -956,6 +1164,89 @@ exports.applyJob = async (req, res) => {
 
     console.error('申请岗位错误:', error);
     res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+exports.bulkApplyJobs = async (req, res) => {
+  try {
+    const studentId = parseInt(req.user.id, 10);
+    const coverLetter = req.body.coverLetter ? sanitizeText(req.body.coverLetter) : null;
+    const rawJobIds = Array.isArray(req.body.jobIds) ? req.body.jobIds : [];
+    const jobIds = [...new Set(rawJobIds
+      .map((item) => parseInt(item, 10))
+      .filter((item) => !Number.isNaN(item)))];
+
+    if (jobIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '请至少选择一个岗位'
+      });
+    }
+
+    if (jobIds.length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: '单次最多批量投递 100 个岗位'
+      });
+    }
+
+    const results = [];
+
+    for (const jobId of jobIds) {
+      try {
+        const application = await sequelize.transaction((transaction) => applyJobForStudent({
+          studentId,
+          jobId,
+          coverLetter,
+          transaction
+        }));
+
+        results.push({
+          jobId,
+          status: 'applied',
+          message: '投递成功',
+          application
+        });
+      } catch (error) {
+        if (error.status) {
+          results.push({
+            jobId,
+            status: 'skipped',
+            message: error.message
+          });
+          continue;
+        }
+
+        console.error(`批量投递岗位 ${jobId} 失败:`, error);
+        results.push({
+          jobId,
+          status: 'failed',
+          message: '服务器内部错误'
+        });
+      }
+    }
+
+    const successCount = results.filter((item) => item.status === 'applied').length;
+    const skippedCount = results.filter((item) => item.status === 'skipped').length;
+    const failedCount = results.filter((item) => item.status === 'failed').length;
+
+    return res.json({
+      success: true,
+      message: '批量投递处理完成',
+      data: {
+        total: jobIds.length,
+        successCount,
+        skippedCount,
+        failedCount,
+        results
+      }
+    });
+  } catch (error) {
+    console.error('批量投递岗位错误:', error);
+    return res.status(500).json({
       success: false,
       message: '服务器内部错误'
     });

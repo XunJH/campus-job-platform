@@ -4,6 +4,9 @@ const User = require('./User');
 const Job = require('./Job');
 const Application = require('./Application');
 const Bookmark = require('./Bookmark');
+const Conversation = require('./Conversation');
+const ConversationMessage = require('./ConversationMessage');
+const ConversationParticipantState = require('./ConversationParticipantState');
 const Settlement = require('./Settlement');
 const Verification = require('./Verification')(sequelize, DataTypes);
 
@@ -47,6 +50,78 @@ Job.hasMany(Application, {
 Application.belongsTo(Job, {
   foreignKey: 'jobId',
   as: 'job'
+});
+
+Application.hasOne(Conversation, {
+  foreignKey: 'applicationId',
+  as: 'conversation'
+});
+Conversation.belongsTo(Application, {
+  foreignKey: 'applicationId',
+  as: 'application'
+});
+
+Job.hasMany(Conversation, {
+  foreignKey: 'jobId',
+  as: 'conversations'
+});
+Conversation.belongsTo(Job, {
+  foreignKey: 'jobId',
+  as: 'job'
+});
+
+User.hasMany(Conversation, {
+  foreignKey: 'studentId',
+  as: 'studentConversations'
+});
+Conversation.belongsTo(User, {
+  foreignKey: 'studentId',
+  as: 'student'
+});
+
+User.hasMany(Conversation, {
+  foreignKey: 'employerId',
+  as: 'employerConversations'
+});
+Conversation.belongsTo(User, {
+  foreignKey: 'employerId',
+  as: 'employer'
+});
+
+Conversation.hasMany(ConversationMessage, {
+  foreignKey: 'conversationId',
+  as: 'messages'
+});
+ConversationMessage.belongsTo(Conversation, {
+  foreignKey: 'conversationId',
+  as: 'conversation'
+});
+
+User.hasMany(ConversationMessage, {
+  foreignKey: 'senderId',
+  as: 'sentConversationMessages'
+});
+ConversationMessage.belongsTo(User, {
+  foreignKey: 'senderId',
+  as: 'sender'
+});
+
+Conversation.hasMany(ConversationParticipantState, {
+  foreignKey: 'conversationId',
+  as: 'participantStates'
+});
+ConversationParticipantState.belongsTo(Conversation, {
+  foreignKey: 'conversationId',
+  as: 'conversation'
+});
+
+User.hasMany(ConversationParticipantState, {
+  foreignKey: 'userId',
+  as: 'conversationStates'
+});
+ConversationParticipantState.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
 });
 
 // User 和 Bookmark 的关系：一个学生可以收藏多个岗位
@@ -131,6 +206,9 @@ module.exports = {
   Job,
   Application,
   Bookmark,
+  Conversation,
+  ConversationMessage,
+  ConversationParticipantState,
   Settlement,
   Verification
 };

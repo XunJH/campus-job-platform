@@ -35,7 +35,6 @@
               [class.text-white]="selectedCategories.includes(category)"
               [class.border-slate-200]="!selectedCategories.includes(category)"
               [class.text-slate-600]="!selectedCategories.includes(category)"
-              [class.hover:border-slate-300]="!selectedCategories.includes(category)"
             >
               <span class="material-symbols-outlined text-base">{{ getCategoryIcon(category) }}</span>
               {{ category }}
@@ -151,6 +150,42 @@
             搜索
           </button>
         </div>
+      </div>
+    </section>
+
+    <section class="mb-6 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p class="text-sm font-semibold text-[#1A365D]">投递效率增强</p>
+          <p class="mt-1 text-sm text-slate-500">
+            支持对当前筛选结果一键投递。系统会自动跳过已申请、已关闭或未审核通过的岗位。
+          </p>
+          <p class="mt-1 text-xs text-slate-400">
+            单次最多处理 {{ maxBatchApplyCount }} 个筛选结果。
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="applyFilteredJobs()"
+          [disabled]="!canBatchApply"
+          class="rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          {{ batchApplyLoading ? '批量投递中...' : '一键投递当前筛选结果' }}
+        </button>
+      </div>
+
+      <div
+        *ngIf="batchApplyMessage"
+        class="mt-4 rounded-xl border px-4 py-3 text-sm"
+        [class.border-green-100]="!batchApplyError"
+        [class.bg-green-50]="!batchApplyError"
+        [class.text-green-700]="!batchApplyError"
+        [class.border-rose-100]="batchApplyError"
+        [class.bg-rose-50]="batchApplyError"
+        [class.text-rose-700]="batchApplyError"
+      >
+        {{ batchApplyMessage }}
       </div>
     </section>
 

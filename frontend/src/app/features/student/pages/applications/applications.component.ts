@@ -54,12 +54,12 @@ export class StudentApplicationsComponent implements OnInit {
         if (res.success) {
           this.applications = res.data || [];
         } else {
-          this.errorMessage = '加载投递记录失败';
+          this.errorMessage = '加载投递记录失败。';
         }
         this.loading = false;
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || '加载投递记录失败，请稍后重试';
+        this.errorMessage = err.error?.message || '加载投递记录失败，请稍后重试。';
         this.loading = false;
       }
     });
@@ -80,14 +80,14 @@ export class StudentApplicationsComponent implements OnInit {
           this.applications = this.applications.map((item) =>
             item.id === application.id ? { ...item, ...res.data } : item
           );
-          this.successMessage = res.message || '申请已撤回';
+          this.successMessage = res.message || '申请已撤回。';
         } else {
-          this.errorMessage = res.message || '撤回申请失败';
+          this.errorMessage = res.message || '撤回申请失败。';
         }
         this.withdrawingId = null;
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || '撤回申请失败，请稍后重试';
+        this.errorMessage = err.error?.message || '撤回申请失败，请稍后重试。';
         this.withdrawingId = null;
       }
     });

@@ -21,6 +21,7 @@ router.patch('/settlements/:settlementId/status', authenticateToken, employerGua
 router.get('/settlements/admin', authenticateToken, adminGuard, jobController.getAdminSettlements);
 
 router.get('/bookmarks/my', authenticateToken, studentGuard, jobController.getMyBookmarks);
+router.post('/batch-apply', authenticateToken, studentGuard, jobController.bulkApplyJobs);
 
 router.post('/:id/approve', authenticateToken, adminGuard, jobController.approveJob);
 router.post('/:id/reject', authenticateToken, adminGuard, jobController.rejectJob);

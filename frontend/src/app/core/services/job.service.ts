@@ -48,6 +48,7 @@ export interface JobApplication {
   id: number;
   status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
   coverLetter?: string | null;
+  resume?: string | null;
   notes?: string | null;
   appliedAt: string;
   reviewedAt?: string | null;
@@ -59,6 +60,21 @@ export interface JobApplication {
     username: string;
   };
   job?: Job;
+}
+
+export interface BatchApplyResultItem {
+  jobId: number;
+  status: 'applied' | 'skipped' | 'failed';
+  message: string;
+  application?: JobApplication;
+}
+
+export interface BatchApplyPayload {
+  total: number;
+  successCount: number;
+  skippedCount: number;
+  failedCount: number;
+  results: BatchApplyResultItem[];
 }
 
 export interface BookmarkRecord {
@@ -244,6 +260,16 @@ export class JobService {
     return this.http.post<{ success: boolean; message: string; data?: JobApplication }>(
       `${this.API_URL}/${id}/apply`,
       { coverLetter }
+    );
+  }
+
+  batchApplyJobs(
+    jobIds: number[],
+    coverLetter?: string
+  ): Observable<{ success: boolean; message: string; data: BatchApplyPayload }> {
+    return this.http.post<{ success: boolean; message: string; data: BatchApplyPayload }>(
+      `${this.API_URL}/batch-apply`,
+      { jobIds, coverLetter }
     );
   }
 

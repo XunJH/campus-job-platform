@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
+const path = require('path');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
@@ -10,6 +11,7 @@ require('dotenv').config();
 
 const { sequelize, testConnection } = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
+const conversationRoutes = require('./routes/conversationRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const userRoutes = require('./routes/userRoutes');
 const verificationRoutes = require('./routes/verificationRoutes');
@@ -76,7 +78,8 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:']
     }
-  }
+  },
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
 app.use(cors({
@@ -87,12 +90,13 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(compression());
 app.use(morgan('combined', {
   skip: () => process.env.NODE_ENV === 'test'
 }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/', (_req, res) => {
   res.status(200).json({
@@ -122,6 +126,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 app.use(`${apiPrefix}/auth`, authRoutes);
+app.use(`${apiPrefix}/conversations`, conversationRoutes);
 app.use(`${apiPrefix}/jobs`, jobRoutes);
 app.use(`${apiPrefix}/users`, userRoutes);
 app.use(`${apiPrefix}/verification`, verificationRoutes);

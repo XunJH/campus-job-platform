@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const fs = require('fs/promises');
 const { Op } = require('sequelize');
+const path = require('path');
 const { User, Verification } = require('../models');
 const { sanitizeText } = require('../utils/sanitize');
 
@@ -10,6 +13,12 @@ if (!process.env.JWT_SECRET) {
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+const AVATAR_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'avatars');
+const RESUME_UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'resumes');
+const IMAGE_DATA_URL_PATTERN = /^data:(image\/(png|jpeg|jpg|webp));base64,([a-z0-9+/=]+)$/i;
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const RESUME_MAX_BYTES = 4 * 1024 * 1024;
+const AVATAR_DATA_URL_PATTERN = IMAGE_DATA_URL_PATTERN;
 
 const generateToken = (user) => jwt.sign(
   {
@@ -63,6 +72,131 @@ const sanitizeProfileUpdate = (payload) => {
   }
 
   return updateData;
+};
+
+const getPublicServerOrigin = (req) => (
+  process.env.PUBLIC_SERVER_ORIGIN ||
+  `${req.protocol}://localhost:${process.env.PORT || 3001}`
+).replace(/\/+$/, '');
+
+const extractStoredAvatarPath = (avatarUrl) => {
+  if (!avatarUrl || typeof avatarUrl !== 'string') {
+    return null;
+  }
+
+  try {
+    const pathname = avatarUrl.startsWith('/uploads/')
+      ? avatarUrl
+      : new URL(avatarUrl).pathname;
+
+    if (!pathname.startsWith('/uploads/avatars/')) {
+      return null;
+    }
+
+    const avatarRoot = path.resolve(AVATAR_UPLOAD_DIR);
+    const filePath = path.resolve(path.join(__dirname, '..', pathname.replace(/^\/+/, '')));
+
+    if (!filePath.startsWith(avatarRoot)) {
+      return null;
+    }
+
+    return filePath;
+  } catch (_error) {
+    return null;
+  }
+};
+
+const removeStoredAvatar = async (avatarUrl) => {
+  const filePath = extractStoredAvatarPath(avatarUrl);
+  if (!filePath) {
+    return;
+  }
+
+  try {
+    await fs.unlink(filePath);
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      console.error('删除旧头像文件失败:', error);
+    }
+  }
+};
+
+const saveAvatarUpload = async (avatarUpload, userId, req) => {
+  if (typeof avatarUpload !== 'string' || !avatarUpload.trim()) {
+    return null;
+  }
+
+  const matches = avatarUpload.match(AVATAR_DATA_URL_PATTERN);
+  if (!matches) {
+    const error = new Error('头像文件仅支持 PNG、JPG、JPEG、WEBP 格式');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const mimeType = matches[1].toLowerCase();
+  const base64Payload = matches[3];
+  const buffer = Buffer.from(base64Payload, 'base64');
+
+  if (!buffer.length) {
+    const error = new Error('头像文件内容无效');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (buffer.length > AVATAR_MAX_BYTES) {
+    const error = new Error('头像文件不能超过 2MB');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const extension = mimeType === 'image/jpeg' || mimeType === 'image/jpg'
+    ? 'jpg'
+    : mimeType.split('/')[1];
+  const filename = `user-${userId}-${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${extension}`;
+
+  await fs.mkdir(AVATAR_UPLOAD_DIR, { recursive: true });
+  await fs.writeFile(path.join(AVATAR_UPLOAD_DIR, filename), buffer);
+
+  return `${getPublicServerOrigin(req)}/uploads/avatars/${filename}`;
+};
+
+const saveResumeUpload = async (resumeUpload, userId, req) => {
+  if (typeof resumeUpload !== 'string' || !resumeUpload.trim()) {
+    return null;
+  }
+
+  const matches = resumeUpload.match(IMAGE_DATA_URL_PATTERN);
+  if (!matches) {
+    const error = new Error('简历图片仅支持 PNG、JPG、JPEG、WEBP 格式');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const mimeType = matches[1].toLowerCase();
+  const base64Payload = matches[3];
+  const buffer = Buffer.from(base64Payload, 'base64');
+
+  if (!buffer.length) {
+    const error = new Error('简历图片内容无效');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (buffer.length > RESUME_MAX_BYTES) {
+    const error = new Error('简历图片不能超过 4MB');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const extension = mimeType === 'image/jpeg' || mimeType === 'image/jpg'
+    ? 'jpg'
+    : mimeType.split('/')[1];
+  const filename = `resume-${userId}-${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${extension}`;
+
+  await fs.mkdir(RESUME_UPLOAD_DIR, { recursive: true });
+  await fs.writeFile(path.join(RESUME_UPLOAD_DIR, filename), buffer);
+
+  return `${getPublicServerOrigin(req)}/uploads/resumes/${filename}`;
 };
 
 const AI_INTERNAL_TOKEN = process.env.AI_INTERNAL_TOKEN || 'campus-job-ai-internal';
@@ -341,6 +475,12 @@ exports.updateUser = async (req, res) => {
       }
     }
 
+    const previousAvatar = user.avatar || '';
+    const previousProfile = user.personalityProfile || {};
+    if (req.body.avatarUpload) {
+      updateData.avatar = await saveAvatarUpload(req.body.avatarUpload, userId, req);
+    }
+
     if (updateData.avatar && !/^https?:\/\//i.test(updateData.avatar)) {
       return res.status(400).json({
         success: false,
@@ -348,7 +488,33 @@ exports.updateUser = async (req, res) => {
       });
     }
 
+    const nextProfile = {
+      ...previousProfile,
+      ...(updateData.personalityProfile || {})
+    };
+
+    if (req.body.resumeImageUpload) {
+      nextProfile.resumeImage = await saveResumeUpload(req.body.resumeImageUpload, userId, req);
+    } else if (req.body.resumeImageRemoved) {
+      nextProfile.resumeImage = '';
+    }
+
+    if (nextProfile.resumeImage && !/^https?:\/\//i.test(nextProfile.resumeImage)) {
+      return res.status(400).json({
+        success: false,
+        message: '简历图片地址格式不正确'
+      });
+    }
+
+    if (updateData.personalityProfile !== undefined || req.body.resumeImageUpload || req.body.resumeImageRemoved) {
+      updateData.personalityProfile = nextProfile;
+    }
+
     await user.update(updateData);
+
+    if (updateData.avatar !== undefined && previousAvatar && previousAvatar !== updateData.avatar) {
+      await removeStoredAvatar(previousAvatar);
+    }
 
     if (updateData.username && user.role === 'employer') {
       await Verification.update(

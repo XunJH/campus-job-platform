@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import { Subscription, interval, startWith } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { ConversationService } from '../../../core/services/conversation.service';
 
 @Component({
   selector: 'app-employer-shell-sidebar',
@@ -9,13 +11,27 @@ import { AuthService } from '../../../core/services/auth.service';
   imports: [CommonModule, RouterModule],
   templateUrl: './employer-shell-sidebar.component.html'
 })
-export class EmployerShellSidebarComponent {
+export class EmployerShellSidebarComponent implements OnInit, OnDestroy {
+  unreadCount = 0;
+  private unreadSubscription?: Subscription;
+
   constructor(
     private authService: AuthService,
+    private conversationService: ConversationService,
     private router: Router
   ) {}
 
-  isActive(section: 'dashboard' | 'post-job' | 'jobs' | 'applications' | 'wallet' | 'ai' | 'profile' | 'verification'): boolean {
+  ngOnInit(): void {
+    this.unreadSubscription = interval(10000)
+      .pipe(startWith(0))
+      .subscribe(() => this.loadUnreadSummary());
+  }
+
+  ngOnDestroy(): void {
+    this.unreadSubscription?.unsubscribe();
+  }
+
+  isActive(section: 'dashboard' | 'post-job' | 'jobs' | 'applications' | 'messages' | 'wallet' | 'ai' | 'profile' | 'verification'): boolean {
     const url = this.router.url;
 
     switch (section) {
@@ -27,6 +43,8 @@ export class EmployerShellSidebarComponent {
         return url === '/employer/jobs';
       case 'applications':
         return url.startsWith('/employer/applications');
+      case 'messages':
+        return url.startsWith('/employer/messages');
       case 'wallet':
         return url.startsWith('/employer/wallet');
       case 'ai':
@@ -43,5 +61,16 @@ export class EmployerShellSidebarComponent {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/auth/login']);
+  }
+
+  private loadUnreadSummary(): void {
+    this.conversationService.getUnreadSummary().subscribe({
+      next: (res) => {
+        this.unreadCount = res.data?.totalUnread || 0;
+      },
+      error: () => {
+        this.unreadCount = 0;
+      }
+    });
   }
 }

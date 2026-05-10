@@ -25,6 +25,8 @@ interface Education {
   honors: string;
 }
 
+type ProfileSection = 'basic' | 'education' | 'experience' | 'skills';
+
 @Component({
   selector: 'app-profile',
   standalone: true,
@@ -36,17 +38,42 @@ export class ProfileComponent implements OnInit {
   profileForm!: FormGroup;
   isLoading = false;
   isEditing = false;
-  activeSection = 'basic';
+  activeSection: ProfileSection = 'basic';
   user: User | null = null;
   message = '';
   error = false;
 
-  sections = [
+  avatarPreviewUrl = '';
+  selectedAvatarDataUrl = '';
+  avatarMessage = '';
+  avatarError = false;
+
+  resumePreviewUrl = '';
+  selectedResumeDataUrl = '';
+  resumeMessage = '';
+  resumeError = false;
+  resumeRemoved = false;
+
+  readonly maxAvatarFileSize = 2 * 1024 * 1024;
+  readonly maxResumeFileSize = 4 * 1024 * 1024;
+
+  readonly sections: Array<{ id: ProfileSection; label: string; icon: string }> = [
     { id: 'basic', label: '基本信息', icon: 'person' },
     { id: 'education', label: '教育背景', icon: 'school' },
-    { id: 'experience', label: '工作经历', icon: 'work' },
+    { id: 'experience', label: '经历项目', icon: 'work' },
     { id: 'skills', label: '技能工具', icon: 'code' }
   ];
+
+  constructor(
+    private fb: FormBuilder,
+    private userService: UserService,
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.loadProfile();
+  }
 
   get workExperienceList(): WorkExperience[] {
     return this.user?.personalityProfile?.workExperience || [];
@@ -68,15 +95,20 @@ export class ProfileComponent implements OnInit {
     return this.user?.personalityProfile?.languages || '';
   }
 
-  constructor(
-    private fb: FormBuilder,
-    private userService: UserService,
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  get workExperienceArray(): FormArray {
+    return this.profileForm.get('workExperience') as FormArray;
+  }
 
-  ngOnInit(): void {
-    this.loadProfile();
+  get educationArray(): FormArray {
+    return this.profileForm.get('education') as FormArray;
+  }
+
+  get avatarDisplayUrl(): string {
+    return this.avatarPreviewUrl || this.profileForm?.value.avatar || this.user?.avatar || '';
+  }
+
+  get resumeDisplayUrl(): string {
+    return this.resumePreviewUrl || this.user?.personalityProfile?.resumeImage || '';
   }
 
   private loadProfile(): void {
@@ -84,35 +116,50 @@ export class ProfileComponent implements OnInit {
       next: (res) => {
         const mappedUser = {
           ...res.data,
-          nickname: res.data.username || ''
+          nickname: res.data.nickname || res.data.username || ''
         } as User;
+
         this.user = mappedUser;
+        this.authService.updateCurrentUser(mappedUser);
         this.initForm(mappedUser);
       },
       error: () => {
         this.error = true;
-        this.message = '加载用户信息失败';
+        this.message = '加载个人资料失败，请稍后重试。';
       }
     });
   }
 
   private initForm(user: User): void {
     const profile = user.personalityProfile || {};
-    const workExp = profile.workExperience || this.workExperienceList;
-    const educationList = profile.education || this.educationList;
 
     this.profileForm = this.fb.group({
-      nickname: [user.nickname || ''],
+      nickname: [user.nickname || user.username || ''],
       email: [user.email || ''],
       phone: [user.phone || ''],
       avatar: [user.avatar || ''],
       bio: [user.bio || ''],
-      workExperience: this.fb.array(workExp.map((experience: WorkExperience) => this.createExperienceGroup(experience))),
-      education: this.fb.array(educationList.map((education: Education) => this.createEducationGroup(education))),
-      technicalSkills: [(profile.technicalSkills || this.technicalSkills).join('、')],
-      tools: [(profile.tools || this.toolsList).join('、')],
-      languages: [profile.languages || this.languages]
+      workExperience: this.fb.array(
+        (profile.workExperience || []).map((experience: WorkExperience) => this.createExperienceGroup(experience))
+      ),
+      education: this.fb.array(
+        (profile.education || []).map((education: Education) => this.createEducationGroup(education))
+      ),
+      technicalSkills: [(profile.technicalSkills || []).join('、')],
+      tools: [(profile.tools || []).join('、')],
+      languages: [profile.languages || '']
     });
+
+    this.avatarPreviewUrl = '';
+    this.selectedAvatarDataUrl = '';
+    this.avatarMessage = '';
+    this.avatarError = false;
+
+    this.resumePreviewUrl = '';
+    this.selectedResumeDataUrl = '';
+    this.resumeMessage = '';
+    this.resumeError = false;
+    this.resumeRemoved = false;
   }
 
   private createExperienceGroup(experience?: WorkExperience): FormGroup {
@@ -121,7 +168,7 @@ export class ProfileComponent implements OnInit {
       company: [experience?.company || ''],
       period: [experience?.period || ''],
       description: [experience?.description || ''],
-      skills: [experience?.skills?.join('、') || '']
+      skills: [(experience?.skills || []).join('、')]
     });
   }
 
@@ -137,15 +184,14 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  get workExperienceArray(): FormArray {
-    return this.profileForm.get('workExperience') as FormArray;
+  private parseListInput(value: string): string[] {
+    return (value || '')
+      .split(/[、,，]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 
-  get educationArray(): FormArray {
-    return this.profileForm.get('education') as FormArray;
-  }
-
-  selectSection(section: string): void {
+  selectSection(section: ProfileSection): void {
     this.activeSection = section;
   }
 
@@ -165,17 +211,104 @@ export class ProfileComponent implements OnInit {
     this.educationArray.removeAt(index);
   }
 
+  onAvatarSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.avatarError = true;
+      this.avatarMessage = '请选择 PNG、JPG 或 WEBP 图片。';
+      input.value = '';
+      return;
+    }
+
+    if (file.size > this.maxAvatarFileSize) {
+      this.avatarError = true;
+      this.avatarMessage = '头像图片不能超过 2MB。';
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      this.avatarPreviewUrl = result;
+      this.selectedAvatarDataUrl = result;
+      this.avatarError = false;
+      this.avatarMessage = '已选择新的头像图片，保存后生效。';
+    };
+    reader.onerror = () => {
+      this.avatarError = true;
+      this.avatarMessage = '读取头像图片失败，请重试。';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeAvatar(): void {
+    this.avatarPreviewUrl = '';
+    this.selectedAvatarDataUrl = '';
+    this.profileForm.patchValue({ avatar: '' });
+    this.avatarError = false;
+    this.avatarMessage = '当前头像会在保存后移除。';
+  }
+
+  onResumeSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.resumeError = true;
+      this.resumeMessage = '请选择 PNG、JPG 或 WEBP 格式的简历图片。';
+      input.value = '';
+      return;
+    }
+
+    if (file.size > this.maxResumeFileSize) {
+      this.resumeError = true;
+      this.resumeMessage = '简历图片不能超过 4MB。';
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      this.resumePreviewUrl = result;
+      this.selectedResumeDataUrl = result;
+      this.resumeRemoved = false;
+      this.resumeError = false;
+      this.resumeMessage = '已选择简历图片。投递岗位后会自动发送给企业。';
+    };
+    reader.onerror = () => {
+      this.resumeError = true;
+      this.resumeMessage = '读取简历图片失败，请重试。';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeResume(): void {
+    this.resumePreviewUrl = '';
+    this.selectedResumeDataUrl = '';
+    this.resumeRemoved = true;
+    this.resumeError = false;
+    this.resumeMessage = '当前简历图片会在保存后移除。';
+  }
+
   toggleEdit(): void {
     this.isEditing = !this.isEditing;
     this.activeSection = 'basic';
+
     if (!this.isEditing && this.user) {
       this.initForm(this.user);
     }
-  }
-
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/auth/login']);
   }
 
   startPersonalityTest(): void {
@@ -188,16 +321,10 @@ export class ProfileComponent implements OnInit {
     }
 
     this.isLoading = true;
-
     const formValue = this.profileForm.value;
-    const workExperience = (formValue.workExperience || []).map((experience: any) => ({
-      ...experience,
-      skills: experience.skills ? experience.skills.split(/[、,，]/).map((item: string) => item.trim()).filter(Boolean) : []
-    }));
-    const education = formValue.education || [];
-
     const existingProfile = this.user?.personalityProfile || {};
-    const updateData = {
+
+    const updateData: any = {
       username: formValue.nickname,
       email: formValue.email,
       phone: formValue.phone,
@@ -205,34 +332,57 @@ export class ProfileComponent implements OnInit {
       bio: formValue.bio,
       personalityProfile: {
         ...existingProfile,
-        workExperience,
-        education,
-        technicalSkills: formValue.technicalSkills ? formValue.technicalSkills.split(/[、,，]/).map((item: string) => item.trim()).filter(Boolean) : [],
-        tools: formValue.tools ? formValue.tools.split(/[、,，]/).map((item: string) => item.trim()).filter(Boolean) : [],
-        languages: formValue.languages || ''
+        workExperience: (formValue.workExperience || []).map((experience: any) => ({
+          ...experience,
+          skills: this.parseListInput(experience.skills || '')
+        })),
+        education: formValue.education || [],
+        technicalSkills: this.parseListInput(formValue.technicalSkills || ''),
+        tools: this.parseListInput(formValue.tools || ''),
+        languages: formValue.languages || '',
+        resumeImage: this.resumeRemoved ? '' : (existingProfile.resumeImage || '')
       }
     };
 
+    if (this.selectedAvatarDataUrl) {
+      updateData.avatarUpload = this.selectedAvatarDataUrl;
+    }
+
+    if (this.selectedResumeDataUrl) {
+      updateData.resumeImageUpload = this.selectedResumeDataUrl;
+    }
+
+    if (this.resumeRemoved) {
+      updateData.resumeImageRemoved = true;
+    }
+
     this.userService.updateProfile(updateData).subscribe({
       next: (res) => {
+        const mappedUser = {
+          ...res.data,
+          nickname: res.data.nickname || res.data.username || ''
+        } as User;
+
         this.isLoading = false;
         this.error = false;
-        this.message = '保存成功';
+        this.message = '个人资料已保存。';
         this.isEditing = false;
-        const mappedUser = { ...res.data, nickname: res.data.username || '' } as User;
         this.user = mappedUser;
+        this.authService.updateCurrentUser(mappedUser);
         this.initForm(mappedUser);
       },
       error: (err) => {
         this.isLoading = false;
         this.error = true;
-        let msg = '保存失败';
-        if (err.error?.errors && Array.isArray(err.error.errors) && err.error.errors.length > 0) {
-          msg = err.error.errors.map((item: any) => item.msg || item.message || JSON.stringify(item)).join('；');
-        } else {
-          msg = err.error?.message || err.message || '保存失败';
+
+        if (Array.isArray(err.error?.errors) && err.error.errors.length > 0) {
+          this.message = err.error.errors
+            .map((item: any) => item.msg || item.message || JSON.stringify(item))
+            .join('；');
+          return;
         }
-        this.message = msg;
+
+        this.message = err.error?.message || err.message || '保存资料失败，请稍后重试。';
       }
     });
   }

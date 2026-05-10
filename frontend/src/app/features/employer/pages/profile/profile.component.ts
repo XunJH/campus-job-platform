@@ -32,6 +32,11 @@ export class EmployerProfileComponent implements OnInit {
   };
   message = '';
   error = false;
+  avatarPreviewUrl = '';
+  selectedAvatarDataUrl = '';
+  avatarMessage = '';
+  avatarError = false;
+  readonly maxAvatarFileSize = 2 * 1024 * 1024;
 
   defaultIndustry = '互联网 / 科技';
   defaultScale = '50-200 人';
@@ -108,6 +113,11 @@ export class EmployerProfileComponent implements OnInit {
       scale: [''],
       website: ['']
     });
+
+    this.avatarPreviewUrl = '';
+    this.selectedAvatarDataUrl = '';
+    this.avatarMessage = '';
+    this.avatarError = false;
   }
 
   private initFormWithVerification(): void {
@@ -175,6 +185,55 @@ export class EmployerProfileComponent implements OnInit {
     return `${job.location || '地点待定'} · ${salary} · ${views} 次浏览 · ${applications} 份申请`;
   }
 
+  get avatarDisplayUrl(): string {
+    return this.avatarPreviewUrl || this.profileForm?.value.avatar || this.user?.avatar || '';
+  }
+
+  onAvatarSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.avatarError = true;
+      this.avatarMessage = '请选择图片文件';
+      input.value = '';
+      return;
+    }
+
+    if (file.size > this.maxAvatarFileSize) {
+      this.avatarError = true;
+      this.avatarMessage = 'Logo 图片不能超过 2MB';
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      this.avatarPreviewUrl = result;
+      this.selectedAvatarDataUrl = result;
+      this.avatarError = false;
+      this.avatarMessage = '已选择本地图片';
+    };
+    reader.onerror = () => {
+      this.avatarError = true;
+      this.avatarMessage = '读取图片失败，请重试';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeAvatar(): void {
+    this.avatarPreviewUrl = '';
+    this.selectedAvatarDataUrl = '';
+    this.profileForm.patchValue({ avatar: '' });
+    this.avatarError = false;
+    this.avatarMessage = '当前 Logo 将在保存后移除';
+  }
+
   toggleEdit(): void {
     this.isEditing = !this.isEditing;
     if (!this.isEditing && this.user) {
@@ -193,13 +252,17 @@ export class EmployerProfileComponent implements OnInit {
 
     this.isLoading = true;
     const formValue = this.profileForm.value;
-    const updateData = {
+    const updateData: any = {
       username: formValue.companyName,
       email: formValue.email,
       phone: formValue.phone,
       avatar: formValue.avatar,
       bio: formValue.bio
     };
+
+    if (this.selectedAvatarDataUrl) {
+      updateData.avatarUpload = this.selectedAvatarDataUrl;
+    }
 
     this.userService.updateProfile(updateData).subscribe({
       next: (res) => {
@@ -209,6 +272,7 @@ export class EmployerProfileComponent implements OnInit {
         this.isEditing = false;
         const mappedUser = { ...res.data, nickname: res.data.username || '' } as User;
         this.user = mappedUser;
+        this.authService.updateCurrentUser(mappedUser);
         this.initForm(mappedUser);
         this.initFormWithVerification();
       },
