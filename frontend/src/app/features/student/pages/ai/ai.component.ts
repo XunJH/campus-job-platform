@@ -301,9 +301,10 @@ export class StudentAiComponent implements OnInit {
 
     this.aiApi.chatInterview(this.interviewJobTitle.trim(), text, this.getInterviewHistory()).subscribe({
       next: (res) => {
+        const cleanedReply = this.stripInterviewWarningMarker(res.data?.reply || '我记录下来了，我们继续下一题。');
         this.interviewMessages.push({
           role: 'assistant',
-          content: res.data?.reply || '我记录下来了，我们继续下一题。'
+          content: cleanedReply
         });
         this.interviewWarning = res.data?.warning || null;
         this.interviewLoading = false;
@@ -855,6 +856,12 @@ export class StudentAiComponent implements OnInit {
       role: item.role,
       content: item.content
     }));
+  }
+
+  private stripInterviewWarningMarker(content: string): string {
+    return String(content || '')
+      .replace(/\n*<<<WARNING>>>[\s\S]*?<<<\/WARNING>>>/g, '')
+      .trim();
   }
 
   private joinList(values: string[]): string {

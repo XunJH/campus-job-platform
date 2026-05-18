@@ -34,6 +34,10 @@ class PersonalityProfile(BaseModel):
     strengths: List[str]  # 优势
     weaknesses: List[str]  # 不足
     suitable_jobs: List[str]  # 适合的岗位类型
+    technical_skills: List[str] = Field(default_factory=list)  # 简历中的技术/专业技能
+    tools: List[str] = Field(default_factory=list)  # 常用工具
+    major: str = ""  # 专业信息
+    grade: str = ""  # 年级或学历阶段
     created_at: datetime = Field(default_factory=datetime.now)
 
 

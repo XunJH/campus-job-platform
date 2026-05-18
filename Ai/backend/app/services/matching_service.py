@@ -46,6 +46,50 @@ TERM_LABELS: Dict[str, str] = {
     "withdrawn": "已撤回",
 }
 
+MATCH_KEYWORDS: List[str] = [
+    "前端",
+    "后端",
+    "开发",
+    "实习",
+    "兼职",
+    "数据",
+    "分析",
+    "python",
+    "java",
+    "sql",
+    "excel",
+    "typescript",
+    "javascript",
+    "angular",
+    "vue",
+    "运营",
+    "新媒体",
+    "内容",
+    "整理",
+    "校园",
+    "推广",
+    "地推",
+    "活动",
+    "执行",
+    "文案",
+    "社群",
+    "英语",
+    "外教",
+    "教学",
+    "辅导",
+    "接待",
+    "客服",
+    "技术",
+    "支持",
+    "产品",
+    "设计",
+    "视频",
+    "剪辑",
+    "流程",
+    "沟通",
+    "协调",
+]
+
 
 def _humanize_term(value: Any) -> str:
     text = str(value or "").strip()
@@ -93,6 +137,36 @@ def _normalize_terms(items: List[Any]) -> List[str]:
 def _tokenize_keywords(text: str) -> List[str]:
     raw_tokens = re.split(r"[\s,，。、；;|/()（）]+", _humanize_text(text or ""))
     return _normalize_terms([token for token in raw_tokens if len(token.strip()) >= 2])
+
+
+def _extract_match_keywords(text: str) -> List[str]:
+    normalized = _humanize_text(text or "").lower()
+    if not normalized:
+        return []
+
+    raw_tokens = re.split(r"[\s,，。、；;|/()（）:+\-]+", normalized)
+    tokens = {token.strip() for token in raw_tokens if len(token.strip()) >= 2}
+
+    for keyword in MATCH_KEYWORDS:
+        if keyword.lower() in normalized:
+            tokens.add(keyword.lower())
+
+    return sorted(tokens)
+
+
+def _is_soft_match(left: str, right: str) -> bool:
+    left_text = _humanize_text(left or "").lower().strip()
+    right_text = _humanize_text(right or "").lower().strip()
+
+    if not left_text or not right_text:
+        return False
+
+    if left_text in right_text or right_text in left_text:
+        return True
+
+    left_keywords = set(_extract_match_keywords(left_text))
+    right_keywords = set(_extract_match_keywords(right_text))
+    return bool(left_keywords and right_keywords and left_keywords.intersection(right_keywords))
 
 
 class MatchingService:
@@ -330,10 +404,22 @@ class MatchingService:
         user_tags = _normalize_terms(personality_profile.tags)
         user_strengths = _normalize_terms(personality_profile.strengths)
         suitable_jobs = _normalize_terms(personality_profile.suitable_jobs)
+        user_capabilities = _normalize_terms(
+            getattr(personality_profile, "technical_skills", [])
+            + getattr(personality_profile, "tools", [])
+            + _tokenize_keywords(getattr(personality_profile, "summary", ""))
+            + _tokenize_keywords(getattr(personality_profile, "major", ""))
+        )
 
         results: List[MatchResult] = []
         for job in self.job_pool:
-            base_score = self._calculate_base_score(user_tags, user_strengths, suitable_jobs, job)
+            base_score = self._calculate_base_score(
+                user_tags,
+                user_strengths,
+                suitable_jobs,
+                user_capabilities,
+                job,
+            )
             match_reasons = self._generate_match_reasons(personality_profile, job, base_score)
             warnings = self._generate_warnings(personality_profile, job)
             results.append(
@@ -353,30 +439,34 @@ class MatchingService:
         user_tags: List[str],
         user_strengths: List[str],
         suitable_jobs: List[str],
+        user_capabilities: List[str],
         job: Job,
     ) -> float:
-        job_terms = _normalize_terms(job.tags + job.requirements + _tokenize_keywords(job.title))
+        job_terms = _normalize_terms(
+            job.tags + job.requirements + _tokenize_keywords(job.title) + _tokenize_keywords(job.description)
+        )
         tag_hits = self._count_soft_matches(user_tags, job_terms)
-        strength_hits = self._count_soft_matches(user_strengths, job.requirements + job.tags)
+        strength_hits = self._count_soft_matches(user_strengths, job.requirements + job.tags + job_terms)
         suitable_hits = self._count_soft_matches(suitable_jobs, [job.title] + job.tags)
+        capability_hits = self._count_soft_matches(user_capabilities, job_terms)
 
         score = 0.0
         if user_tags:
-            score += (tag_hits / len(user_tags)) * 35
+            score += (tag_hits / len(user_tags)) * 18
         if user_strengths:
-            score += (strength_hits / len(user_strengths)) * 35
+            score += (strength_hits / len(user_strengths)) * 24
         if suitable_jobs:
-            score += (suitable_hits / len(suitable_jobs)) * 30
+            score += (suitable_hits / len(suitable_jobs)) * 28
+        if user_capabilities:
+            score += (capability_hits / len(user_capabilities)) * 30
 
         return round(min(score, 100.0), 1)
 
     def _count_soft_matches(self, left_items: List[str], right_items: List[str]) -> int:
         count = 0
-        right_joined = " ".join(item.lower() for item in right_items)
 
         for item in left_items:
-            lowered = item.lower()
-            if lowered and lowered in right_joined:
+            if any(_is_soft_match(item, target) for target in right_items):
                 count += 1
 
         return count
@@ -391,13 +481,19 @@ class MatchingService:
         tags = _normalize_terms(profile.tags)
         strengths = _normalize_terms(profile.strengths)
         suitable_jobs = _normalize_terms(profile.suitable_jobs)
-        job_terms = _normalize_terms(job.tags + job.requirements + _tokenize_keywords(job.title))
-        job_term_text = " ".join(term.lower() for term in job_terms)
-        job_requirement_text = " ".join(term.lower() for term in job.requirements + job.tags)
+        technical_skills = _normalize_terms(getattr(profile, "technical_skills", []))
+        tools = _normalize_terms(getattr(profile, "tools", []))
+        capability_pool = technical_skills + tools
+        job_terms = _normalize_terms(
+            job.tags + job.requirements + _tokenize_keywords(job.title) + _tokenize_keywords(job.description)
+        )
 
-        matched_tags = [tag for tag in tags if tag.lower() in job_term_text]
-        matched_strengths = [strength for strength in strengths if strength.lower() in job_requirement_text]
-        matched_directions = [item for item in suitable_jobs if item.lower() in job_term_text]
+        matched_tags = [tag for tag in tags if any(_is_soft_match(tag, term) for term in job_terms)]
+        matched_strengths = [strength for strength in strengths if any(_is_soft_match(strength, term) for term in job.requirements + job.tags + job_terms)]
+        matched_directions = [item for item in suitable_jobs if any(_is_soft_match(item, term) for term in [job.title] + job_terms)]
+        matched_capabilities = [
+            item for item in capability_pool if any(_is_soft_match(item, term) for term in job_terms)
+        ]
 
         if matched_tags:
             reasons.append(f"候选人标签与岗位特质贴合：{matched_tags[0]}")
@@ -405,6 +501,8 @@ class MatchingService:
             reasons.append(f"核心优势与岗位要求相符：{matched_strengths[0]}")
         if matched_directions:
             reasons.append(f"求职方向与岗位类别一致：{matched_directions[0]}")
+        if len(reasons) < 3 and matched_capabilities:
+            reasons.append(f"简历技能可直接支撑岗位需求：{matched_capabilities[0]}")
 
         if base_score >= 80:
             reasons.append("综合匹配度高，适合优先安排沟通。")
@@ -585,12 +683,8 @@ class MatchingService:
         matches: List[Dict[str, str]] = []
 
         for left in left_items:
-            left_lower = left.lower()
             for right in right_items:
-                right_lower = right.lower()
-                if not left_lower or not right_lower:
-                    continue
-                if left_lower in right_lower or right_lower in left_lower:
+                if _is_soft_match(left, right):
                     matches.append({"target": left, "candidate": right})
                     break
 
@@ -748,12 +842,11 @@ class MatchingService:
         gap_items: List[Dict[str, str]] = []
 
         for requirement in job_requirements:
-            requirement_lower = requirement.lower()
             matched_term = next(
                 (
                     term
                     for term in candidate_terms
-                    if requirement_lower in term.lower() or term.lower() in requirement_lower
+                    if _is_soft_match(requirement, term)
                 ),
                 None,
             )
@@ -780,7 +873,7 @@ class MatchingService:
                     (
                         term
                         for term in candidate_terms
-                        if keyword.lower() in term.lower() or term.lower() in keyword.lower()
+                        if _is_soft_match(keyword, term)
                     ),
                     None,
                 )

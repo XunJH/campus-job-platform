@@ -242,6 +242,10 @@ const normalizeAiPersonalityProfile = (profile, userId, completedAt) => ({
   strengths: normalizeStringArray(profile?.strengths),
   weaknesses: normalizeStringArray(profile?.weaknesses),
   suitable_jobs: normalizeStringArray(profile?.suitable_jobs),
+  technical_skills: normalizeStringArray(profile?.technical_skills || profile?.technicalSkills),
+  tools: normalizeStringArray(profile?.tools),
+  major: pickProfileText(profile, ['major', 'educationMajor', 'schoolMajor', 'specialty']),
+  grade: pickProfileText(profile, ['grade', 'educationGrade', 'schoolGrade', 'year']),
   created_at: profile?.created_at || completedAt.toISOString()
 });
 
@@ -256,6 +260,10 @@ const buildAiProfileResponse = (profile, userId, completedAt) => {
     strengths: normalized.strengths,
     weaknesses: normalized.weaknesses,
     suitable_jobs: normalized.suitable_jobs,
+    technical_skills: normalized.technical_skills,
+    tools: normalized.tools,
+    major: normalized.major,
+    grade: normalized.grade,
     created_at: normalized.created_at
   };
 };

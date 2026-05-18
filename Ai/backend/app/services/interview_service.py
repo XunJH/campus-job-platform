@@ -12,6 +12,8 @@ v2 增强：
 - 结束后风险预警报告
 """
 
+import json
+import re
 from typing import List, Dict, Any
 from ..services.ai_provider import _ai_service
 
@@ -205,6 +207,26 @@ Level 5 - 岗位匹配追问：
             warning_rules=self.WARNING_RULES,
         )
 
+    def _strip_warning_marker(self, text: str) -> tuple[str, dict | None]:
+        warning = None
+        normalized = str(text or "")
+        warning_match = re.search(r'<<<WARNING>>>(.+?)<</WARNING>>>', normalized, re.DOTALL)
+
+        if warning_match:
+            try:
+                warning = json.loads(warning_match.group(1))
+            except json.JSONDecodeError:
+                warning = {"type": "unknown", "level": "中", "text": "检测到异常信号"}
+
+            normalized = re.sub(
+                r'\n*<<<WARNING>>>.*?<</WARNING>>>',
+                '',
+                normalized,
+                flags=re.DOTALL
+            ).strip()
+
+        return normalized, warning
+
     def _build_system_prompt(self, job_title: str) -> str:
         """动态构建系统提示词，注入岗位名"""
         return self.SYSTEM_PROMPT_TEMPLATE.format(
@@ -237,13 +259,14 @@ Level 5 - 岗位匹配追问：
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content}
         ])
+        clean_response, warning = self._strip_warning_marker(response)
 
         return {
             "session_id": f"interview_{job_title}_{__import__('time').time()}",
             "job_title": job_title,
-            "opening": response,
+            "opening": clean_response,
             "status": "in_progress",
-            "warning": None,  # 开始阶段无预警
+            "warning": warning,
         }
 
     def chat_interview(
@@ -285,21 +308,7 @@ Level 5 - 岗位匹配追问：
 
         response = _ai_service.chat(messages)
 
-        # 解析预警标签
-        import re
-        warning = None
-        warning_match = re.search(
-            r'<<<WARNING>>>(.+?)<</WARNING>>>',
-            response, re.DOTALL
-        )
-        if warning_match:
-            try:
-                import json
-                warning = json.loads(warning_match.group(1))
-                # 清理回复文本中的预警标签
-                response = re.sub(r'\n*<<<WARNING>>>.*?<</WARNING>>>', '', response, flags=re.DOTALL).strip()
-            except json.JSONDecodeError:
-                warning = {"type": "unknown", "level": "中", "text": "检测到异常信号"}
+        response, warning = self._strip_warning_marker(response)
 
         return {
             "reply": response,
