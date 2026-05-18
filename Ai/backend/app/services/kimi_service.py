@@ -1,6 +1,4 @@
-"""
-Kimi (Moonshot) service using the OpenAI-compatible API.
-"""
+"""Kimi (Moonshot) service with fast fallback for defense/demo stability."""
 
 from __future__ import annotations
 
@@ -11,6 +9,7 @@ from typing import Optional
 from openai import OpenAI
 
 from ..core.config import settings
+from .gemini_service import GeminiService
 
 
 class KimiService:
@@ -37,6 +36,10 @@ class KimiService:
         self._chat_max_tokens = int(
             os.getenv("KIMI_CHAT_MAX_TOKENS") or getattr(settings, "KIMI_CHAT_MAX_TOKENS", 1200)
         )
+        self._timeout_seconds = float(
+            os.getenv("KIMI_TIMEOUT_SECONDS") or getattr(settings, "KIMI_TIMEOUT_SECONDS", 12)
+        )
+        self._fallback_service = GeminiService()
 
         if not api_key or api_key == "your-kimi-api-key":
             print("[WARNING] KIMI_API_KEY not configured.")
@@ -44,8 +47,15 @@ class KimiService:
             return
 
         try:
-            self._client = OpenAI(api_key=api_key, base_url="https://api.moonshot.cn/v1")
-            print(f"[OK] Kimi API configured successfully (model={self._model})")
+            self._client = OpenAI(
+                api_key=api_key,
+                base_url="https://api.moonshot.cn/v1",
+                timeout=self._timeout_seconds,
+            )
+            print(
+                f"[OK] Kimi API configured successfully "
+                f"(model={self._model}, timeout={self._timeout_seconds}s)"
+            )
         except Exception as error:
             print(f"[ERROR] Kimi API configuration failed: {error}")
 
@@ -55,7 +65,7 @@ class KimiService:
 
     def generate_text(self, prompt: str, temperature: float = 0.7) -> str:
         if not self._client:
-            raise ValueError("Kimi API not configured")
+            return self._fallback_service.generate_text(prompt, temperature)
 
         try:
             response = self._client.chat.completions.create(
@@ -66,7 +76,8 @@ class KimiService:
             )
             return response.choices[0].message.content
         except Exception as error:
-            raise RuntimeError(f"Kimi API call failed: {error}") from error
+            print(f"[WARNING] Kimi generate_text failed, fallback to mock service: {error}")
+            return self._fallback_service.generate_text(prompt, temperature)
 
     def generate_structured_response(
         self,
@@ -91,11 +102,13 @@ class KimiService:
             json_match = re.search(r"\{.*\}|\[.*\]", response_text, re.DOTALL)
             if json_match:
                 return json.loads(json_match.group())
-            raise ValueError(f"无法解析响应中的 JSON: {response_text}")
+
+            print("[WARNING] Kimi structured response parse failed, fallback to mock service")
+            return self._fallback_service.generate_structured_response(prompt, response_format, temperature)
 
     def chat(self, messages: list, temperature: float = 0.7) -> str:
         if not self._client:
-            raise ValueError("Kimi API not configured")
+            return self._fallback_service.chat(messages, temperature)
 
         try:
             response = self._client.chat.completions.create(
@@ -106,7 +119,8 @@ class KimiService:
             )
             return response.choices[0].message.content
         except Exception as error:
-            raise RuntimeError(f"Kimi API call failed: {error}") from error
+            print(f"[WARNING] Kimi chat failed, fallback to mock service: {error}")
+            return self._fallback_service.chat(messages, temperature)
 
 
 kimi_service = KimiService()

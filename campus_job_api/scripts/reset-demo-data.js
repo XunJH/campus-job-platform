@@ -46,13 +46,63 @@ function dataUrlCard(label, background, foreground = '#FFFFFF') {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+function buildEducation({
+  school,
+  degree,
+  gpa,
+  graduationYear,
+  status = '在读',
+  courses = [],
+  honors = []
+}) {
+  return {
+    school,
+    degree,
+    gpa,
+    graduationYear,
+    status,
+    courses: Array.isArray(courses) ? courses.join('、') : String(courses || ''),
+    honors: Array.isArray(honors) ? honors.join('\n') : String(honors || '')
+  };
+}
+
+function buildExperience({
+  title,
+  company,
+  period,
+  bullets = [],
+  skills = []
+}) {
+  return {
+    title,
+    company,
+    period,
+    description: Array.isArray(bullets) ? bullets.join('\n') : String(bullets || ''),
+    skills
+  };
+}
+
 function buildPersonalityProfile(config) {
+  const suitableJobs = config.suitableJobs || config.suitable_jobs || [];
+  const preferredJobTypes = config.preferredJobTypes || config.preferred_job_types || [];
+
   return {
     summary: config.summary,
     tags: config.tags,
     strengths: config.strengths,
-    suitableJobs: config.suitableJobs,
-    preferredJobTypes: config.preferredJobTypes,
+    suitableJobs,
+    suitable_jobs: suitableJobs,
+    preferredJobTypes,
+    preferred_job_types: preferredJobTypes,
+    major: config.major || '',
+    educationMajor: config.major || '',
+    grade: config.grade || '',
+    educationGrade: config.grade || '',
+    education: config.education || [],
+    workExperience: config.workExperience || [],
+    technicalSkills: config.technicalSkills || [],
+    tools: config.tools || [],
+    languages: config.languages || [],
     workStyle: config.workStyle,
     communicationStyle: config.communicationStyle,
     riskAwareness: config.riskAwareness,
@@ -162,6 +212,44 @@ async function createUsers(passwordHash) {
         strengths: ['Vue/Angular 开发', '页面设计', '沟通协调'],
         suitableJobs: ['前端开发实习生', '产品助理', '新媒体运营'],
         preferredJobTypes: ['internship', 'part_time'],
+        major: '软件工程',
+        grade: '2023级本科',
+        education: [
+          buildEducation({
+            school: '广西科技大学',
+            degree: '软件工程 本科',
+            gpa: '专业前15%',
+            graduationYear: '2027届',
+            courses: ['前端工程化', '数据库原理', '计算机网络'],
+            honors: ['获校级创新项目立项', '担任班级技术委员，组织课程答疑']
+          })
+        ],
+        workExperience: [
+          buildExperience({
+            title: '校园招聘平台前端开发',
+            company: '校内创新实验室',
+            period: '2026.03 - 至今',
+            bullets: [
+              '负责学生端岗位列表、详情页和投递流程的界面实现与联调',
+              '将推荐、收藏、沟通等功能串联为完整求职链路，提升演示流程完整度',
+              '整理组件样式规范并协助排查前端交互缺陷'
+            ],
+            skills: ['Angular', 'TypeScript', 'Tailwind CSS', 'REST API']
+          }),
+          buildExperience({
+            title: '校园活动官网志愿维护',
+            company: '学院团委',
+            period: '2025.09 - 2025.12',
+            bullets: [
+              '协助完成活动官网页面改版和报名表单维护',
+              '配合老师更新通知公告，保障活动高峰期页面稳定访问'
+            ],
+            skills: ['HTML', 'CSS', 'JavaScript']
+          })
+        ],
+        technicalSkills: ['HTML', 'CSS', 'JavaScript', 'TypeScript', 'Angular', 'Vue'],
+        tools: ['Git', 'Figma', 'Postman', 'Vite'],
+        languages: ['英语 CET-6', '普通话'],
         workStyle: '注重协作，能快速推动任务落地',
         communicationStyle: '沟通直接、反馈及时',
         riskAwareness: '对押金、私下转账等风险较敏感',
@@ -212,6 +300,44 @@ async function createUsers(passwordHash) {
         strengths: ['Python 数据处理', 'Excel', '内容整理'],
         suitableJobs: ['Python数据分析兼职', '新媒体运营', '内容编辑'],
         preferredJobTypes: ['part_time', 'internship'],
+        major: '统计学',
+        grade: '2022级本科',
+        education: [
+          buildEducation({
+            school: '广西科技大学',
+            degree: '统计学 本科',
+            gpa: '专业前20%',
+            graduationYear: '2026届',
+            courses: ['概率论与数理统计', 'Python 数据分析', '市场调研方法'],
+            honors: ['获数据分析竞赛院级二等奖', '完成校内运营数据复盘专题报告']
+          })
+        ],
+        workExperience: [
+          buildExperience({
+            title: '活动数据分析助理',
+            company: '大学生服务中心',
+            period: '2025.10 - 2026.04',
+            bullets: [
+              '清洗活动报名与到场数据，输出周报并跟进异常指标',
+              '用 Excel 和 Python 汇总多场活动转化效果，支持运营复盘',
+              '协助整理用户反馈标签，为内容推送和活动选题提供依据'
+            ],
+            skills: ['Python', 'Excel', '数据清洗', '可视化']
+          }),
+          buildExperience({
+            title: '内容运营兼职',
+            company: '校园新媒体工作室',
+            period: '2025.03 - 2025.08',
+            bullets: [
+              '参与选题整理、文案排期和推送数据记录',
+              '结合后台数据调整发布时间，提升阅读与互动表现'
+            ],
+            skills: ['内容策划', 'Excel', '文案整理']
+          })
+        ],
+        technicalSkills: ['Python', 'SQL', 'Excel', 'Power BI', 'SPSS'],
+        tools: ['Jupyter Notebook', 'PowerPoint', '问卷星', '飞书表格'],
+        languages: ['英语 CET-4', '普通话'],
         workStyle: '偏独立推进，注重结果复盘',
         communicationStyle: '表达清晰，善于整理结构',
         riskAwareness: '会优先核验岗位真实性和结算方式',
@@ -248,6 +374,44 @@ async function createUsers(passwordHash) {
         strengths: ['英语口语', '课程辅导', '活动组织'],
         suitableJobs: ['英语外教助理', '教学辅导', '国际交流接待'],
         preferredJobTypes: ['part_time', 'temporary'],
+        major: '英语',
+        grade: '2022级本科',
+        education: [
+          buildEducation({
+            school: '广西科技大学',
+            degree: '英语 本科',
+            gpa: '专业前25%',
+            graduationYear: '2026届',
+            courses: ['英语口译', '跨文化交际', '教育学基础'],
+            honors: ['通过 TEM-4', '多次参与国际交流活动志愿接待']
+          })
+        ],
+        workExperience: [
+          buildExperience({
+            title: '英语外教助理',
+            company: '校园国际交流中心',
+            period: '2025.09 - 至今',
+            bullets: [
+              '协助外教准备课堂资料和口语互动任务，跟进学生反馈',
+              '承担课前签到、课堂秩序维护和课后问题收集',
+              '在国际文化活动中负责嘉宾接待与双语引导'
+            ],
+            skills: ['英语口语', '活动组织', '课堂协助']
+          }),
+          buildExperience({
+            title: '英语家教',
+            company: '校外辅导机构',
+            period: '2024.11 - 2025.06',
+            bullets: [
+              '为初高中学生制定单词与阅读训练计划',
+              '根据月度测试结果调整辅导重点，提升学习节奏和信心'
+            ],
+            skills: ['教学辅导', '沟通表达', '课件整理']
+          })
+        ],
+        technicalSkills: ['英语口语', '英文写作', '课程辅导', '活动接待'],
+        tools: ['PowerPoint', 'Canva', '剪映', '腾讯会议'],
+        languages: ['英语 TEM-4', '普通话'],
         workStyle: '关注体验与细节，适合服务型岗位',
         communicationStyle: '友好耐心，善于解释',
         riskAwareness: '对合同条款和薪资说明比较关注',
@@ -264,6 +428,46 @@ async function createUsers(passwordHash) {
       phone: '16600000004',
       bio: '留作现场演示人格测评、岗位投递和聊天链路的干净测试账号。',
       creditScore: 90,
+      personalityProfile: buildPersonalityProfile({
+        name: '测试学生4',
+        summary: '综合素质均衡，适合产品助理、运营支持和校园项目执行类岗位。',
+        tags: ['条理清晰', '执行稳定', '配合度高'],
+        strengths: ['文档整理', '流程跟进', '基础数据整理'],
+        suitableJobs: ['产品助理', '运营支持', '校园活动执行'],
+        preferredJobTypes: ['internship', 'part_time'],
+        major: '信息管理与信息系统',
+        grade: '2023级本科',
+        education: [
+          buildEducation({
+            school: '广西科技大学',
+            degree: '信息管理与信息系统 本科',
+            gpa: '专业前30%',
+            graduationYear: '2027届',
+            courses: ['管理信息系统', '用户研究基础', '数据可视化'],
+            honors: ['参与学院项目路演志愿服务', '完成校园服务流程优化课程作业']
+          })
+        ],
+        workExperience: [
+          buildExperience({
+            title: '校园运营支持',
+            company: '大学生事务服务站',
+            period: '2025.11 - 至今',
+            bullets: [
+              '协助整理岗位报名信息、通知名单并跟进现场执行安排',
+              '负责活动物料核对、签到表更新和复盘资料归档',
+              '配合老师完成周报整理和基础数据汇总'
+            ],
+            skills: ['运营支持', '文档整理', '活动执行']
+          })
+        ],
+        technicalSkills: ['Excel', 'PPT', '流程梳理', '基础 SQL'],
+        tools: ['飞书', '墨刀', 'XMind', '问卷星'],
+        languages: ['英语 CET-4', '普通话'],
+        workStyle: '做事稳妥，适合按节点推进任务并及时反馈',
+        communicationStyle: '表达清楚，偏向先确认信息再执行',
+        riskAwareness: '会重点关注岗位来源、联系人身份和结算说明',
+        resumeColor: '#7C3AED'
+      }),
     }
   ]);
 
