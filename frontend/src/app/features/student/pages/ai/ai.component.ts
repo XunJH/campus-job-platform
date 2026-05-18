@@ -847,7 +847,7 @@ export class StudentAiComponent implements OnInit {
 
   private getUserId(): string {
     const user = this.authService.getCurrentUser();
-    return user?.id || 'guest';
+    return String(user?.id || 'guest');
   }
 
   private getInterviewHistory(): Array<{ role: string; content: string }> {

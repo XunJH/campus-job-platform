@@ -11,17 +11,17 @@ export class AiApiService {
 
   constructor(private http: HttpClient) {}
 
-  studentChat(userId: string, message: string, history: any[] = []): Observable<any> {
+  studentChat(userId: string | number | null | undefined, message: string, history: any[] = []): Observable<any> {
     return this.http.post(`${this.apiUrl}/chat/send`, {
-      user_id: userId,
+      user_id: this.normalizeId(userId, 'guest'),
       message,
       history
     });
   }
 
-  employerChat(userId: string, message: string, role: string = 'hr', history: any[] = []): Observable<any> {
+  employerChat(userId: string | number | null | undefined, message: string, role: string = 'hr', history: any[] = []): Observable<any> {
     return this.http.post(`${this.apiUrl}/chat/employer/send`, {
-      user_id: userId,
+      user_id: this.normalizeId(userId, 'employer'),
       message,
       role,
       history
@@ -32,9 +32,9 @@ export class AiApiService {
     return this.http.get(`${this.apiUrl}/personality/questionnaire`);
   }
 
-  analyzePersonality(userId: string, answers: any[]): Observable<any> {
+  analyzePersonality(userId: string | number | null | undefined, answers: any[]): Observable<any> {
     return this.http.post(`${this.apiUrl}/personality/analyze`, {
-      user_id: userId,
+      user_id: this.normalizeId(userId, 'guest'),
       answers
     });
   }
@@ -43,9 +43,9 @@ export class AiApiService {
     return this.http.get(`${this.apiUrl}/matching/jobs`);
   }
 
-  recommendJobs(userId: string, personalityProfile?: any, topN: number = 5): Observable<any> {
+  recommendJobs(userId: string | number | null | undefined, personalityProfile?: any, topN: number = 5): Observable<any> {
     const payload: any = {
-      user_id: userId,
+      user_id: this.normalizeId(userId, 'guest'),
       top_n: topN
     };
 
@@ -57,7 +57,7 @@ export class AiApiService {
   }
 
   smartReferral(
-    jobId: string,
+    jobId: string | number | null | undefined,
     jobTitle: string,
     jobDescription: string = '',
     jobRequirements: string[] = [],
@@ -66,7 +66,7 @@ export class AiApiService {
     includeGapAnalysis: boolean = true
   ): Observable<any> {
     return this.http.post(`${this.apiUrl}/matching/smart-referral`, {
-      job_id: jobId,
+      job_id: this.normalizeId(jobId),
       job_title: jobTitle,
       job_description: jobDescription,
       job_requirements: jobRequirements,
@@ -166,9 +166,15 @@ export class AiApiService {
     });
   }
 
-  optimizeResume(userId: string, section: string, content: string, jobTarget?: string, tone?: string): Observable<any> {
+  optimizeResume(
+    userId: string | number | null | undefined,
+    section: string,
+    content: string,
+    jobTarget?: string,
+    tone?: string
+  ): Observable<any> {
     return this.http.post(`${this.apiUrl}/resume/optimize`, {
-      user_id: userId,
+      user_id: this.normalizeId(userId, 'guest'),
       section,
       content,
       job_target: jobTarget ?? null,
@@ -176,9 +182,14 @@ export class AiApiService {
     });
   }
 
-  analyzeRejection(userId: string, rejectionMessage: string, jobTitle: string, resumeSummary?: string): Observable<any> {
+  analyzeRejection(
+    userId: string | number | null | undefined,
+    rejectionMessage: string,
+    jobTitle: string,
+    resumeSummary?: string
+  ): Observable<any> {
     return this.http.post(`${this.apiUrl}/resume/rejection-analysis`, {
-      user_id: userId,
+      user_id: this.normalizeId(userId, 'guest'),
       rejection_message: rejectionMessage,
       job_title: jobTitle,
       resume_summary: resumeSummary ?? null
@@ -186,7 +197,7 @@ export class AiApiService {
   }
 
   updateResumeFromJob(
-    userId: string,
+    userId: string | number | null | undefined,
     jobTitle: string,
     company: string,
     duration: string,
@@ -194,7 +205,7 @@ export class AiApiService {
     currentResume?: string
   ): Observable<any> {
     return this.http.post(`${this.apiUrl}/resume/update`, {
-      user_id: userId,
+      user_id: this.normalizeId(userId, 'guest'),
       job_title: jobTitle,
       company,
       duration,
@@ -204,16 +215,16 @@ export class AiApiService {
   }
 
   analyzeStudentReviewToEmployer(
-    userId: string,
-    jobId: string,
+    userId: string | number | null | undefined,
+    jobId: string | number | null | undefined,
     companyName: string,
     jobTitle: string,
     rating: number,
     reviewText: string
   ): Observable<any> {
     return this.http.post(`${this.apiUrl}/review/student-to-employer`, {
-      user_id: userId,
-      job_id: jobId,
+      user_id: this.normalizeId(userId, 'guest'),
+      job_id: this.normalizeId(jobId),
       company_name: companyName,
       job_title: jobTitle,
       rating,
@@ -222,8 +233,8 @@ export class AiApiService {
   }
 
   analyzeEmployerReviewToStudent(
-    employerId: string,
-    studentId: string,
+    employerId: string | number | null | undefined,
+    studentId: string | number | null | undefined,
     studentName: string,
     jobTitle: string,
     workDuration: string,
@@ -231,8 +242,8 @@ export class AiApiService {
     reviewText: string
   ): Observable<any> {
     return this.http.post(`${this.apiUrl}/review/employer-to-student`, {
-      employer_id: employerId,
-      student_id: studentId,
+      employer_id: this.normalizeId(employerId, 'employer'),
+      student_id: this.normalizeId(studentId),
       student_name: studentName,
       job_title: jobTitle,
       work_duration: workDuration,
@@ -247,5 +258,18 @@ export class AiApiService {
       target_name: targetName,
       reviews
     });
+  }
+
+  private normalizeId(value: string | number | null | undefined, fallback: string = ''): string {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed || fallback;
+    }
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return String(value);
+    }
+
+    return fallback;
   }
 }

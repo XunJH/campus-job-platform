@@ -51,10 +51,10 @@ export class AiPersonalityService {
     );
   }
 
-  analyzePersonality(userId: string, answers: PersonalityAnswer[]): Observable<PersonalityProfile> {
+  analyzePersonality(userId: string | number | null | undefined, answers: PersonalityAnswer[]): Observable<PersonalityProfile> {
     return this.http
       .post<any>(`${this.aiApiUrl}/personality/analyze`, {
-        user_id: userId,
+        user_id: this.normalizeId(userId, 'guest'),
         answers
       })
       .pipe(
@@ -74,6 +74,19 @@ export class AiPersonalityService {
   private toReadableMessage(source: any, fallback: string): string {
     const normalized = this.extractReadableMessage(source);
     return normalized || fallback;
+  }
+
+  private normalizeId(value: string | number | null | undefined, fallback: string = ''): string {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed || fallback;
+    }
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return String(value);
+    }
+
+    return fallback;
   }
 
   private extractReadableMessage(source: any): string {
