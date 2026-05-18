@@ -3,12 +3,15 @@ const Job = require('../models/Job');
 const User = require('../models/User');
 const { sequelize, Verification, Application, Bookmark, Conversation, ConversationMessage, ConversationParticipantState, Settlement } = require('../models');
 const { checkFraud } = require('../services/aiService');
+const { createAdminOperationLog, createSystemNotification } = require('../services/adminActivityService');
+const { DEFAULT_PLATFORM_SETTINGS, getPublicPlatformSettings } = require('../services/platformSettingService');
 const { sanitizeFields, sanitizeText } = require('../utils/sanitize');
 
 const VALID_SALARY_TYPES = ['hourly', 'daily', 'weekly', 'monthly'];
 const VALID_WORK_LOCATIONS = ['on_campus', 'remote', 'hybrid'];
-const VALID_CATEGORIES = ['技术类', '教学类', '配送类', '营销类', '其他'];
+const VALID_CATEGORIES = DEFAULT_PLATFORM_SETTINGS.jobCategories;
 const VALID_APPLICATION_STATUSES = ['pending', 'approved', 'rejected', 'withdrawn'];
+const VALID_APPLICATION_STAGES = ['new', 'screening', 'interview_shortlist', 'interview_confirmed', 'rejected_pool', 'archived'];
 const VALID_SETTLEMENT_STATUSES = ['pending', 'paid', 'disputed'];
 
 const ADMIN_STATUS_TRANSITIONS = {
@@ -144,6 +147,129 @@ const buildSettlementStatusSummary = (settlements) => settlements.reduce((summar
   pending: 0,
   paid: 0,
   disputed: 0
+});
+
+const APPLICATION_STAGE_META = {
+  new: {
+    label: '新投递',
+    priority: 6
+  },
+  screening: {
+    label: '待筛选',
+    priority: 5
+  },
+  interview_shortlist: {
+    label: '待面试',
+    priority: 4
+  },
+  interview_confirmed: {
+    label: '已确认面试',
+    priority: 7
+  },
+  rejected_pool: {
+    label: '已淘汰',
+    priority: 2
+  },
+  archived: {
+    label: '已归档',
+    priority: 1
+  }
+};
+
+const buildApplicationStatusSummary = (applications) => applications.reduce((summary, application) => {
+  summary.total += 1;
+  if (summary[application.status] !== undefined) {
+    summary[application.status] += 1;
+  }
+  return summary;
+}, {
+  total: 0,
+  pending: 0,
+  approved: 0,
+  rejected: 0,
+  withdrawn: 0
+});
+
+const buildApplicationStageSummary = (applications) => applications.reduce((summary, application) => {
+  const stage = application.applicationStage || 'new';
+  if (summary[stage] !== undefined) {
+    summary[stage] += 1;
+  }
+  return summary;
+}, {
+  new: 0,
+  screening: 0,
+  interview_shortlist: 0,
+  interview_confirmed: 0,
+  rejected_pool: 0,
+  archived: 0
+});
+
+const getApplicationStagePriority = (application) => {
+  if (!application) {
+    return 0;
+  }
+
+  if (application.status === 'withdrawn') {
+    return 0;
+  }
+
+  const stage = application.applicationStage || 'new';
+  return APPLICATION_STAGE_META[stage]?.priority || 0;
+};
+
+const buildApplicationTags = (application) => {
+  const tags = [];
+
+  if (application.resume) {
+    tags.push('简历已上传');
+  }
+
+  if (application.coverLetter) {
+    tags.push('有求职说明');
+  }
+
+  if (application.student?.personalityProfileCompletedAt) {
+    tags.push('已完成人格测评');
+  }
+
+  if (application.reviewedAt) {
+    tags.push('已记录处理意见');
+  }
+
+  if (application.status === 'withdrawn') {
+    tags.push('学生已撤回');
+  }
+
+  return tags;
+};
+
+const compareApplicationsByPriority = (left, right) => {
+  const priorityDiff = getApplicationStagePriority(right) - getApplicationStagePriority(left);
+  if (priorityDiff !== 0) {
+    return priorityDiff;
+  }
+
+  const rightUnread = right.conversation?.participantStates?.[0]?.unreadCount || 0;
+  const leftUnread = left.conversation?.participantStates?.[0]?.unreadCount || 0;
+  if (rightUnread !== leftUnread) {
+    return rightUnread - leftUnread;
+  }
+
+  const rightStageTime = right.stageUpdatedAt ? new Date(right.stageUpdatedAt).getTime() : 0;
+  const leftStageTime = left.stageUpdatedAt ? new Date(left.stageUpdatedAt).getTime() : 0;
+  if (rightStageTime !== leftStageTime) {
+    return rightStageTime - leftStageTime;
+  }
+
+  const rightAppliedTime = right.appliedAt ? new Date(right.appliedAt).getTime() : 0;
+  const leftAppliedTime = left.appliedAt ? new Date(left.appliedAt).getTime() : 0;
+  return rightAppliedTime - leftAppliedTime;
+};
+
+const serializeApplication = (application) => ({
+  ...application.toJSON(),
+  classificationTags: buildApplicationTags(application)
 });
 
 const ensureSettlementForApprovedApplication = async (application, transaction) => {
@@ -325,6 +451,9 @@ exports.createJob = async (req, res) => {
       });
     }
 
+    const platformSettings = await getPublicPlatformSettings();
+    const validCategories = platformSettings.jobCategories?.length ? platformSettings.jobCategories : VALID_CATEGORIES;
+
     if (salaryType && !VALID_SALARY_TYPES.includes(salaryType)) {
       return res.status(400).json({
         success: false,
@@ -339,7 +468,7 @@ exports.createJob = async (req, res) => {
       });
     }
 
-    if (category && !VALID_CATEGORIES.includes(category)) {
+    if (category && !validCategories.includes(category)) {
       return res.status(400).json({
         success: false,
         message: '岗位类别不合法'
@@ -361,7 +490,7 @@ exports.createJob = async (req, res) => {
       salary: numericSalary,
       location,
       workLocation: workLocation || 'on_campus',
-      category: category || '其他',
+      category: category || validCategories[validCategories.length - 1] || '其他',
       jobType,
       salaryType: salaryType || 'monthly',
       workingHours,
@@ -369,6 +498,15 @@ exports.createJob = async (req, res) => {
       employerId: req.user.id,
       status: 'draft',
       auditStatus: 'pending'
+    });
+
+    await createSystemNotification({
+      title: `新的岗位待审核：${title}`,
+      content: `${verification.companyName || req.user.username} 发布了新岗位，请管理员尽快审核。`,
+      type: 'audit_result',
+      targetRole: 'admin',
+      relatedJobId: job.id,
+      actionUrl: '/jobs'
     });
 
     checkFraud({
@@ -553,6 +691,8 @@ exports.updateJob = async (req, res) => {
     } = req.body;
 
     const job = await Job.findByPk(id);
+    const platformSettings = await getPublicPlatformSettings();
+    const validCategories = platformSettings.jobCategories?.length ? platformSettings.jobCategories : VALID_CATEGORIES;
     if (!job) {
       return res.status(404).json({
         success: false,
@@ -624,7 +764,7 @@ exports.updateJob = async (req, res) => {
       });
     }
 
-    if (category && !VALID_CATEGORIES.includes(category)) {
+    if (category && !validCategories.includes(category)) {
       return res.status(400).json({
         success: false,
         message: '岗位类别不合法'
@@ -827,6 +967,33 @@ exports.approveJob = async (req, res) => {
       status: 'active'
     });
 
+    await Promise.all([
+      createAdminOperationLog({
+        adminId: req.user.id,
+        actionType: 'job_approve',
+        targetType: 'job',
+        targetId: job.id,
+        summary: `审核通过岗位：${job.title}`,
+        detail: '岗位已审核通过并对学生开放申请。',
+        metadata: {
+          employerId: job.employerId,
+          auditStatus: 'approved'
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      }),
+      createSystemNotification({
+        title: `岗位审核已通过：${job.title}`,
+        content: '你发布的岗位已通过平台审核，当前已对学生开放申请。',
+        type: 'audit_result',
+        targetRole: 'employer',
+        targetUserId: job.employerId,
+        senderAdminId: req.user.id,
+        relatedJobId: job.id,
+        actionUrl: '/employer/jobs'
+      })
+    ]);
+
     res.json({
       success: true,
       message: '岗位审核通过',
@@ -866,6 +1033,33 @@ exports.rejectJob = async (req, res) => {
       rejectionReason: reason,
       status: 'closed'
     });
+
+    await Promise.all([
+      createAdminOperationLog({
+        adminId: req.user.id,
+        actionType: 'job_reject',
+        targetType: 'job',
+        targetId: job.id,
+        summary: `驳回岗位：${job.title}`,
+        detail: reason,
+        metadata: {
+          employerId: job.employerId,
+          auditStatus: 'rejected'
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      }),
+      createSystemNotification({
+        title: `岗位审核未通过：${job.title}`,
+        content: `你发布的岗位未通过平台审核。原因：${reason}`,
+        type: 'audit_result',
+        targetRole: 'employer',
+        targetUserId: job.employerId,
+        senderAdminId: req.user.id,
+        relatedJobId: job.id,
+        actionUrl: '/employer/jobs'
+      })
+    ]);
 
     res.json({
       success: true,
@@ -976,6 +1170,7 @@ const applyJobForStudent = async ({
   studentId,
   jobId,
   coverLetter,
+  platformSettings,
   transaction
 }) => {
   const job = await Job.findByPk(jobId, {
@@ -1020,7 +1215,8 @@ const applyJobForStudent = async ({
   }
 
   const resumeUrl = student.personalityProfile?.resumeImage || null;
-  if (!resumeUrl) {
+  const resumeRequired = platformSettings?.featureToggles?.requireResumeImageBeforeApply !== false;
+  if (resumeRequired && !resumeUrl) {
     const error = new Error('请先在个人资料中上传简历图片后再投递');
     error.status = 400;
     throw error;
@@ -1043,7 +1239,9 @@ const applyJobForStudent = async ({
     jobId,
     coverLetter,
     resume: resumeUrl,
-    status: 'pending'
+    status: 'pending',
+    applicationStage: 'new',
+    stageUpdatedAt: new Date()
   }, { transaction });
 
   await job.increment('applicationsCount', { by: 1, transaction });
@@ -1065,6 +1263,24 @@ exports.applyJob = async (req, res) => {
     const studentId = parseInt(req.user.id, 10);
     const jobId = parseInt(req.params.id, 10);
     const coverLetter = req.body.coverLetter ? sanitizeText(req.body.coverLetter) : null;
+    const useStagePipelineFlow = true;
+    const platformSettings = await getPublicPlatformSettings();
+
+    if (useStagePipelineFlow) {
+      const directApplicationResult = await sequelize.transaction((transaction) => applyJobForStudent({
+        studentId,
+        jobId,
+        coverLetter,
+        platformSettings,
+        transaction
+      }));
+
+      return res.json({
+        success: true,
+        message: '申请提交成功',
+        data: directApplicationResult
+      });
+    }
 
     const result = await sequelize.transaction(async (transaction) => {
       const job = await Job.findByPk(jobId, {
@@ -1109,7 +1325,8 @@ exports.applyJob = async (req, res) => {
       }
 
       const resumeUrl = student.personalityProfile?.resumeImage || null;
-      if (!resumeUrl) {
+      const resumeRequired = platformSettings?.featureToggles?.requireResumeImageBeforeApply !== false;
+      if (resumeRequired && !resumeUrl) {
         const error = new Error('请先在个人资料中上传简历图片后再投递');
         error.status = 400;
         throw error;
@@ -1174,10 +1391,23 @@ exports.bulkApplyJobs = async (req, res) => {
   try {
     const studentId = parseInt(req.user.id, 10);
     const coverLetter = req.body.coverLetter ? sanitizeText(req.body.coverLetter) : null;
+    const platformSettings = await getPublicPlatformSettings();
+    const batchApplyEnabled = platformSettings.featureToggles?.enableBatchApply !== false;
+    const batchApplyLimit = Math.min(
+      Math.max(parseInt(platformSettings.operationRules?.batchApplyLimit, 10) || 100, 1),
+      500
+    );
     const rawJobIds = Array.isArray(req.body.jobIds) ? req.body.jobIds : [];
     const jobIds = [...new Set(rawJobIds
       .map((item) => parseInt(item, 10))
       .filter((item) => !Number.isNaN(item)))];
+
+    if (!batchApplyEnabled) {
+      return res.status(403).json({
+        success: false,
+        message: '平台暂时关闭了一键批量投递功能'
+      });
+    }
 
     if (jobIds.length === 0) {
       return res.status(400).json({
@@ -1186,10 +1416,10 @@ exports.bulkApplyJobs = async (req, res) => {
       });
     }
 
-    if (jobIds.length > 100) {
+    if (jobIds.length > batchApplyLimit) {
       return res.status(400).json({
         success: false,
-        message: '单次最多批量投递 100 个岗位'
+        message: `单次最多批量投递 ${batchApplyLimit} 个岗位`
       });
     }
 
@@ -1201,6 +1431,7 @@ exports.bulkApplyJobs = async (req, res) => {
           studentId,
           jobId,
           coverLetter,
+          platformSettings,
           transaction
         }));
 
@@ -1266,7 +1497,8 @@ exports.checkApplied = async (req, res) => {
       success: true,
       data: {
         applied: Boolean(application),
-        status: application ? application.status : null
+        status: application ? application.status : null,
+        applicationStage: application ? application.applicationStage : null
       }
     });
   } catch (error) {
@@ -1310,7 +1542,7 @@ exports.getMyApplications = async (req, res) => {
 
     res.json({
       success: true,
-      data: applications
+      data: applications.map(serializeApplication)
     });
   } catch (error) {
     console.error('获取申请列表错误:', error);
@@ -1373,7 +1605,8 @@ exports.withdrawApplication = async (req, res) => {
 
     await sequelize.transaction(async (transaction) => {
       await application.update({
-        status: 'withdrawn'
+        status: 'withdrawn',
+        stageUpdatedAt: new Date()
       }, { transaction });
 
       if (application.jobId) {
@@ -1431,6 +1664,101 @@ exports.getReceivedApplications = async (req, res) => {
     const { page, limit, offset } = parsePagination(req.query.page, req.query.limit);
     const requestedJobId = req.query.jobId ? parseInt(req.query.jobId, 10) : null;
     const requestedStatus = req.query.status;
+    const requestedStage = VALID_APPLICATION_STAGES.includes(req.query.stage) ? req.query.stage : null;
+    const useStagePipelineFlow = true;
+
+    if (useStagePipelineFlow) {
+      const priorityJobWhere = req.user.role === 'admin' && req.query.employerId
+        ? { employerId: parseInt(req.query.employerId, 10) }
+        : { employerId: req.user.id };
+
+      if (requestedJobId) {
+        priorityJobWhere.id = requestedJobId;
+      }
+
+      const priorityJobs = await Job.findAll({
+        where: priorityJobWhere,
+        attributes: ['id', 'title', 'status', 'auditStatus', 'applicationsCount'],
+        order: [['createdAt', 'DESC']]
+      });
+
+      const priorityJobIds = priorityJobs.map((job) => job.id);
+
+      if (priorityJobIds.length === 0) {
+        return res.json({
+          success: true,
+          data: {
+            applications: [],
+            jobs: [],
+            summary: buildApplicationStatusSummary([]),
+            stageSummary: buildApplicationStageSummary([]),
+            pagination: buildPagination(page, limit, 0)
+          }
+        });
+      }
+
+      const baseApplications = await Application.findAll({
+        where: {
+          jobId: { [Op.in]: priorityJobIds }
+        },
+        include: [
+          {
+            model: Job,
+            as: 'job',
+            attributes: [
+              'id',
+              'title',
+              'status',
+              'auditStatus',
+              'location',
+              'salary',
+              'salaryType',
+              'deadline'
+            ]
+          },
+          {
+            model: User,
+            as: 'student',
+            attributes: studentApplicationAttributes
+          },
+          {
+            model: User,
+            as: 'reviewer',
+            attributes: ['id', 'username']
+          }
+        ],
+        order: [['appliedAt', 'DESC']]
+      });
+
+      const filteredApplications = baseApplications.filter((application) => {
+        if (requestedStatus && VALID_APPLICATION_STATUSES.includes(requestedStatus) && application.status !== requestedStatus) {
+          return false;
+        }
+
+        if (requestedStage && application.applicationStage !== requestedStage) {
+          return false;
+        }
+
+        return true;
+      });
+
+      const sortedApplications = filteredApplications
+        .sort(compareApplicationsByPriority)
+        .map(serializeApplication);
+
+      const paginatedApplications = sortedApplications.slice(offset, offset + limit);
+
+      return res.json({
+        success: true,
+        data: {
+          applications: paginatedApplications,
+          jobs: priorityJobs,
+          summary: buildApplicationStatusSummary(baseApplications),
+          stageSummary: buildApplicationStageSummary(baseApplications),
+          pagination: buildPagination(page, limit, sortedApplications.length)
+        }
+      });
+    }
 
     const jobWhere = req.user.role === 'admin' && req.query.employerId
       ? { employerId: parseInt(req.query.employerId, 10) }
@@ -1538,11 +1866,212 @@ exports.getReceivedApplications = async (req, res) => {
   }
 };
 
+exports.updateApplicationStage = async (req, res) => {
+  try {
+    const applicationId = parseInt(req.params.applicationId, 10);
+    const nextStage = req.body.stage;
+    const notes = req.body.notes ? sanitizeText(req.body.notes) : null;
+
+    if (!VALID_APPLICATION_STAGES.includes(nextStage)) {
+      return res.status(400).json({
+        success: false,
+        message: '申请阶段不合法'
+      });
+    }
+
+    const application = await Application.findByPk(applicationId, {
+      include: [
+        {
+          model: Job,
+          as: 'job',
+          attributes: ['id', 'title', 'employerId', 'salary', 'salaryType', 'location', 'status', 'auditStatus', 'deadline']
+        },
+        {
+          model: User,
+          as: 'student',
+          attributes: studentApplicationAttributes
+        },
+        {
+          model: User,
+          as: 'reviewer',
+          attributes: ['id', 'username']
+        }
+      ]
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: '申请记录不存在'
+      });
+    }
+
+    if (req.user.role !== 'admin' && application.job.employerId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: '您没有权限处理这条申请'
+      });
+    }
+
+    if (application.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: '只有待处理申请支持阶段流转'
+      });
+    }
+
+    await application.update({
+      applicationStage: nextStage,
+      stageUpdatedAt: new Date(),
+      ...(notes !== null ? { notes } : {})
+    });
+
+    const updatedApplication = await Application.findByPk(applicationId, {
+      include: [
+        {
+          model: Job,
+          as: 'job',
+          attributes: [
+            'id',
+            'title',
+            'status',
+            'auditStatus',
+            'location',
+            'salary',
+            'salaryType',
+            'deadline'
+          ]
+        },
+        {
+          model: User,
+          as: 'student',
+          attributes: studentApplicationAttributes
+        },
+        {
+          model: User,
+          as: 'reviewer',
+          attributes: ['id', 'username']
+        }
+      ]
+    });
+
+    return res.json({
+      success: true,
+      message: `申请已更新为“${APPLICATION_STAGE_META[nextStage]?.label || nextStage}”`,
+      data: serializeApplication(updatedApplication)
+    });
+  } catch (error) {
+    console.error('更新申请阶段失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
 exports.reviewApplication = async (req, res) => {
   try {
     const applicationId = parseInt(req.params.applicationId, 10);
     const nextStatus = req.body.status;
     const notes = req.body.notes ? sanitizeText(req.body.notes) : null;
+    const useStagePipelineFlow = true;
+
+    if (useStagePipelineFlow) {
+      const stageAfterReview = nextStatus === 'approved' ? 'archived' : 'rejected_pool';
+
+      if (!['approved', 'rejected'].includes(nextStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: '申请处理状态只能是 approved 或 rejected'
+        });
+      }
+
+      const finalApplication = await Application.findByPk(applicationId, {
+        include: [{
+          model: Job,
+          as: 'job',
+          attributes: ['id', 'title', 'employerId', 'salary', 'salaryType']
+        }]
+      });
+
+      if (!finalApplication) {
+        return res.status(404).json({
+          success: false,
+          message: '申请记录不存在'
+        });
+      }
+
+      if (req.user.role !== 'admin' && finalApplication.job.employerId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: '您没有权限处理这条申请'
+        });
+      }
+
+      if (finalApplication.status === 'withdrawn') {
+        return res.status(400).json({
+          success: false,
+          message: '该申请已被学生撤回，不能继续处理'
+        });
+      }
+
+      if (['approved', 'rejected'].includes(finalApplication.status)) {
+        return res.status(400).json({
+          success: false,
+          message: '该申请已给出最终结论，请勿重复操作'
+        });
+      }
+
+      await sequelize.transaction(async (transaction) => {
+        await finalApplication.update({
+          status: nextStatus,
+          notes,
+          reviewedAt: new Date(),
+          reviewedBy: req.user.id,
+          applicationStage: stageAfterReview,
+          stageUpdatedAt: new Date()
+        }, { transaction });
+
+        if (nextStatus === 'approved') {
+          await ensureSettlementForApprovedApplication(finalApplication, transaction);
+        }
+      });
+
+      const updatedApplication = await Application.findByPk(applicationId, {
+        include: [
+          {
+            model: Job,
+            as: 'job',
+            attributes: [
+              'id',
+              'title',
+              'status',
+              'auditStatus',
+              'location',
+              'salary',
+              'salaryType',
+              'deadline'
+            ]
+          },
+          {
+            model: User,
+            as: 'student',
+            attributes: studentApplicationAttributes
+          },
+          {
+            model: User,
+            as: 'reviewer',
+            attributes: ['id', 'username']
+          }
+        ]
+      });
+
+      return res.json({
+        success: true,
+        message: nextStatus === 'approved' ? '申请已通过并归档' : '申请已移入淘汰池',
+        data: serializeApplication(updatedApplication)
+      });
+    }
 
     if (!['approved', 'rejected'].includes(nextStatus)) {
       return res.status(400).json({

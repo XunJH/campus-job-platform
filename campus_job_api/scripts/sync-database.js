@@ -1,3 +1,4 @@
+require('../models');
 const { sequelize } = require('../config/database');
 
 const syncDatabase = async () => {

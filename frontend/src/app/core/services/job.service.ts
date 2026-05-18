@@ -2,6 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+export type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn';
+export type ApplicationStage =
+  | 'new'
+  | 'screening'
+  | 'interview_shortlist'
+  | 'interview_confirmed'
+  | 'rejected_pool'
+  | 'archived';
+
 export interface Employer {
   id: number;
   username: string;
@@ -46,20 +55,32 @@ export interface StudentApplicant {
 
 export interface JobApplication {
   id: number;
-  status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
+  status: ApplicationStatus;
+  applicationStage: ApplicationStage;
   coverLetter?: string | null;
   resume?: string | null;
   notes?: string | null;
   appliedAt: string;
   reviewedAt?: string | null;
   reviewedBy?: number | null;
+  stageUpdatedAt?: string | null;
   updatedAt?: string;
+  classificationTags?: string[];
   student?: StudentApplicant;
   reviewer?: {
     id: number;
     username: string;
   };
   job?: Job;
+}
+
+export interface ApplicationStageSummary {
+  new: number;
+  screening: number;
+  interview_shortlist: number;
+  interview_confirmed: number;
+  rejected_pool: number;
+  archived: number;
 }
 
 export interface BatchApplyResultItem {
@@ -101,7 +122,7 @@ export interface SettlementRecord {
   updatedAt?: string;
   application?: {
     id: number;
-    status: JobApplication['status'];
+    status: ApplicationStatus;
     appliedAt: string;
     reviewedAt?: string | null;
     notes?: string | null;
@@ -159,6 +180,7 @@ export interface EmployerApplicationsPayload {
     rejected: number;
     withdrawn: number;
   };
+  stageSummary: ApplicationStageSummary;
   pagination: PaginationData;
 }
 
@@ -230,18 +252,31 @@ export class JobService {
     page = 1,
     limit = 10,
     jobId?: number | null,
-    status?: string | null
+    stage?: ApplicationStage | '' | null,
+    status?: ApplicationStatus | '' | null
   ): Observable<{ success: boolean; data: EmployerApplicationsPayload }> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
 
     if (jobId) params = params.set('jobId', jobId.toString());
+    if (stage) params = params.set('stage', stage);
     if (status) params = params.set('status', status);
 
     return this.http.get<{ success: boolean; data: EmployerApplicationsPayload }>(
       `${this.API_URL}/applications/received`,
       { params }
+    );
+  }
+
+  updateApplicationStage(
+    applicationId: number,
+    stage: ApplicationStage,
+    notes?: string
+  ): Observable<{ success: boolean; message: string; data: JobApplication }> {
+    return this.http.patch<{ success: boolean; message: string; data: JobApplication }>(
+      `${this.API_URL}/applications/${applicationId}/stage`,
+      { stage, notes: notes ?? null }
     );
   }
 
@@ -280,8 +315,10 @@ export class JobService {
     );
   }
 
-  checkApplied(id: number): Observable<{ success: boolean; data: { applied: boolean; status: string | null } }> {
-    return this.http.get<{ success: boolean; data: { applied: boolean; status: string | null } }>(
+  checkApplied(
+    id: number
+  ): Observable<{ success: boolean; data: { applied: boolean; status: ApplicationStatus | null; applicationStage: ApplicationStage | null } }> {
+    return this.http.get<{ success: boolean; data: { applied: boolean; status: ApplicationStatus | null; applicationStage: ApplicationStage | null } }>(
       `${this.API_URL}/${id}/applied`
     );
   }

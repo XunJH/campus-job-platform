@@ -4,6 +4,8 @@ import { Router, RouterModule } from '@angular/router';
 import { Subscription, interval, startWith } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { ConversationService } from '../../../core/services/conversation.service';
+import { NotificationService } from '../../../core/services/notification.service';
+import { PlatformSettingsService } from '../../../core/services/platform-settings.service';
 
 @Component({
   selector: 'app-student-shell-header',
@@ -12,26 +14,49 @@ import { ConversationService } from '../../../core/services/conversation.service
   templateUrl: './student-shell-header.component.html'
 })
 export class StudentShellHeaderComponent implements OnInit, OnDestroy {
-  unreadCount = 0;
-  private unreadSubscription?: Subscription;
+  unreadMessageCount = 0;
+  unreadNotificationCount = 0;
+  appealsEnabled = true;
+  aiAssistantEnabled = true;
+  conversationReminderEnabled = true;
+  private pollingSubscription?: Subscription;
 
   constructor(
-    private authService: AuthService,
-    private conversationService: ConversationService,
-    private router: Router
+    private readonly authService: AuthService,
+    private readonly conversationService: ConversationService,
+    private readonly notificationService: NotificationService,
+    private readonly platformSettingsService: PlatformSettingsService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
-    this.unreadSubscription = interval(10000)
+    this.platformSettingsService.getPublicSettings().subscribe({
+      next: (response) => {
+        const toggles = response.data.featureToggles;
+        this.appealsEnabled = toggles.enableAppeals !== false;
+        this.aiAssistantEnabled = toggles.enableAiAssistant !== false;
+        this.conversationReminderEnabled = toggles.enableConversationReminder !== false;
+      },
+      error: () => {}
+    });
+
+    this.pollingSubscription = interval(10000)
       .pipe(startWith(0))
-      .subscribe(() => this.loadUnreadSummary());
+      .subscribe(() => {
+        if (this.conversationReminderEnabled) {
+          this.loadUnreadMessages();
+        } else {
+          this.unreadMessageCount = 0;
+        }
+        this.loadUnreadNotifications();
+      });
   }
 
   ngOnDestroy(): void {
-    this.unreadSubscription?.unsubscribe();
+    this.pollingSubscription?.unsubscribe();
   }
 
-  isActive(section: 'jobs' | 'applications' | 'favorites' | 'messages' | 'wallet' | 'resume' | 'ai'): boolean {
+  isActive(section: 'jobs' | 'applications' | 'favorites' | 'notifications' | 'messages' | 'tickets' | 'wallet' | 'resume' | 'ai'): boolean {
     const url = this.router.url;
 
     switch (section) {
@@ -41,8 +66,12 @@ export class StudentShellHeaderComponent implements OnInit, OnDestroy {
         return url.startsWith('/student/applications');
       case 'favorites':
         return url.startsWith('/student/favorites');
+      case 'notifications':
+        return url.startsWith('/student/notifications');
       case 'messages':
         return url.startsWith('/student/messages');
+      case 'tickets':
+        return url.startsWith('/student/tickets');
       case 'wallet':
         return url.startsWith('/student/wallet');
       case 'resume':
@@ -54,8 +83,12 @@ export class StudentShellHeaderComponent implements OnInit, OnDestroy {
     }
   }
 
-  get unreadLabel(): string {
-    return this.unreadCount > 99 ? '99+' : String(this.unreadCount);
+  get unreadMessageLabel(): string {
+    return this.unreadMessageCount > 99 ? '99+' : String(this.unreadMessageCount);
+  }
+
+  get unreadNotificationLabel(): string {
+    return this.unreadNotificationCount > 99 ? '99+' : String(this.unreadNotificationCount);
   }
 
   logout(): void {
@@ -63,13 +96,24 @@ export class StudentShellHeaderComponent implements OnInit, OnDestroy {
     this.router.navigate(['/auth/login']);
   }
 
-  private loadUnreadSummary(): void {
+  private loadUnreadMessages(): void {
     this.conversationService.getUnreadSummary().subscribe({
       next: (res) => {
-        this.unreadCount = res.data?.totalUnread || 0;
+        this.unreadMessageCount = res.data?.totalUnread || 0;
       },
       error: () => {
-        this.unreadCount = 0;
+        this.unreadMessageCount = 0;
+      }
+    });
+  }
+
+  private loadUnreadNotifications(): void {
+    this.notificationService.getMyNotifications('', true).subscribe({
+      next: (res) => {
+        this.unreadNotificationCount = res.data?.unreadCount || 0;
+      },
+      error: () => {
+        this.unreadNotificationCount = 0;
       }
     });
   }

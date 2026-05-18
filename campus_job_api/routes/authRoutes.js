@@ -133,6 +133,11 @@ router.get(
   authController.getInternalPersonalityProfile
 );
 
+router.get(
+  '/internal/candidate-profiles',
+  authController.getInternalCandidateProfiles
+);
+
 router.post(
   '/personality-profile',
   authenticateToken,

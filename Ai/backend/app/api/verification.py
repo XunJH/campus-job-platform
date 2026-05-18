@@ -90,6 +90,15 @@ async def verify_identity(request: VerificationRequest):
 {request.content}
 <<</USER_INPUT>>>"""
 
+    system_prompt = f"""{system_prompt}
+
+补充规则：
+1. 如果材料中写明“平台已上传营业执照图片”或图片地址属于平台内部 /uploads/ 路径，说明申请方已经提交了图片材料，不能仅因为它不是外部 URL 就判定为高风险。
+2. 如果图片地址明显指向 placeholder、picsum、fake、example 等测试、占位或演示链接，必须继续作为高风险信号处理。
+3. 图片材料只能作为辅助判断项，仍要结合企业名称、营业执照号、联系人和官网等字段综合给出风险结论。
+4. 平台内部图片地址已经属于有效提交，不要再给出“需要补充图片 URL”这类建议，除非材料里根本没有图片地址或地址本身明显无效。
+"""
+
     import re
     import json
 

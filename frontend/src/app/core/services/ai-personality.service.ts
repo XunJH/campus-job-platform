@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, catchError } from 'rxjs';
+import { Observable, catchError, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface PersonalityQuestion {
@@ -32,46 +32,82 @@ export interface QuestionnaireResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AiPersonalityService {
-  private readonly AI_API_URL = environment.aiBaseUrl;
+  private readonly aiApiUrl = environment.aiBaseUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
-  /**
-   * 获取人格测试问卷
-   */
   getQuestionnaire(): Observable<QuestionnaireResponse> {
-    return this.http.get<any>(`${this.AI_API_URL}/personality/questionnaire`).pipe(
-      map(response => {
-        if (response.code === 200 && response.data) {
+    return this.http.get<any>(`${this.aiApiUrl}/personality/questionnaire`).pipe(
+      map((response) => {
+        if (response?.code === 200 && response.data) {
           return response.data as QuestionnaireResponse;
         }
-        throw new Error(response.message || '获取问卷失败');
+
+        throw new Error(this.toReadableMessage(response?.message, '获取人格测评问卷失败。'));
       }),
-      catchError(error => {
-        const msg = error.error?.message || error.message || '获取问卷失败';
-        throw new Error(msg);
+      catchError((error) => {
+        throw new Error(this.toReadableMessage(error, '获取人格测评问卷失败。'));
       })
     );
   }
 
-  /**
-   * 提交答案，分析人格画像
-   */
   analyzePersonality(userId: string, answers: PersonalityAnswer[]): Observable<PersonalityProfile> {
-    return this.http.post<any>(`${this.AI_API_URL}/personality/analyze`, {
-      user_id: userId,
-      answers
-    }).pipe(
-      map(response => {
-        if (response.code === 200 && response.data) {
-          return response.data as PersonalityProfile;
-        }
-        throw new Error(response.message || '分析人格画像失败');
-      }),
-      catchError(error => {
-        const msg = error.error?.message || error.message || '分析人格画像失败';
-        throw new Error(msg);
+    return this.http
+      .post<any>(`${this.aiApiUrl}/personality/analyze`, {
+        user_id: userId,
+        answers
       })
-    );
+      .pipe(
+        map((response) => {
+          if (response?.code === 200 && response.data) {
+            return response.data as PersonalityProfile;
+          }
+
+          throw new Error(this.toReadableMessage(response?.message, '人格画像分析失败。'));
+        }),
+        catchError((error) => {
+          throw new Error(this.toReadableMessage(error, '人格画像分析失败。'));
+        })
+      );
+  }
+
+  private toReadableMessage(source: any, fallback: string): string {
+    const normalized = this.extractReadableMessage(source);
+    return normalized || fallback;
+  }
+
+  private extractReadableMessage(source: any): string {
+    if (typeof source === 'string') {
+      return source === '[object Object]' ? '' : source;
+    }
+
+    if (source == null) {
+      return '';
+    }
+
+    if (Array.isArray(source)) {
+      return source
+        .map((item) => this.extractReadableMessage(item))
+        .filter(Boolean)
+        .join('；');
+    }
+
+    if (typeof source === 'object') {
+      const candidates = [source.error, source.detail, source.message];
+
+      for (const candidate of candidates) {
+        const nested = this.extractReadableMessage(candidate);
+        if (nested) {
+          return nested;
+        }
+      }
+
+      if (typeof source.msg === 'string') {
+        const location = Array.isArray(source.loc) ? source.loc.slice(1).join('.') : '';
+        return location ? `${location}：${source.msg}` : source.msg;
+      }
+    }
+
+    return '';
   }
 }

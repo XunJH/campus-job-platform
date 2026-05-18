@@ -5,58 +5,57 @@ const Application = sequelize.define('Application', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
-    comment: '申请记录ID'
+    autoIncrement: true
   },
   studentId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    comment: '申请者ID（学生ID）（外键）'
+    allowNull: false
   },
   jobId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    comment: '申请的岗位ID（外键）'
+    allowNull: false
   },
   status: {
     type: DataTypes.ENUM('pending', 'approved', 'rejected', 'withdrawn'),
     allowNull: false,
-    defaultValue: 'pending',
-    comment: '申请状态'
+    defaultValue: 'pending'
+  },
+  applicationStage: {
+    type: DataTypes.STRING(32),
+    allowNull: false,
+    defaultValue: 'new'
   },
   coverLetter: {
     type: DataTypes.TEXT,
-    allowNull: true,
-    comment: '求职信'
+    allowNull: true
   },
   resume: {
     type: DataTypes.STRING(255),
-    allowNull: true,
-    comment: '简历文件路径'
+    allowNull: true
   },
   appliedAt: {
     type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-    comment: '申请时间'
+    defaultValue: DataTypes.NOW
   },
   reviewedAt: {
     type: DataTypes.DATE,
-    allowNull: true,
-    comment: '审核时间'
+    allowNull: true
   },
   reviewedBy: {
     type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  stageUpdatedAt: {
+    type: DataTypes.DATE,
     allowNull: true,
-    comment: '审核者ID'
+    defaultValue: DataTypes.NOW
   },
   notes: {
     type: DataTypes.TEXT,
-    allowNull: true,
-    comment: '备注'
+    allowNull: true
   }
 }, {
-  tableName: 'applications',
-  comment: '申请记录表'
+  tableName: 'applications'
 });
 
 module.exports = Application;

@@ -1,12 +1,12 @@
 <app-student-shell-header></app-student-shell-header>
 
-<main *ngIf="!isEditing" class="mx-auto max-w-7xl px-6 py-8">
+<main class="resume-workbench mx-auto max-w-[1680px] px-4 pb-10 pt-6 sm:px-6 lg:px-8">
   <div
     *ngIf="message"
-    class="mb-6 rounded-2xl border px-4 py-3 text-sm"
-    [class.border-green-100]="!error"
-    [class.bg-green-50]="!error"
-    [class.text-green-700]="!error"
+    class="mb-6 rounded-3xl border px-5 py-4 text-sm shadow-sm"
+    [class.border-emerald-100]="!error"
+    [class.bg-emerald-50]="!error"
+    [class.text-emerald-700]="!error"
     [class.border-rose-100]="error"
     [class.bg-rose-50]="error"
     [class.text-rose-700]="error"
@@ -14,301 +14,180 @@
     {{ message }}
   </div>
 
-  <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
-    <aside class="space-y-6 lg:col-span-4">
-      <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-        <div class="flex flex-col items-center text-center">
-          <div class="mb-4">
-            <img
-              *ngIf="user?.avatar"
-              [src]="user!.avatar"
-              alt="个人头像"
-              class="h-28 w-28 rounded-full object-cover"
-            />
-            <div
-              *ngIf="!user?.avatar"
-              class="flex h-28 w-28 items-center justify-center rounded-full bg-[#1A365D] text-white"
-            >
-              <span class="material-symbols-outlined text-5xl">person</span>
+  <section class="resume-hero overflow-hidden rounded-[32px] border border-slate-200/70 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.08)]">
+    <div class="grid gap-8 px-6 py-7 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.34em] text-slate-400">Resume</p>
+        <h1 class="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-[2.35rem]">
+          完善简历资料，整理成清晰的投递内容。
+        </h1>
+        <p class="mt-4 max-w-3xl text-sm leading-8 text-slate-600 sm:text-[15px]">
+          左侧补充个人信息、教育背景和经历内容，右侧查看预览效果，方便统一检查和整理。
+        </p>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button
+            type="button"
+            (click)="onSubmit()"
+            [disabled]="isLoading"
+            class="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <span class="material-symbols-outlined text-[18px]">save</span>
+            {{ isLoading ? '保存中...' : '保存资料' }}
+          </button>
+          <button
+            type="button"
+            (click)="startPersonalityTest()"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            <span class="material-symbols-outlined text-[18px]">psychology</span>
+            前往测评页
+          </button>
+        </div>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+        <article class="rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Status</p>
+          <p class="mt-4 text-4xl font-black text-slate-900">{{ completionScore }}</p>
+          <p class="mt-2 text-sm text-slate-500">简历完整度</p>
+        </article>
+
+        <article class="rounded-3xl border border-slate-200 bg-white p-5">
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">方向</p>
+          <p class="mt-4 text-lg font-bold text-slate-900">{{ primaryTargetRole }}</p>
+          <p class="mt-2 text-sm text-slate-500">可先围绕这个方向整理简历内容。</p>
+        </article>
+
+        <article class="rounded-3xl border border-slate-200 bg-white p-5">
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">预览</p>
+          <p class="mt-4 text-lg font-bold text-slate-900">简历预览</p>
+          <p class="mt-2 text-sm text-slate-500">可切换版式并导出当前内容。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <div class="mt-8 grid gap-8 xl:grid-cols-[0.95fr_0.05fr_1fr]">
+    <section class="space-y-6">
+      <aside class="rounded-[30px] border border-slate-200 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Sections</p>
+            <h2 class="mt-2 text-xl font-black text-slate-900">编辑导航</h2>
+          </div>
+          <div class="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-600">
+            当前完整度 {{ completionScore }}%
+          </div>
+        </div>
+
+        <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <button
+            *ngFor="let section of sections"
+            type="button"
+            (click)="selectSection(section.id)"
+            class="group rounded-2xl border px-4 py-4 text-left transition"
+            [ngClass]="activeSection === section.id
+              ? 'border-slate-900 bg-slate-900 text-white shadow-lg resume-nav-active-shadow'
+              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'"
+          >
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-[20px]">{{ section.icon }}</span>
+              <div>
+                <p class="text-sm font-semibold">{{ section.label }}</p>
+                <p
+                  class="mt-1 text-xs leading-5"
+                  [class.text-slate-300]="activeSection === section.id"
+                  [class.text-slate-400]="activeSection !== section.id"
+                >
+                  {{ section.hint }}
+                </p>
+              </div>
             </div>
-          </div>
-
-          <h1 class="text-2xl font-bold text-[#1A365D]">
-            {{ user?.nickname || user?.username || '学生用户' }}
-          </h1>
-          <p class="mt-2 text-slate-500">
-            {{ user?.bio || '补充一句个人简介，让企业更快了解你。' }}
-          </p>
-
-          <div class="mt-6 w-full space-y-3 border-t border-slate-100 pt-4 text-left text-sm">
-            <div class="flex items-center gap-3 text-slate-600">
-              <span class="material-symbols-outlined text-[#1A365D]">mail</span>
-              <span>{{ user?.email || '未填写邮箱' }}</span>
-            </div>
-            <div class="flex items-center gap-3 text-slate-600">
-              <span class="material-symbols-outlined text-[#1A365D]">phone</span>
-              <span>{{ user?.phone || '未填写电话' }}</span>
-            </div>
-            <div class="flex items-center gap-3 text-slate-600">
-              <span class="material-symbols-outlined text-[#1A365D]">badge</span>
-              <span>学生账号</span>
-            </div>
-          </div>
-
-          <div class="mt-6 flex w-full gap-3">
-            <button
-              type="button"
-              (click)="toggleEdit()"
-              class="flex-1 rounded-2xl bg-[#1A365D] px-4 py-3 text-sm font-semibold text-white hover:opacity-90"
-            >
-              编辑资料
-            </button>
-            <button
-              type="button"
-              (click)="startPersonalityTest()"
-              class="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
-            >
-              AI 测评
-            </button>
-          </div>
+          </button>
         </div>
-      </section>
+      </aside>
 
-      <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-        <div class="mb-4 flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#1A365D]">description</span>
-          <h2 class="text-xl font-bold text-[#1A365D]">简历图片</h2>
-        </div>
-
-        <ng-container *ngIf="resumeDisplayUrl; else emptyResume">
-          <img
-            [src]="resumeDisplayUrl"
-            alt="简历图片预览"
-            class="h-80 w-full rounded-2xl border border-slate-100 object-contain bg-slate-50 p-3"
-          />
-          <p class="mt-4 text-sm leading-6 text-slate-600">
-            你投递岗位后，这张简历图片会自动发送到企业的沟通渠道里，企业可以直接查看。
-          </p>
-        </ng-container>
-
-        <ng-template #emptyResume>
-          <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
-            还没有上传简历图片。编辑资料后上传，申请岗位时会自动带给企业。
-          </div>
-        </ng-template>
-      </section>
-
-      <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-        <div class="mb-4 flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#1A365D]">psychology</span>
-          <h2 class="text-xl font-bold text-[#1A365D]">人格画像</h2>
-        </div>
-
-        <ng-container
-          *ngIf="user?.personalityProfileCompletedAt && (user?.personalityProfile?.tags?.length || user?.personalityProfile?.summary); else emptyProfile"
-        >
-          <div class="flex flex-wrap gap-2">
-            <span
-              *ngFor="let tag of user?.personalityProfile?.tags || []"
-              class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-[#1A365D]"
-            >
-              {{ tag }}
-            </span>
-          </div>
-          <p class="mt-4 leading-7 text-slate-600">{{ user?.personalityProfile?.summary }}</p>
-        </ng-container>
-
-        <ng-template #emptyProfile>
-          <p class="text-sm text-slate-500">
-            还没有完成人格测评，建议先去 AI 测评页面生成求职画像和推荐。
-          </p>
-        </ng-template>
-      </section>
-    </aside>
-
-    <section class="space-y-6 lg:col-span-8">
-      <article class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-        <div class="mb-6 flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#1A365D]">school</span>
-          <h2 class="text-xl font-bold text-[#1A365D]">教育背景</h2>
-        </div>
-
-        <div *ngIf="educationList.length === 0" class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
-          暂无教育背景信息
-        </div>
-
-        <div *ngFor="let education of educationList" class="mb-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 last:mb-0">
-          <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+      <form [formGroup]="profileForm" class="space-y-6">
+        <section id="resume-section-basic" class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+          <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h3 class="font-semibold text-[#1A365D]">{{ education.school }}</h3>
-              <p class="mt-1 text-sm text-slate-600">{{ education.degree }}</p>
+              <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Section 01</p>
+              <h3 class="mt-2 text-2xl font-black text-slate-900">个人总览</h3>
+              <p class="mt-2 max-w-2xl text-sm leading-7 text-slate-500">
+                先把简历第一页最核心的信息补齐，包括联系信息、职业概述、头像和附加简历图。
+              </p>
             </div>
-            <span class="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
-              {{ education.status }}
-            </span>
-          </div>
-          <div class="mt-3 grid grid-cols-1 gap-3 text-sm text-slate-600 md:grid-cols-2">
-            <p>GPA：{{ education.gpa || '暂无' }}</p>
-            <p>毕业年份：{{ education.graduationYear || '暂无' }}</p>
-            <p>核心课程：{{ education.courses || '暂无' }}</p>
-            <p>荣誉奖项：{{ education.honors || '暂无' }}</p>
-          </div>
-        </div>
-      </article>
-
-      <article class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-        <div class="mb-6 flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#1A365D]">work</span>
-          <h2 class="text-xl font-bold text-[#1A365D]">经历项目</h2>
-        </div>
-
-        <div *ngIf="workExperienceList.length === 0" class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
-          暂无工作或项目经历
-        </div>
-
-        <div *ngFor="let experience of workExperienceList" class="mb-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 last:mb-0">
-          <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h3 class="font-semibold text-[#1A365D]">{{ experience.title }}</h3>
-              <p class="mt-1 text-sm text-slate-600">{{ experience.company }}</p>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" (click)="runBioAi('check')" [disabled]="resumeAiLoading" class="resume-ai-pill">
+                <span class="material-symbols-outlined text-[16px]">fact_check</span>
+                内容检查
+              </button>
+              <button type="button" (click)="runBioAi('rewrite')" [disabled]="resumeAiLoading" class="resume-ai-pill">
+                <span class="material-symbols-outlined text-[16px]">edit_note</span>
+                表述调整
+              </button>
+              <button type="button" (click)="runBioAi('polish')" [disabled]="resumeAiLoading" class="resume-ai-pill resume-ai-pill-primary">
+                <span class="material-symbols-outlined text-[16px]">auto_awesome</span>
+                快速整理
+              </button>
             </div>
-            <span class="text-sm text-slate-500">{{ experience.period }}</span>
-          </div>
-          <p *ngIf="experience.description" class="mt-3 leading-7 text-slate-600">{{ experience.description }}</p>
-          <div *ngIf="experience.skills?.length" class="mt-3 flex flex-wrap gap-2">
-            <span
-              *ngFor="let skill of experience.skills"
-              class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600"
-            >
-              {{ skill }}
-            </span>
-          </div>
-        </div>
-      </article>
-
-      <article class="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h2 class="mb-4 text-xl font-bold text-[#1A365D]">技术技能</h2>
-          <div *ngIf="technicalSkills.length > 0; else emptySkills" class="flex flex-wrap gap-2">
-            <span
-              *ngFor="let skill of technicalSkills"
-              class="rounded-full bg-[#1A365D] px-3 py-1 text-xs font-medium text-white"
-            >
-              {{ skill }}
-            </span>
-          </div>
-          <ng-template #emptySkills>
-            <p class="text-sm text-slate-500">暂无技术技能信息</p>
-          </ng-template>
-        </div>
-
-        <div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h2 class="mb-4 text-xl font-bold text-[#1A365D]">工具与语言</h2>
-          <p class="text-sm font-medium text-slate-600">工具</p>
-          <div *ngIf="toolsList.length > 0; else emptyTools" class="mt-2 flex flex-wrap gap-2">
-            <span
-              *ngFor="let tool of toolsList"
-              class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600"
-            >
-              {{ tool }}
-            </span>
-          </div>
-          <ng-template #emptyTools>
-            <p class="mt-2 text-sm text-slate-500">暂无工具信息</p>
-          </ng-template>
-
-          <p class="mt-4 text-sm font-medium text-slate-600">语言能力</p>
-          <p class="mt-2 text-slate-600">{{ languages || '暂无语言能力信息' }}</p>
-        </div>
-      </article>
-    </section>
-  </div>
-</main>
-
-<main *ngIf="isEditing" class="mx-auto max-w-6xl px-6 py-8">
-  <form [formGroup]="profileForm" class="grid grid-cols-1 gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
-    <aside class="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div class="mb-4">
-        <h2 class="text-lg font-bold text-[#1A365D]">编辑资料</h2>
-        <p class="mt-1 text-xs text-slate-500">按模块完善你的个人信息和简历内容。</p>
-      </div>
-
-      <div class="space-y-2">
-        <button
-          *ngFor="let section of sections"
-          type="button"
-          (click)="selectSection(section.id)"
-          class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition-colors"
-          [class.bg-[#1A365D]]="activeSection === section.id"
-          [class.text-white]="activeSection === section.id"
-          [class.bg-slate-50]="activeSection !== section.id"
-          [class.text-slate-600]="activeSection !== section.id"
-        >
-          <span class="material-symbols-outlined text-[18px]">{{ section.icon }}</span>
-          {{ section.label }}
-        </button>
-      </div>
-
-      <div class="mt-6 space-y-2 border-t border-slate-100 pt-4">
-        <button
-          type="button"
-          (click)="onSubmit()"
-          [disabled]="isLoading"
-          class="w-full rounded-2xl bg-[#1A365D] px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-        >
-          {{ isLoading ? '保存中...' : '保存资料' }}
-        </button>
-        <button
-          type="button"
-          (click)="toggleEdit()"
-          class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
-        >
-          取消
-        </button>
-      </div>
-    </aside>
-
-    <section class="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
-      <div *ngIf="activeSection === 'basic'" class="space-y-6">
-        <h3 class="text-2xl font-bold text-[#1A365D]">基本信息</h3>
-
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700">昵称</label>
-            <input
-              type="text"
-              formControlName="nickname"
-              class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-            />
           </div>
 
-          <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700">邮箱</label>
-            <input
-              type="email"
-              formControlName="email"
-              class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-            />
-          </div>
+          <div class="mt-6 grid gap-6 lg:grid-cols-[0.62fr_0.38fr]">
+            <div class="space-y-6">
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="block">
+                  <span class="mb-2 block text-sm font-medium text-slate-700">姓名 / 昵称</span>
+                  <input type="text" formControlName="nickname" class="resume-input" placeholder="例如：陈同学" />
+                </label>
 
-          <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700">电话</label>
-            <input
-              type="text"
-              formControlName="phone"
-              class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-            />
-          </div>
+                <label class="block">
+                  <span class="mb-2 block text-sm font-medium text-slate-700">邮箱</span>
+                  <input type="email" formControlName="email" class="resume-input" placeholder="例如：you@example.com" />
+                </label>
 
-          <div class="md:col-span-2">
-            <label class="mb-2 block text-sm font-medium text-slate-700">个人头像</label>
-            <div class="flex flex-col gap-4 rounded-2xl border border-slate-200 px-4 py-4 md:flex-row md:items-center">
-              <div class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-[#1A365D]">
-                <img *ngIf="avatarDisplayUrl" [src]="avatarDisplayUrl" alt="头像预览" class="h-full w-full object-cover" />
-                <span *ngIf="!avatarDisplayUrl" class="material-symbols-outlined text-4xl">person</span>
+                <label class="block">
+                  <span class="mb-2 block text-sm font-medium text-slate-700">手机号</span>
+                  <input type="text" formControlName="phone" class="resume-input" placeholder="例如：13800000000" />
+                </label>
+
+                <label class="block">
+                  <span class="mb-2 block text-sm font-medium text-slate-700">目标岗位</span>
+                  <input
+                    type="text"
+                    [(ngModel)]="resumeAiTargetJob"
+                    [ngModelOptions]="{ standalone: true }"
+                    class="resume-input"
+                    placeholder="例如：数据分析实习生"
+                  />
+                </label>
               </div>
 
-              <div class="flex-1">
+              <label class="block">
+                <span class="mb-2 block text-sm font-medium text-slate-700">职业概述</span>
+                <textarea
+                  formControlName="bio"
+                  rows="6"
+                  class="resume-input min-h-[168px]"
+                  placeholder="建议写清你的专业背景、正在做的方向、已经具备的能力，以及想申请什么岗位。"
+                ></textarea>
+              </label>
+            </div>
+
+            <div class="space-y-4">
+              <article class="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-900">头像素材</p>
+                    <p class="mt-1 text-xs leading-6 text-slate-500">支持 PNG / JPG / WEBP，建议正方形。</p>
+                  </div>
+                  <div class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-white">
+                    <img *ngIf="avatarDisplayUrl" [src]="avatarDisplayUrl" alt="头像预览" class="h-full w-full object-cover" />
+                    <span *ngIf="!avatarDisplayUrl" class="material-symbols-outlined text-4xl">person</span>
+                  </div>
+                </div>
+
                 <input
                   #avatarInput
                   type="file"
@@ -316,50 +195,27 @@
                   class="hidden"
                   (change)="onAvatarSelected($event)"
                 />
-                <div class="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    (click)="avatarInput.click()"
-                    class="rounded-2xl bg-[#1A365D] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-                  >
-                    选择本地图片
-                  </button>
-                  <button
-                    *ngIf="avatarDisplayUrl"
-                    type="button"
-                    (click)="removeAvatar()"
-                    class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                  >
-                    移除头像
-                  </button>
+                <div class="mt-4 flex flex-wrap gap-3">
+                  <button type="button" (click)="avatarInput.click()" class="resume-secondary-button">上传头像</button>
+                  <button *ngIf="avatarDisplayUrl" type="button" (click)="removeAvatar()" class="resume-tertiary-button">移除</button>
                 </div>
-                <p class="mt-2 text-xs text-slate-500">支持 PNG、JPG、WEBP，大小不超过 2MB。</p>
-                <p
-                  *ngIf="avatarMessage"
-                  class="mt-2 text-xs"
-                  [class.text-rose-600]="avatarError"
-                  [class.text-emerald-600]="!avatarError"
-                >
+                <p *ngIf="avatarMessage" class="mt-3 text-xs" [class.text-rose-600]="avatarError" [class.text-emerald-600]="!avatarError">
                   {{ avatarMessage }}
                 </p>
-              </div>
-            </div>
-          </div>
+              </article>
 
-          <div class="md:col-span-2">
-            <label class="mb-2 block text-sm font-medium text-slate-700">简历图片</label>
-            <div class="flex flex-col gap-4 rounded-2xl border border-slate-200 px-4 py-4 md:flex-row md:items-center">
-              <div class="flex h-28 w-24 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-[#1A365D]">
-                <img
-                  *ngIf="resumeDisplayUrl"
-                  [src]="resumeDisplayUrl"
-                  alt="简历图片预览"
-                  class="h-full w-full object-cover"
-                />
-                <span *ngIf="!resumeDisplayUrl" class="material-symbols-outlined text-4xl">description</span>
-              </div>
+              <article class="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-900">附加简历图</p>
+                    <p class="mt-1 text-xs leading-6 text-slate-500">投递岗位后，这张图会自动发给企业。</p>
+                  </div>
+                  <div class="flex h-24 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white text-slate-400">
+                    <img *ngIf="resumeDisplayUrl" [src]="resumeDisplayUrl" alt="简历图预览" class="h-full w-full object-cover" />
+                    <span *ngIf="!resumeDisplayUrl" class="material-symbols-outlined text-3xl">description</span>
+                  </div>
+                </div>
 
-              <div class="flex-1">
                 <input
                   #resumeInput
                   type="file"
@@ -367,159 +223,659 @@
                   class="hidden"
                   (change)="onResumeSelected($event)"
                 />
-                <div class="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    (click)="resumeInput.click()"
-                    class="rounded-2xl bg-[#1A365D] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-                  >
-                    上传简历图片
-                  </button>
-                  <button
-                    *ngIf="resumeDisplayUrl"
-                    type="button"
-                    (click)="removeResume()"
-                    class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                  >
-                    移除简历
-                  </button>
+                <div class="mt-4 flex flex-wrap gap-3">
+                  <button type="button" (click)="resumeInput.click()" class="resume-secondary-button">上传简历图</button>
+                  <button *ngIf="resumeDisplayUrl" type="button" (click)="removeResume()" class="resume-tertiary-button">移除</button>
                 </div>
-                <p class="mt-2 text-xs text-slate-500">
-                  支持 PNG、JPG、WEBP，大小不超过 4MB。学生点击申请后，这张图片会自动发送到对应企业的聊天里。
-                </p>
-                <p
-                  *ngIf="resumeMessage"
-                  class="mt-2 text-xs"
-                  [class.text-rose-600]="resumeError"
-                  [class.text-emerald-600]="!resumeError"
-                >
+                <p *ngIf="resumeMessage" class="mt-3 text-xs" [class.text-rose-600]="resumeError" [class.text-emerald-600]="!resumeError">
                   {{ resumeMessage }}
                 </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section id="resume-section-education" class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Section 02</p>
+              <h3 class="mt-2 text-2xl font-black text-slate-900">教育背景</h3>
+              <p class="mt-2 text-sm leading-7 text-slate-500">
+                把学校、专业、课程和荣誉拆成清晰条目，后续整理和预览都会更直观。
+              </p>
+            </div>
+            <button type="button" (click)="addEducation()" class="resume-secondary-button">
+              <span class="material-symbols-outlined text-[18px]">add</span>
+              新增教育经历
+            </button>
+          </div>
+
+          <div formArrayName="education" class="mt-6 space-y-4">
+            <article
+              *ngFor="let education of educationArray.controls; let i = index"
+              [formGroupName]="i"
+              class="rounded-3xl border border-slate-200 bg-slate-50/70 p-5"
+            >
+              <div class="mb-5 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <p class="text-sm font-semibold text-slate-900">教育经历 {{ i + 1 }}</p>
+                  <p class="mt-1 text-xs text-slate-500">建议至少补齐学校、专业、时间和 2 条教育亮点。</p>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                  <button type="button" (click)="runEducationAi(i, 'check')" [disabled]="resumeAiLoading" class="resume-ai-pill">
+                    内容检查
+                  </button>
+                  <button type="button" (click)="runEducationAi(i, 'rewrite')" [disabled]="resumeAiLoading" class="resume-ai-pill">
+                    表述调整
+                  </button>
+                  <button type="button" (click)="runEducationAi(i, 'polish')" [disabled]="resumeAiLoading" class="resume-ai-pill resume-ai-pill-primary">
+                    快速整理
+                  </button>
+                  <button type="button" (click)="removeEducation(i)" class="resume-danger-button">删除</button>
+                </div>
+              </div>
+
+              <div class="grid gap-4 md:grid-cols-2">
+                <input type="text" formControlName="school" class="resume-input" placeholder="学校名称" />
+                <input type="text" formControlName="degree" class="resume-input" placeholder="专业 / 学位" />
+                <input type="text" formControlName="gpa" class="resume-input" placeholder="GPA / 排名 / 成绩亮点" />
+                <input type="text" formControlName="graduationYear" class="resume-input" placeholder="起止时间，例如：2022.09 - 2026.07" />
+                <select formControlName="status" class="resume-input bg-white">
+                  <option value="在读">在读</option>
+                  <option value="已毕业">已毕业</option>
+                </select>
+                <input type="text" formControlName="courses" class="resume-input" placeholder="核心课程，用顿号或逗号分开" />
+              </div>
+
+              <div class="mt-5 rounded-3xl border border-white/80 bg-white p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-900">教育亮点卡</p>
+                    <p class="mt-1 text-xs text-slate-500">把课程、排名、奖项或校内角色拆成条目，更像正式简历。</p>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <button type="button" (click)="seedEducationHighlights(i)" class="resume-secondary-button">
+                      <span class="material-symbols-outlined text-[16px]">tips_and_updates</span>
+                      自动生成亮点
+                    </button>
+                    <button type="button" (click)="addEducationHighlight(i)" class="resume-tertiary-button">
+                      <span class="material-symbols-outlined text-[16px]">add</span>
+                      新增条目
+                    </button>
+                  </div>
+                </div>
+
+                <div formArrayName="highlights" class="mt-4 space-y-3">
+                  <div
+                    *ngFor="let highlight of getEducationHighlightsArray(i).controls; let highlightIndex = index"
+                    class="resume-bullet-card"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-slate-400">format_list_bulleted</span>
+                    <textarea
+                      [formControlName]="highlightIndex"
+                      rows="2"
+                      class="resume-input min-h-[88px]"
+                      placeholder="例如：专业排名前 15%，围绕目标岗位补强数据分析与表达能力。"
+                    ></textarea>
+                    <button type="button" (click)="removeEducationHighlight(i, highlightIndex)" class="resume-mini-danger">
+                      <span class="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="resume-section-experience" class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Section 03</p>
+              <h3 class="mt-2 text-2xl font-black text-slate-900">经历项目</h3>
+              <p class="mt-2 text-sm leading-7 text-slate-500">
+                每段经历尽量拆成清晰的成果点，重点写清做了什么、怎么做、结果如何。
+              </p>
+            </div>
+            <button type="button" (click)="addExperience()" class="resume-secondary-button">
+              <span class="material-symbols-outlined text-[18px]">add</span>
+              新增经历
+            </button>
+          </div>
+
+          <div formArrayName="workExperience" class="mt-6 space-y-4">
+            <article
+              *ngFor="let experience of workExperienceArray.controls; let i = index"
+              [formGroupName]="i"
+              class="rounded-3xl border border-slate-200 bg-slate-50/70 p-5"
+            >
+              <div class="mb-5 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <p class="text-sm font-semibold text-slate-900">经历 {{ i + 1 }}</p>
+                  <p class="mt-1 text-xs text-slate-500">目标是让每段经历都能直接进入正式简历，而不是停留在草稿状态。</p>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                  <button type="button" (click)="runExperienceAi(i, 'check')" [disabled]="resumeAiLoading" class="resume-ai-pill">
+                    内容检查
+                  </button>
+                  <button type="button" (click)="runExperienceAi(i, 'rewrite')" [disabled]="resumeAiLoading" class="resume-ai-pill">
+                    表述调整
+                  </button>
+                  <button type="button" (click)="runExperienceAi(i, 'polish')" [disabled]="resumeAiLoading" class="resume-ai-pill resume-ai-pill-primary">
+                    快速整理
+                  </button>
+                  <button type="button" (click)="removeExperience(i)" class="resume-danger-button">删除</button>
+                </div>
+              </div>
+
+              <div class="grid gap-4 md:grid-cols-2">
+                <input type="text" formControlName="title" class="resume-input" placeholder="职位 / 项目角色" />
+                <input type="text" formControlName="company" class="resume-input" placeholder="公司 / 项目名称" />
+                <input type="text" formControlName="period" class="resume-input" placeholder="时间，例如：2026.03 - 2026.05" />
+                <input type="text" formControlName="skills" class="resume-input" placeholder="关键词，例如：Python、SQL、沟通协作" />
+              </div>
+
+              <div class="mt-5 rounded-3xl border border-white/80 bg-white p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-900">成果条目</p>
+                    <p class="mt-1 text-xs text-slate-500">每条成果点尽量写成“动作 + 方法 + 结果”，企业一眼就能看懂。</p>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <button type="button" (click)="seedExperienceBullets(i)" class="resume-secondary-button">
+                      <span class="material-symbols-outlined text-[16px]">tips_and_updates</span>
+                      自动生成成果点
+                    </button>
+                    <button type="button" (click)="addExperienceBullet(i)" class="resume-tertiary-button">
+                      <span class="material-symbols-outlined text-[16px]">add</span>
+                      新增条目
+                    </button>
+                  </div>
+                </div>
+
+                <div formArrayName="bullets" class="mt-4 space-y-3">
+                  <div
+                    *ngFor="let bullet of getExperienceBullets(i).controls; let bulletIndex = index"
+                    class="resume-bullet-card"
+                  >
+                    <span class="material-symbols-outlined text-[18px] text-slate-400">keyboard_double_arrow_right</span>
+                    <textarea
+                      [formControlName]="bulletIndex"
+                      rows="3"
+                      class="resume-input min-h-[96px]"
+                      placeholder="例如：独立整理岗位需求并优化投递话术，让岗位说明更适合学生理解和投递。"
+                    ></textarea>
+                    <button type="button" (click)="removeExperienceBullet(i, bulletIndex)" class="resume-mini-danger">
+                      <span class="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="resume-section-skills" class="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Section 04</p>
+            <h3 class="mt-2 text-2xl font-black text-slate-900">技能标签</h3>
+            <p class="mt-2 text-sm leading-7 text-slate-500">把技术栈、工具和语言拆成短标签，简历看起来会更像成熟候选人的投递版本。</p>
+          </div>
+
+          <div class="mt-6 grid gap-5 lg:grid-cols-3">
+            <label class="block">
+              <span class="mb-2 block text-sm font-medium text-slate-700">技术技能</span>
+              <textarea formControlName="technicalSkills" rows="6" class="resume-input" placeholder="例如：Python、SQL、JavaScript、数据分析"></textarea>
+            </label>
+
+            <label class="block">
+              <span class="mb-2 block text-sm font-medium text-slate-700">工具 / 平台</span>
+              <textarea formControlName="tools" rows="6" class="resume-input" placeholder="例如：Excel、Power BI、Figma、Git、FastAPI"></textarea>
+            </label>
+
+            <label class="block">
+              <span class="mb-2 block text-sm font-medium text-slate-700">语言能力</span>
+              <textarea formControlName="languages" rows="6" class="resume-input" placeholder="例如：英语 CET-6、普通话、粤语"></textarea>
+            </label>
+          </div>
+        </section>
+      </form>
+    </section>
+
+    <div class="hidden xl:block"></div>
+
+    <aside class="space-y-6">
+      <section class="resume-preview-panel sticky top-24 rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Preview</p>
+            <h2 class="mt-2 text-2xl font-black text-slate-900">简历预览</h2>
+          </div>
+          <div class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+            {{ completionScore }}%
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <p class="preview-control-label">模板切换</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button
+              *ngFor="let template of resumeTemplates"
+              type="button"
+              (click)="selectTemplate(template.id)"
+              class="resume-template-switch"
+              [class.is-active]="selectedTemplate === template.id"
+            >
+              <span class="template-name">{{ template.label }}</span>
+              <span class="template-desc">{{ template.description }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <p class="preview-control-label">配色方案</p>
+          <div class="mt-3 flex flex-wrap gap-3">
+            <button
+              *ngFor="let theme of resumeThemes"
+              type="button"
+              (click)="selectTheme(theme.id)"
+              class="resume-theme-switch"
+              [class.is-active]="selectedTheme === theme.id"
+              [attr.aria-label]="theme.label"
+            >
+              <span class="theme-swatch" [style.background]="theme.swatch"></span>
+              <span class="theme-copy">
+                <span class="theme-name">{{ theme.label }}</span>
+                <span class="theme-desc">{{ theme.description }}</span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <p class="preview-control-label">表述风格</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button
+              *ngFor="let tone of resumeTones"
+              type="button"
+              (click)="selectTone(tone.id)"
+              class="resume-tone-switch"
+              [class.is-active]="selectedTone === tone.id"
+            >
+              {{ tone.label }}
+            </button>
+          </div>
+          <p class="mt-2 text-xs leading-6 text-slate-500">
+            当前语气：{{ activeToneDescription }}
+          </p>
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button type="button" (click)="exportResumeAsPdf()" [disabled]="isExportingPdf || isExportingImage" class="resume-primary-button">
+            <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+            {{ isExportingPdf ? '导出 PDF 中...' : '导出 PDF' }}
+          </button>
+          <button type="button" (click)="exportResumeAsImage()" [disabled]="isExportingPdf || isExportingImage" class="resume-secondary-button">
+            <span class="material-symbols-outlined text-[18px]">image</span>
+            {{ isExportingImage ? '导出长图中...' : '导出简历长图' }}
+          </button>
+        </div>
+
+        <article
+          #resumeExportSurface
+          class="resume-sheet resume-sheet-a4 mt-5 overflow-hidden rounded-[28px] border border-slate-200 bg-white"
+          [attr.data-theme]="selectedTheme"
+        >
+          <ng-container [ngSwitch]="selectedTemplate">
+            <ng-container *ngSwitchCase="'executive'">
+              <div class="grid h-full lg:grid-cols-[250px_minmax(0,1fr)]">
+                <div class="resume-sidebar px-5 py-6 text-white">
+                  <div class="flex flex-col items-center text-center">
+                    <div class="flex h-28 w-28 items-center justify-center overflow-hidden rounded-[24px] border border-white/20 bg-white/10 text-4xl font-black">
+                      <img *ngIf="avatarDisplayUrl" [src]="avatarDisplayUrl" alt="预览头像" class="h-full w-full object-cover" />
+                      <span *ngIf="!avatarDisplayUrl">{{ previewInitial }}</span>
+                    </div>
+
+                    <h3 class="mt-4 text-2xl font-black">{{ previewName }}</h3>
+                    <p class="mt-1 text-sm text-white/80">{{ primaryTargetRole }}</p>
+                  </div>
+
+                  <div class="mt-6 space-y-3 text-sm text-white/85">
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-[18px]">mail</span>
+                      <span class="break-all">{{ previewEmail }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-[18px]">call</span>
+                      <span>{{ previewPhone }}</span>
+                    </div>
+                  </div>
+
+                  <div class="mt-7 space-y-5">
+                    <div *ngIf="previewTechnicalSkills.length > 0">
+                      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">核心技能</p>
+                      <div class="mt-3 flex flex-wrap gap-2">
+                        <span *ngFor="let skill of previewTechnicalSkills.slice(0, 8)" class="rounded-full bg-white/14 px-3 py-1 text-xs font-medium text-white">
+                          {{ skill }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div *ngIf="previewTools.length > 0">
+                      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">工具栈</p>
+                      <p class="mt-3 text-sm leading-7 text-white/85">{{ previewTools.join('、') }}</p>
+                    </div>
+
+                    <div *ngIf="previewLanguages.length > 0">
+                      <p class="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">语言能力</p>
+                      <p class="mt-3 text-sm leading-7 text-white/85">{{ previewLanguages.join('、') }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="px-5 py-6 sm:px-6">
+                  <section>
+                    <div class="resume-sheet-title">个人总结</div>
+                    <p class="mt-3 text-sm leading-7 text-slate-600">{{ previewBio }}</p>
+                  </section>
+
+                  <section class="mt-6" *ngIf="previewEducations.length > 0">
+                    <div class="resume-sheet-title">教育经历</div>
+                    <article *ngFor="let education of previewEducations" class="mt-4">
+                      <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <h4 class="text-sm font-bold text-slate-900">{{ education.school || '学校名称' }}</h4>
+                          <p class="mt-1 text-sm text-slate-600">{{ education.degree || '专业 / 学位' }}</p>
+                        </div>
+                        <div class="text-sm text-slate-500">{{ education.graduationYear || education.status || '时间待补充' }}</div>
+                      </div>
+                      <ul class="mt-3 space-y-2">
+                        <li *ngFor="let item of education.highlightLines" class="resume-bullet">{{ item }}</li>
+                      </ul>
+                    </article>
+                  </section>
+
+                  <section class="mt-6" *ngIf="previewExperiences.length > 0">
+                    <div class="resume-sheet-title">经历项目</div>
+                    <article *ngFor="let experience of previewExperiences" class="mt-4">
+                      <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <h4 class="text-sm font-bold text-slate-900">{{ experience.title || '经历标题' }}</h4>
+                          <p class="mt-1 text-sm text-slate-600">{{ experience.company || '单位 / 项目名称' }}</p>
+                        </div>
+                        <div class="text-sm text-slate-500">{{ experience.period || '时间待补充' }}</div>
+                      </div>
+                      <ul class="mt-3 space-y-2">
+                        <li *ngFor="let line of experience.bulletLines" class="resume-bullet">{{ line }}</li>
+                      </ul>
+                    </article>
+                  </section>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'compact'">
+              <div class="resume-sheet-compact h-full px-7 py-7">
+                <div class="resume-sheet-header compact">
+                  <div>
+                    <h3 class="resume-header-name">{{ previewName }}</h3>
+                    <p class="resume-header-role">{{ primaryTargetRole }}</p>
+                  </div>
+                  <div class="resume-header-contact">
+                    <div>{{ previewPhone }}</div>
+                    <div>{{ previewEmail }}</div>
+                  </div>
+                </div>
+
+                <div class="mt-6 grid gap-6 lg:grid-cols-[0.64fr_0.36fr]">
+                  <div class="space-y-6">
+                    <section>
+                      <div class="resume-sheet-title alt">个人概述</div>
+                      <p class="mt-3 text-sm leading-7 text-slate-700">{{ previewBio }}</p>
+                    </section>
+
+                    <section *ngIf="previewExperiences.length > 0">
+                      <div class="resume-sheet-title alt">项目 / 实习经历</div>
+                      <article *ngFor="let experience of previewExperiences" class="mt-4">
+                        <div class="flex items-start justify-between gap-4">
+                          <div>
+                            <h4 class="text-[15px] font-bold text-slate-900">{{ experience.title }}</h4>
+                            <p class="mt-1 text-sm text-slate-600">{{ experience.company }}</p>
+                          </div>
+                          <div class="text-xs font-medium text-slate-500">{{ experience.period }}</div>
+                        </div>
+                        <ul class="mt-3 space-y-2">
+                          <li *ngFor="let line of experience.bulletLines" class="resume-bullet">{{ line }}</li>
+                        </ul>
+                      </article>
+                    </section>
+                  </div>
+
+                  <div class="space-y-6">
+                    <section *ngIf="previewEducations.length > 0">
+                      <div class="resume-sheet-title alt">教育背景</div>
+                      <article *ngFor="let education of previewEducations" class="mt-4">
+                        <h4 class="text-[15px] font-bold text-slate-900">{{ education.school }}</h4>
+                        <p class="mt-1 text-sm text-slate-600">{{ education.degree }}</p>
+                        <p class="mt-1 text-xs font-medium text-slate-500">{{ education.graduationYear || education.status }}</p>
+                        <ul class="mt-3 space-y-2">
+                          <li *ngFor="let item of education.highlightLines" class="resume-bullet">{{ item }}</li>
+                        </ul>
+                      </article>
+                    </section>
+
+                    <section *ngIf="previewSkillCloud.length > 0">
+                      <div class="resume-sheet-title alt">技能标签</div>
+                      <div class="mt-3 flex flex-wrap gap-2">
+                        <span *ngFor="let skill of previewSkillCloud" class="resume-preview-chip compact">{{ skill }}</span>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngSwitchDefault>
+              <div class="resume-sheet-formal h-full px-8 py-7">
+                <div class="resume-sheet-header">
+                  <div class="flex items-center gap-5">
+                    <div class="resume-avatar-frame">
+                      <img *ngIf="avatarDisplayUrl" [src]="avatarDisplayUrl" alt="预览头像" class="h-full w-full object-cover" />
+                      <span *ngIf="!avatarDisplayUrl">{{ previewInitial }}</span>
+                    </div>
+                    <div>
+                      <h3 class="resume-header-name">{{ previewName }}</h3>
+                      <p class="resume-header-role">{{ primaryTargetRole }}</p>
+                    </div>
+                  </div>
+
+                  <div class="resume-header-contact">
+                    <div><span>电话</span>{{ previewPhone }}</div>
+                    <div><span>邮箱</span>{{ previewEmail }}</div>
+                  </div>
+                </div>
+
+                <section class="resume-sheet-section">
+                  <div class="resume-sheet-title alt">个人概述</div>
+                  <p class="mt-3 text-sm leading-7 text-slate-700">{{ previewBio }}</p>
+                </section>
+
+                <section class="resume-sheet-section" *ngIf="previewEducations.length > 0">
+                  <div class="resume-sheet-title alt">教育背景</div>
+                  <article *ngFor="let education of previewEducations" class="resume-formal-entry">
+                    <div class="resume-entry-topline">
+                      <div>
+                        <h4 class="resume-entry-title">{{ education.school || '学校名称' }}</h4>
+                        <p class="resume-entry-subtitle">{{ education.degree || '专业 / 学位' }}</p>
+                      </div>
+                      <div class="resume-entry-meta">{{ education.graduationYear || education.status || '时间待补充' }}</div>
+                    </div>
+
+                    <div class="mt-2 flex flex-wrap gap-2" *ngIf="education.courseTags.length > 0">
+                      <span *ngFor="let tag of education.courseTags" class="resume-preview-chip">{{ tag }}</span>
+                    </div>
+
+                    <ul class="mt-3 space-y-2">
+                      <li *ngFor="let item of education.highlightLines" class="resume-bullet">{{ item }}</li>
+                    </ul>
+                  </article>
+                </section>
+
+                <section class="resume-sheet-section" *ngIf="previewExperiences.length > 0">
+                  <div class="resume-sheet-title alt">项目 / 实习经历</div>
+                  <article *ngFor="let experience of previewExperiences" class="resume-formal-entry">
+                    <div class="resume-entry-topline">
+                      <div>
+                        <h4 class="resume-entry-title">{{ experience.title || '经历标题' }}</h4>
+                        <p class="resume-entry-subtitle">{{ experience.company || '单位 / 项目名称' }}</p>
+                      </div>
+                      <div class="resume-entry-meta">{{ experience.period || '时间待补充' }}</div>
+                    </div>
+
+                    <div class="mt-2 flex flex-wrap gap-2" *ngIf="experience.skillTags.length > 0">
+                      <span *ngFor="let skill of experience.skillTags" class="resume-preview-chip">{{ skill }}</span>
+                    </div>
+
+                    <ul class="mt-3 space-y-2">
+                      <li *ngFor="let line of experience.bulletLines" class="resume-bullet">{{ line }}</li>
+                    </ul>
+                  </article>
+                </section>
+
+                <section class="resume-sheet-section" *ngIf="previewSkillCloud.length > 0">
+                  <div class="resume-sheet-title alt">技能与工具</div>
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <span *ngFor="let skill of previewSkillCloud" class="resume-preview-chip">{{ skill }}</span>
+                  </div>
+                </section>
+              </div>
+            </ng-container>
+          </ng-container>
+        </article>
+      </section>
+
+      <section class="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Assistant</p>
+        <div class="mt-2 flex items-center justify-between gap-4">
+          <div>
+            <h3 class="text-xl font-black text-slate-900">内容建议</h3>
+            <p class="mt-1 text-xs text-slate-500">当前表述风格：{{ activeToneDescription }}</p>
+          </div>
+          <div *ngIf="resumeAiLoading" class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+            处理中
+          </div>
+        </div>
+
+        <div
+          *ngIf="resumeAiMessage"
+          class="mt-4 rounded-2xl border px-4 py-3 text-sm"
+          [class.border-rose-200]="resumeAiError"
+          [class.bg-rose-50]="resumeAiError"
+          [class.text-rose-700]="resumeAiError"
+          [class.border-sky-200]="!resumeAiError"
+          [class.bg-sky-50]="!resumeAiError"
+          [class.text-sky-800]="!resumeAiError"
+        >
+          {{ resumeAiMessage }}
+        </div>
+
+        <ng-container *ngIf="resumeAiResult; else emptyAiPanel">
+          <article class="mt-4 rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{{ aiActionLabels[resumeAiResult.action] }}</p>
+                <h4 class="mt-2 text-lg font-bold text-slate-900">{{ resumeAiResult.sectionLabel }}</h4>
+              </div>
+              <div *ngIf="resumeAiResult.score !== null" class="rounded-2xl bg-white px-4 py-3 text-center">
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Score</p>
+                <p class="mt-1 text-2xl font-black text-slate-900">{{ resumeAiResult.score }}</p>
               </div>
             </div>
+
+            <div class="mt-4 grid gap-4">
+              <div class="rounded-2xl bg-white p-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">原始内容</p>
+                <p class="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">{{ resumeAiResult.sourcePreview }}</p>
+              </div>
+
+              <div class="rounded-2xl bg-white p-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">建议写法</p>
+                <p class="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700">{{ resumeAiResult.appliedDraft }}</p>
+              </div>
+
+              <div *ngIf="resumeAiResult.issues.length" class="rounded-2xl bg-white p-4">
+                <p class="text-sm font-semibold text-slate-900">发现的问题</p>
+                <ul class="mt-3 space-y-2 text-sm text-slate-600">
+                  <li *ngFor="let issue of resumeAiResult.issues" class="resume-bullet">{{ issue }}</li>
+                </ul>
+              </div>
+
+              <div *ngIf="resumeAiResult.suggestions.length" class="rounded-2xl bg-white p-4">
+                <p class="text-sm font-semibold text-slate-900">细化建议</p>
+                <div *ngFor="let suggestion of resumeAiResult.suggestions" class="mt-4 rounded-2xl border border-slate-100 p-4 first:mt-3">
+                  <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">原表达</p>
+                  <p class="mt-2 text-sm leading-6 text-slate-500">{{ suggestion.original || '—' }}</p>
+                  <p class="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">推荐表达</p>
+                  <p class="mt-2 text-sm leading-6 text-slate-700">{{ suggestion.improved || '—' }}</p>
+                  <p *ngIf="suggestion.reason" class="mt-3 text-xs leading-6 text-slate-500">原因：{{ suggestion.reason }}</p>
+                </div>
+              </div>
+
+              <div *ngIf="resumeAiResult.overallTip" class="rounded-2xl bg-white p-4 text-sm leading-7 text-slate-600">
+                <span class="font-semibold text-slate-900">整体建议：</span>{{ resumeAiResult.overallTip }}
+              </div>
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-3">
+              <button type="button" (click)="applyResumeOptimization()" class="resume-primary-button">应用到左侧草稿</button>
+              <button type="button" (click)="clearResumeAiPanel()" class="resume-tertiary-button">清空结果</button>
+            </div>
+          </article>
+        </ng-container>
+
+        <ng-template #emptyAiPanel>
+          <div class="mt-4 rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 p-5 text-sm leading-7 text-slate-500">
+            这里会汇总当前内容的检查和调整建议。先在左侧选择一个操作，右侧会显示对应结果。
           </div>
-        </div>
+        </ng-template>
+      </section>
 
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">个人简介</label>
-          <textarea
-            formControlName="bio"
-            rows="4"
-            class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-          ></textarea>
-        </div>
-      </div>
+      <section class="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Checklist</p>
+        <h3 class="mt-2 text-xl font-black text-slate-900">完善建议</h3>
 
-      <div *ngIf="activeSection === 'education'" class="space-y-6">
-        <div class="flex items-center justify-between">
-          <h3 class="text-2xl font-bold text-[#1A365D]">教育背景</h3>
-          <button
-            type="button"
-            (click)="addEducation()"
-            class="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-[#1A365D] hover:bg-slate-200"
+        <div class="mt-4 space-y-3">
+          <article
+            *ngFor="let item of checklistItems"
+            class="rounded-2xl border px-4 py-4"
+            [class.border-emerald-200]="item.done"
+            [class.bg-emerald-50]="item.done"
+            [class.border-slate-200]="!item.done"
+            [class.bg-white]="!item.done"
           >
-            新增教育经历
-          </button>
+            <div class="flex items-start gap-3">
+              <span class="material-symbols-outlined mt-0.5 text-[18px]" [class.text-emerald-600]="item.done" [class.text-slate-300]="!item.done">
+                {{ item.done ? 'check_circle' : 'radio_button_unchecked' }}
+              </span>
+              <div>
+                <p class="text-sm font-semibold text-slate-900">{{ item.label }}</p>
+                <p class="mt-1 text-xs leading-6 text-slate-500">{{ item.tip }}</p>
+              </div>
+            </div>
+          </article>
         </div>
 
-        <div formArrayName="education" class="space-y-4">
-          <div
-            *ngFor="let education of educationArray.controls; let i = index"
-            [formGroupName]="i"
-            class="rounded-2xl border border-slate-100 bg-slate-50 p-5"
-          >
-            <div class="mb-4 flex items-center justify-between">
-              <span class="text-sm font-medium text-slate-500">教育经历 {{ i + 1 }}</span>
-              <button type="button" (click)="removeEducation(i)" class="text-sm font-medium text-rose-600">
-                删除
-              </button>
-            </div>
-
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <input type="text" formControlName="school" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="学校名称" />
-              <input type="text" formControlName="degree" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="学位 / 专业" />
-              <input type="text" formControlName="gpa" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="GPA" />
-              <input type="text" formControlName="graduationYear" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="毕业年份" />
-              <select formControlName="status" class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#1A365D]">
-                <option value="在读">在读</option>
-                <option value="已毕业">已毕业</option>
-              </select>
-              <input type="text" formControlName="courses" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="核心课程" />
-              <textarea formControlName="honors" rows="3" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D] md:col-span-2" placeholder="荣誉奖项"></textarea>
-            </div>
+        <div *ngIf="personalityTags.length || personalitySummary" class="mt-5 rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Profile Note</p>
+          <div *ngIf="personalityTags.length" class="mt-3 flex flex-wrap gap-2">
+            <span *ngFor="let tag of personalityTags" class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+              {{ tag }}
+            </span>
           </div>
+          <p *ngIf="personalitySummary" class="mt-3 text-sm leading-7 text-slate-600">{{ personalitySummary }}</p>
         </div>
-      </div>
-
-      <div *ngIf="activeSection === 'experience'" class="space-y-6">
-        <div class="flex items-center justify-between">
-          <h3 class="text-2xl font-bold text-[#1A365D]">经历项目</h3>
-          <button
-            type="button"
-            (click)="addExperience()"
-            class="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-[#1A365D] hover:bg-slate-200"
-          >
-            新增经历
-          </button>
-        </div>
-
-        <div formArrayName="workExperience" class="space-y-4">
-          <div
-            *ngFor="let experience of workExperienceArray.controls; let i = index"
-            [formGroupName]="i"
-            class="rounded-2xl border border-slate-100 bg-slate-50 p-5"
-          >
-            <div class="mb-4 flex items-center justify-between">
-              <span class="text-sm font-medium text-slate-500">经历 {{ i + 1 }}</span>
-              <button type="button" (click)="removeExperience(i)" class="text-sm font-medium text-rose-600">
-                删除
-              </button>
-            </div>
-
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <input type="text" formControlName="title" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="职位 / 项目角色" />
-              <input type="text" formControlName="company" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="公司 / 项目名称" />
-              <input type="text" formControlName="period" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="时间段" />
-              <input type="text" formControlName="skills" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="技能标签，使用顿号或逗号分隔" />
-              <textarea formControlName="description" rows="4" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D] md:col-span-2" placeholder="经历描述"></textarea>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div *ngIf="activeSection === 'skills'" class="space-y-6">
-        <h3 class="text-2xl font-bold text-[#1A365D]">技能与工具</h3>
-
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">技术技能</label>
-          <input
-            type="text"
-            formControlName="technicalSkills"
-            class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-            placeholder="如：Python、React、Node.js"
-          />
-        </div>
-
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">工具</label>
-          <input
-            type="text"
-            formControlName="tools"
-            class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-            placeholder="如：Git、VS Code、Figma"
-          />
-        </div>
-
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">语言能力</label>
-          <input
-            type="text"
-            formControlName="languages"
-            class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-            placeholder="如：英语 CET-6"
-          />
-        </div>
-      </div>
-    </section>
-  </form>
+      </section>
+    </aside>
+  </div>
 </main>

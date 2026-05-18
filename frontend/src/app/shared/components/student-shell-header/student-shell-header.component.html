@@ -47,6 +47,17 @@
           收入记录
         </a>
         <a
+          *ngIf="appealsEnabled"
+          routerLink="/student/tickets"
+          class="rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors"
+          [class.bg-slate-900]="isActive('tickets')"
+          [class.text-white]="isActive('tickets')"
+          [class.text-slate-600]="!isActive('tickets')"
+          [class.hover:bg-slate-100]="!isActive('tickets')"
+        >
+          申诉工单
+        </a>
+        <a
           routerLink="/student/resume"
           class="rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors"
           [class.bg-slate-900]="isActive('resume')"
@@ -57,6 +68,7 @@
           简历资料
         </a>
         <a
+          *ngIf="aiAssistantEnabled"
           routerLink="/student/ai"
           class="rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors"
           [class.bg-slate-900]="isActive('ai')"
@@ -64,12 +76,31 @@
           [class.text-slate-600]="!isActive('ai')"
           [class.hover:bg-slate-100]="!isActive('ai')"
         >
-          AI 测评
+          求职辅助
         </a>
       </nav>
     </div>
 
     <div class="flex items-center gap-3">
+      <a
+        routerLink="/student/notifications"
+        class="relative flex h-9 w-9 items-center justify-center rounded-full border no-underline transition-colors"
+        [class.border-slate-900]="isActive('notifications')"
+        [class.bg-slate-900]="isActive('notifications')"
+        [class.text-white]="isActive('notifications')"
+        [class.border-slate-200]="!isActive('notifications')"
+        [class.bg-slate-50]="!isActive('notifications')"
+        [class.text-[#1A365D]]="!isActive('notifications')"
+        title="系统通知"
+      >
+        <span class="material-symbols-outlined text-[18px]">notifications</span>
+        <span
+          *ngIf="unreadNotificationCount > 0"
+          class="absolute -right-1 -top-1 inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold leading-none text-white"
+        >
+          {{ unreadNotificationLabel }}
+        </span>
+      </a>
       <a
         routerLink="/student/messages"
         class="relative flex h-9 w-9 items-center justify-center rounded-full border no-underline transition-colors"
@@ -83,10 +114,10 @@
       >
         <span class="material-symbols-outlined text-[18px]">chat_bubble</span>
         <span
-          *ngIf="unreadCount > 0"
+          *ngIf="unreadMessageCount > 0"
           class="absolute -right-1 -top-1 inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold leading-none text-white"
         >
-          {{ unreadLabel }}
+          {{ unreadMessageLabel }}
         </span>
       </a>
       <a
@@ -151,6 +182,27 @@
         收入
       </a>
       <a
+        routerLink="/student/notifications"
+        class="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors"
+        [class.bg-slate-900]="isActive('notifications')"
+        [class.text-white]="isActive('notifications')"
+        [class.bg-slate-100]="!isActive('notifications')"
+        [class.text-slate-600]="!isActive('notifications')"
+      >
+        通知
+      </a>
+      <a
+        *ngIf="appealsEnabled"
+        routerLink="/student/tickets"
+        class="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors"
+        [class.bg-slate-900]="isActive('tickets')"
+        [class.text-white]="isActive('tickets')"
+        [class.bg-slate-100]="!isActive('tickets')"
+        [class.text-slate-600]="!isActive('tickets')"
+      >
+        申诉
+      </a>
+      <a
         routerLink="/student/resume"
         class="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors"
         [class.bg-slate-900]="isActive('resume')"
@@ -161,6 +213,7 @@
         简历
       </a>
       <a
+        *ngIf="aiAssistantEnabled"
         routerLink="/student/ai"
         class="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium no-underline transition-colors"
         [class.bg-slate-900]="isActive('ai')"

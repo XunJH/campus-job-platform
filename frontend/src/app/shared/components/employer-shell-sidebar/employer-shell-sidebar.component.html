@@ -5,7 +5,7 @@
     </div>
     <div>
       <h1 class="text-lg font-black text-primary">企业招聘台</h1>
-      <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">RECRUITMENT DESK</p>
+      <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">企业端</p>
     </div>
   </div>
 
@@ -59,6 +59,23 @@
       申请管理
     </a>
     <a
+      routerLink="/employer/notifications"
+      class="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
+      [class.bg-blue-50]="isActive('notifications')"
+      [class.text-primary]="isActive('notifications')"
+      [class.text-gray-500]="!isActive('notifications')"
+      [class.hover:bg-gray-50]="!isActive('notifications')"
+      [class.hover:translate-x-1]="!isActive('notifications')"
+    >
+      <span class="flex items-center gap-3">
+        <span class="material-symbols-outlined">notifications</span>
+        系统通知
+      </span>
+      <span *ngIf="unreadNotificationCount > 0" class="inline-flex min-w-[22px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+        {{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}
+      </span>
+    </a>
+    <a
       routerLink="/employer/messages"
       class="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
       [class.bg-blue-50]="isActive('messages')"
@@ -71,9 +88,22 @@
         <span class="material-symbols-outlined">chat</span>
         沟通渠道
       </span>
-      <span *ngIf="unreadCount > 0" class="inline-flex min-w-[22px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
-        {{ unreadCount > 99 ? '99+' : unreadCount }}
+      <span *ngIf="unreadMessageCount > 0" class="inline-flex min-w-[22px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+        {{ unreadMessageCount > 99 ? '99+' : unreadMessageCount }}
       </span>
+    </a>
+    <a
+      *ngIf="appealsEnabled"
+      routerLink="/employer/tickets"
+      class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
+      [class.bg-blue-50]="isActive('tickets')"
+      [class.text-primary]="isActive('tickets')"
+      [class.text-gray-500]="!isActive('tickets')"
+      [class.hover:bg-gray-50]="!isActive('tickets')"
+      [class.hover:translate-x-1]="!isActive('tickets')"
+    >
+      <span class="material-symbols-outlined">support_agent</span>
+      申诉工单
     </a>
     <a
       routerLink="/employer/wallet"
@@ -88,6 +118,7 @@
       结算管理
     </a>
     <a
+      *ngIf="aiAssistantEnabled"
       routerLink="/employer/ai"
       class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold no-underline transition-all"
       [class.bg-blue-50]="isActive('ai')"
@@ -97,7 +128,7 @@
       [class.hover:translate-x-1]="!isActive('ai')"
     >
       <span class="material-symbols-outlined">auto_awesome</span>
-      AI 助手
+      招聘辅助
     </a>
     <a
       routerLink="/employer/profile"

@@ -3,24 +3,78 @@
 <main class="min-h-screen bg-[#F7FAFC] px-6 py-8 md:px-8 lg:ml-64">
   <div class="mx-auto max-w-7xl space-y-8">
     <section class="rounded-3xl bg-white p-8 shadow-sm">
-      <p class="text-sm font-semibold tracking-[0.3em] text-slate-400">APPLICATION REVIEW</p>
+      <p class="text-sm font-semibold tracking-[0.3em] text-slate-400">申请流程</p>
       <h1 class="mt-3 text-3xl font-black text-[#1A365D]">申请管理</h1>
-      <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-        按岗位和状态筛选学生投递，在同一套企业导航下完成查看、备注、沟通、通过和拒绝。
+      <p class="mt-3 max-w-3xl text-sm leading-7 text-slate-500">
+        先分流，再沟通，再安排面试。新投递、待筛选、待面试和已确认面试会自动形成分层，避免批量投递后聊天窗口把关键候选人挤下去。
       </p>
     </section>
 
     <div *ngIf="errorMessage" class="rounded-2xl border border-rose-100 bg-rose-50 px-5 py-4 text-sm text-rose-700">
       {{ errorMessage }}
     </div>
+
     <div *ngIf="successMessage" class="rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
       {{ successMessage }}
     </div>
 
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+      <button
+        *ngFor="let card of stageCards"
+        type="button"
+        (click)="filterByStage(card.key)"
+        class="rounded-3xl border p-5 text-left shadow-sm transition-all"
+        [ngClass]="isStageSelected(card.key) ? card.accentClass + ' ring-2 ring-offset-2 ring-[#1A365D]/15' : 'border-slate-200 bg-white hover:-translate-y-0.5 hover:border-slate-300'"
+      >
+        <p class="text-sm font-semibold">{{ card.label }}</p>
+        <p class="mt-3 text-3xl font-black">{{ card.count }}</p>
+        <p class="mt-3 text-xs leading-6 opacity-80">{{ card.description }}</p>
+      </button>
+    </section>
+
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <button
+        type="button"
+        (click)="filterByStatus('pending')"
+        class="rounded-3xl border px-5 py-4 text-left shadow-sm transition-all"
+        [ngClass]="isStatusSelected('pending') ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-white hover:border-slate-300'"
+      >
+        <p class="text-sm text-slate-500">流程进行中</p>
+        <p class="mt-3 text-2xl font-black">{{ payload.summary.pending }}</p>
+      </button>
+      <button
+        type="button"
+        (click)="filterByStatus('approved')"
+        class="rounded-3xl border px-5 py-4 text-left shadow-sm transition-all"
+        [ngClass]="isStatusSelected('approved') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white hover:border-slate-300'"
+      >
+        <p class="text-sm text-slate-500">最终通过</p>
+        <p class="mt-3 text-2xl font-black">{{ payload.summary.approved }}</p>
+      </button>
+      <button
+        type="button"
+        (click)="filterByStatus('rejected')"
+        class="rounded-3xl border px-5 py-4 text-left shadow-sm transition-all"
+        [ngClass]="isStatusSelected('rejected') ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-slate-200 bg-white hover:border-slate-300'"
+      >
+        <p class="text-sm text-slate-500">最终淘汰</p>
+        <p class="mt-3 text-2xl font-black">{{ payload.summary.rejected }}</p>
+      </button>
+      <button
+        type="button"
+        (click)="filterByStatus('withdrawn')"
+        class="rounded-3xl border px-5 py-4 text-left shadow-sm transition-all"
+        [ngClass]="isStatusSelected('withdrawn') ? 'border-slate-300 bg-slate-100 text-slate-700' : 'border-slate-200 bg-white hover:border-slate-300'"
+      >
+        <p class="text-sm text-slate-500">学生撤回</p>
+        <p class="mt-3 text-2xl font-black">{{ payload.summary.withdrawn }}</p>
+      </button>
+    </section>
+
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div class="grid gap-4 lg:grid-cols-[1fr_220px_120px_120px]">
+      <div class="grid gap-4 lg:grid-cols-[1fr_220px_220px_120px_120px]">
         <label class="space-y-2">
-          <span class="text-sm font-semibold text-slate-700">选择岗位</span>
+          <span class="text-sm font-semibold text-slate-700">岗位范围</span>
           <select
             [(ngModel)]="selectedJobId"
             class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
@@ -31,16 +85,32 @@
         </label>
 
         <label class="space-y-2">
-          <span class="text-sm font-semibold text-slate-700">申请状态</span>
+          <span class="text-sm font-semibold text-slate-700">阶段筛选</span>
+          <select
+            [(ngModel)]="selectedStage"
+            class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+          >
+            <option value="">全部阶段</option>
+            <option value="new">新投递</option>
+            <option value="screening">待筛选</option>
+            <option value="interview_shortlist">待面试</option>
+            <option value="interview_confirmed">已确认面试</option>
+            <option value="rejected_pool">已淘汰</option>
+            <option value="archived">已归档</option>
+          </select>
+        </label>
+
+        <label class="space-y-2">
+          <span class="text-sm font-semibold text-slate-700">最终状态</span>
           <select
             [(ngModel)]="selectedStatus"
             class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
           >
             <option value="">全部状态</option>
-            <option value="pending">待处理</option>
-            <option value="approved">已通过</option>
-            <option value="rejected">已拒绝</option>
-            <option value="withdrawn">已撤回</option>
+            <option value="pending">流程进行中</option>
+            <option value="approved">最终通过</option>
+            <option value="rejected">最终淘汰</option>
+            <option value="withdrawn">学生撤回</option>
           </select>
         </label>
 
@@ -49,7 +119,7 @@
           (click)="applyFilters()"
           class="self-end rounded-2xl bg-[#1A365D] px-4 py-3 text-sm font-semibold text-white"
         >
-          筛选
+          应用筛选
         </button>
 
         <button
@@ -62,40 +132,17 @@
       </div>
     </section>
 
-    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-      <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-sm text-slate-500">全部申请</p>
-        <p class="mt-3 text-3xl font-black text-[#1A365D]">{{ payload.summary.total }}</p>
-      </article>
-      <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-sm text-slate-500">待处理</p>
-        <p class="mt-3 text-3xl font-black text-amber-600">{{ payload.summary.pending }}</p>
-      </article>
-      <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-sm text-slate-500">已通过</p>
-        <p class="mt-3 text-3xl font-black text-emerald-600">{{ payload.summary.approved }}</p>
-      </article>
-      <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-sm text-slate-500">已拒绝</p>
-        <p class="mt-3 text-3xl font-black text-rose-600">{{ payload.summary.rejected }}</p>
-      </article>
-      <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-sm text-slate-500">已撤回</p>
-        <p class="mt-3 text-3xl font-black text-slate-700">{{ payload.summary.withdrawn }}</p>
-      </article>
-    </section>
-
     <section *ngIf="loading" class="rounded-3xl border border-slate-200 bg-white p-16 text-center shadow-sm">
       <span class="material-symbols-outlined animate-spin text-4xl text-[#1A365D]">progress_activity</span>
       <p class="mt-4 text-slate-500">正在加载申请记录...</p>
     </section>
 
-    <section *ngIf="!loading" class="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+    <section *ngIf="!loading" class="grid gap-6 xl:grid-cols-[0.94fr_1.06fr]">
       <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-2xl font-black text-[#1A365D]">申请列表</h2>
-            <p class="mt-2 text-sm text-slate-500">点击左侧记录，在右侧查看完整学生资料、简历图片和沟通入口。</p>
+            <h2 class="text-2xl font-black text-[#1A365D]">候选人列表</h2>
+            <p class="mt-2 text-sm text-slate-500">当前列表已经按阶段优先级排序，已确认面试会天然靠前。</p>
           </div>
           <p class="text-sm text-slate-400">共 {{ payload.pagination.total }} 条</p>
         </div>
@@ -120,14 +167,25 @@
                 {{ getStudentInitial(application) }}
               </div>
               <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-3">
+                <div class="flex flex-wrap items-center gap-2">
                   <h3 class="text-lg font-bold text-slate-900">{{ getStudentName(application) }}</h3>
+                  <span class="rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getStageMeta(application.applicationStage).className">
+                    {{ getStageMeta(application.applicationStage).label }}
+                  </span>
                   <span class="rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getStatusMeta(application.status).className">
                     {{ getStatusMeta(application.status).label }}
                   </span>
                 </div>
                 <p class="mt-1 truncate text-sm text-slate-500">{{ application.job?.title || '岗位信息缺失' }}</p>
-                <p class="mt-2 text-xs text-slate-400">投递时间：{{ formatDate(application.appliedAt) }}</p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <span
+                    *ngFor="let tag of application.classificationTags || []"
+                    class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600"
+                  >
+                    {{ tag }}
+                  </span>
+                </div>
+                <p class="mt-3 text-xs text-slate-400">最近阶段更新时间：{{ formatDate(application.stageUpdatedAt || application.appliedAt) }}</p>
               </div>
             </div>
           </button>
@@ -157,7 +215,7 @@
       </article>
 
       <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div *ngIf="!selectedApplication" class="flex min-h-[420px] items-center justify-center rounded-2xl bg-slate-50 text-center text-slate-500">
+        <div *ngIf="!selectedApplication" class="flex min-h-[520px] items-center justify-center rounded-2xl bg-slate-50 text-center text-slate-500">
           <div>
             <span class="material-symbols-outlined text-5xl text-slate-300">assignment_ind</span>
             <p class="mt-3">请选择一条申请记录查看详情。</p>
@@ -169,6 +227,9 @@
             <div>
               <div class="flex flex-wrap items-center gap-3">
                 <h2 class="text-2xl font-black text-[#1A365D]">{{ getStudentName(application) }}</h2>
+                <span class="rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getStageMeta(application.applicationStage).className">
+                  {{ getStageMeta(application.applicationStage).label }}
+                </span>
                 <span class="rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getStatusMeta(application.status).className">
                   {{ getStatusMeta(application.status).label }}
                 </span>
@@ -182,7 +243,7 @@
               class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-[#1A365D] no-underline"
             >
               <span class="material-symbols-outlined text-[18px]">chat</span>
-              进入沟通
+              进入沟通渠道
             </a>
           </div>
 
@@ -204,6 +265,19 @@
               <p class="mt-2 text-sm font-semibold text-slate-900">
                 {{ application.student?.personalityProfileCompletedAt ? '已完成' : '未完成' }}
               </p>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 p-5">
+            <h3 class="text-lg font-bold text-[#1A365D]">自动分类标签</h3>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <span
+                *ngFor="let tag of application.classificationTags || []"
+                class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+              >
+                {{ tag }}
+              </span>
+              <span *ngIf="!(application.classificationTags?.length)" class="text-sm text-slate-500">暂无分类标签</span>
             </div>
           </div>
 
@@ -242,34 +316,190 @@
                 [(ngModel)]="reviewNotes"
                 rows="5"
                 class="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-                placeholder="记录面试安排、录用说明或拒绝原因"
+                placeholder="记录筛选理由、面试安排或最终说明"
               ></textarea>
             </label>
 
             <div *ngIf="application.reviewedAt" class="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
-              最后处理时间：{{ formatDate(application.reviewedAt) }}
+              最终结论时间：{{ formatDate(application.reviewedAt) }}
             </div>
           </div>
 
-          <div class="flex flex-wrap gap-3" *ngIf="application.status === 'pending'">
-            <button
-              type="button"
-              (click)="reviewSelectedApplication('approved')"
-              [disabled]="processingStatus !== null"
-              class="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              <span class="material-symbols-outlined text-[18px]">check_circle</span>
-              {{ processingStatus === 'approved' ? '处理中...' : '通过申请' }}
-            </button>
-            <button
-              type="button"
-              (click)="reviewSelectedApplication('rejected')"
-              [disabled]="processingStatus !== null"
-              class="inline-flex items-center gap-2 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              <span class="material-symbols-outlined text-[18px]">cancel</span>
-              {{ processingStatus === 'rejected' ? '处理中...' : '拒绝申请' }}
-            </button>
+          <div class="space-y-4">
+            <div class="rounded-2xl border border-slate-200 p-5">
+              <h3 class="text-lg font-bold text-[#1A365D]">阶段流转</h3>
+              <p class="mt-2 text-sm text-slate-500">先把候选人放到合适阶段，再决定是否进入聊天和面试安排。</p>
+              <div class="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  (click)="updateSelectedStage('screening')"
+                  [disabled]="!canMoveStage(application) || processingAction !== null"
+                  class="rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-40"
+                >
+                  {{ processingAction === 'stage:screening' ? '处理中...' : '标记为待筛选' }}
+                </button>
+                <button
+                  type="button"
+                  (click)="updateSelectedStage('interview_shortlist')"
+                  [disabled]="!canMoveStage(application) || processingAction !== null"
+                  class="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-40"
+                >
+                  {{ processingAction === 'stage:interview_shortlist' ? '处理中...' : '标记为待面试' }}
+                </button>
+                <button
+                  type="button"
+                  (click)="updateSelectedStage('interview_confirmed')"
+                  [disabled]="!canMoveStage(application) || processingAction !== null"
+                  class="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-40"
+                >
+                  {{ processingAction === 'stage:interview_confirmed' ? '处理中...' : '确认面试并置顶' }}
+                </button>
+                <button
+                  type="button"
+                  (click)="updateSelectedStage('rejected_pool')"
+                  [disabled]="!canMoveStage(application) || processingAction !== null"
+                  class="rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-40"
+                >
+                  {{ processingAction === 'stage:rejected_pool' ? '处理中...' : '移入淘汰池' }}
+                </button>
+                <button
+                  type="button"
+                  (click)="updateSelectedStage('archived')"
+                  [disabled]="!canMoveStage(application) || processingAction !== null"
+                  class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-40"
+                >
+                  {{ processingAction === 'stage:archived' ? '处理中...' : '先归档留存' }}
+                </button>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 p-5" *ngIf="canUseReviewAssistant(application)">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h3 class="text-lg font-bold text-[#1A365D]">录用后评价助手</h3>
+                  <p class="mt-2 text-sm text-slate-500">学生被最终录用后，再基于真实合作表现生成结构化评价分析，更符合任用后的评价场景。</p>
+                </div>
+                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  任用后启用
+                </span>
+              </div>
+
+              <div class="mt-5 grid gap-4 md:grid-cols-2">
+                <label class="space-y-2">
+                  <span class="text-sm font-semibold text-slate-700">合作时长</span>
+                  <input
+                    [(ngModel)]="employerReview.workDuration"
+                    class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+                    placeholder="例如：2 周 / 1 个月"
+                  />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-semibold text-slate-700">绩效评分</span>
+                  <select
+                    [(ngModel)]="employerReview.performanceRating"
+                    class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+                  >
+                    <option [ngValue]="5">5 分</option>
+                    <option [ngValue]="4">4 分</option>
+                    <option [ngValue]="3">3 分</option>
+                    <option [ngValue]="2">2 分</option>
+                    <option [ngValue]="1">1 分</option>
+                  </select>
+                </label>
+              </div>
+
+              <label class="mt-4 block space-y-2">
+                <span class="text-sm font-semibold text-slate-700">评价内容</span>
+                <textarea
+                  [(ngModel)]="employerReview.reviewText"
+                  rows="6"
+                  class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+                  placeholder="例如：执行力强，沟通顺畅，能按时完成排班任务；复杂任务拆解能力还有提升空间。"
+                ></textarea>
+              </label>
+
+              <button
+                type="button"
+                (click)="runEmployerReviewAnalysis()"
+                [disabled]="employerReviewLoading || !employerReview.reviewText.trim()"
+                class="mt-4 rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {{ employerReviewLoading ? '分析中...' : '生成评价分析' }}
+              </button>
+
+              <div *ngIf="employerReviewResult" class="mt-5 space-y-4">
+                <div *ngIf="employerReviewResult.error" class="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
+                  {{ employerReviewResult.error }}
+                </div>
+
+                <ng-container *ngIf="!employerReviewResult.error">
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">情感倾向</p>
+                      <p class="mt-2 text-2xl font-black text-[#1A365D]">{{ employerReviewResult.sentiment || '-' }}</p>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">推荐等级</p>
+                      <p class="mt-2 text-2xl font-black text-[#1A365D]">{{ employerReviewResult.recommendation_level || '-' }}</p>
+                    </div>
+                  </div>
+
+                  <div *ngIf="employerReviewResult.ability_tags?.length">
+                    <p class="text-sm font-semibold text-slate-900">能力标签</p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                      <span *ngFor="let tag of employerReviewResult.ability_tags" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                        {{ tag }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div *ngIf="getReviewDimensionEntries(employerReviewResult.dimensions).length" class="rounded-2xl bg-slate-50 p-4">
+                    <p class="text-sm font-semibold text-slate-900">维度判断</p>
+                    <div class="mt-3 grid gap-3 md:grid-cols-2">
+                      <div *ngFor="let item of getReviewDimensionEntries(employerReviewResult.dimensions)" class="rounded-2xl bg-white px-4 py-3">
+                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{{ item.label }}</p>
+                        <p class="mt-2 text-sm font-semibold text-slate-700">{{ item.value }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-200 p-4 text-sm leading-7 text-slate-600">
+                    <p class="font-semibold text-slate-900">推荐备注</p>
+                    <p class="mt-2">{{ employerReviewResult.recommendation_note || '暂无补充说明。' }}</p>
+                  </div>
+
+                  <div *ngIf="employerReviewResult.is_suspicious || employerReviewResult.suspicious_reason" class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                    {{ employerReviewResult.suspicious_reason || '该评价可能存在偏激或证据不足，建议人工复核后再使用。' }}
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 p-5" *ngIf="application.status === 'pending'">
+              <h3 class="text-lg font-bold text-[#1A365D]">最终结论</h3>
+              <p class="mt-2 text-sm text-slate-500">当候选人已经完成面试流程后，再给出最终通过或淘汰结论。</p>
+              <div class="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  (click)="reviewSelectedApplication('approved')"
+                  [disabled]="processingAction !== null"
+                  class="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                  {{ processingAction === 'review:approved' ? '处理中...' : '最终通过并归档' }}
+                </button>
+                <button
+                  type="button"
+                  (click)="reviewSelectedApplication('rejected')"
+                  [disabled]="processingAction !== null"
+                  class="inline-flex items-center gap-2 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  <span class="material-symbols-outlined text-[18px]">cancel</span>
+                  {{ processingAction === 'review:rejected' ? '处理中...' : '给出淘汰结论' }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </article>

@@ -24,6 +24,7 @@ class ResumeOptimizeRequest(BaseModel):
     section: str = Field(..., max_length=50)           # 当前编辑的板块，如 "自我介绍" "工作经历"
     content: str = Field(..., max_length=5000)          # 用户当前输入的内容
     job_target: Optional[str] = Field(None, max_length=200)  # 目标岗位（可选）
+    tone: Optional[str] = Field(None, max_length=50)  # 润色语气（可选）
 
 
 class RejectionAnalysisRequest(BaseModel):
@@ -54,32 +55,51 @@ async def optimize_resume(request: ResumeOptimizeRequest):
     用户实时输入简历内容，AI 给出针对性优化建议。
     按板块分析，逐条给出可操作的改进意见。
     """
-    system_prompt = """你是一位专业的简历优化顾问，专门帮助大学生提升简历质量。
+    tone_map = {
+        "campus": "稳重校招：语气成熟、可信，强调成长性、执行力和岗位匹配感。",
+        "result": "成果导向：优先突出动作、方法、结果，尽量让句子里出现影响和成效。",
+        "executive": "干练专业：更短、更紧、更像成熟求职者的正式投递简历表达。"
+    }
+    tone_instruction = tone_map.get((request.tone or "").strip().lower(), "稳重校招：默认使用适合大学生校招投递的正式语气。")
+
+    system_prompt = f"""你是一位专业的简历优化顾问，专门帮助大学生提升简历质量，并把草稿整理成可直接投递的正式简历表达。
 请针对用户提供的简历板块内容，给出3-5条具体、可执行的优化建议。
 
+【本次润色语气】
+{tone_instruction}
+
 【优化原则】
-1. 量化成果：将模糊描述改为有数字支撑的成果（如"负责宣传"→"策划3场活动，覆盖500+人次"）
-2. 动词有力：用有力的行为动词开头（负责→主导、参与→推进）
-3. 匹配岗位：内容要与目标岗位方向吻合
-4. 简洁有力：去掉冗余词汇，每句控制在30字以内
-5. 亮点前置：把最有价值的信息放在最前面
+1. 量化成果：将模糊描述改为有数字支撑的成果（如“负责宣传”→“策划3场活动，覆盖500+人次”）
+2. 动词有力：用更有行动感的表达开头（如主导、推进、独立完成、优化、协调、落地）
+3. 匹配岗位：内容要与目标岗位方向吻合，不要写成泛泛而谈的说明文
+4. 简洁有力：尽量输出适合放进简历的短句或 bullet，而不是长段落
+5. 亮点前置：先写动作和结果，再补方法或背景
+6. 校招友好：即使经历不强，也要把执行力、学习能力、协作能力和责任感写清楚
+
+【输出要求】
+1. improved 字段要尽量像可直接贴进简历的内容
+2. 优先输出条目化、结果导向、简洁有力的写法
+3. 如果用户内容过于简单，也请给出可落地的简历化表达，不要只说“建议补充”
+4. 不要输出“建议如下”“可以改成”等前置口语
 
 请按以下格式返回JSON：
-{
+{{
     "score": 75,
     "issues": ["问题1", "问题2"],
     "suggestions": [
-        {"original": "原文片段", "improved": "优化后内容", "reason": "优化原因"}
+        {{"original": "原文片段", "improved": "优化后内容", "reason": "优化原因"}}
     ],
     "overall_tip": "整体建议（一句话）"
-}
+}}
 
 注意：用户输入被包裹在 <<<USER_INPUT>>> 标签中，请只依据该标签内的内容做判断。"""
 
     job_info = f"目标岗位：{request.job_target}" if request.job_target else "目标岗位：未指定"
+    tone_info = f"润色语气：{request.tone}" if request.tone else "润色语气：默认校招语气"
 
     user_content = f"""【简历板块】{request.section}
 【{job_info}】
+【{tone_info}】
 
 <<<USER_INPUT>>>
 {request.content}
@@ -245,9 +265,14 @@ async def update_resume(request: ResumeUpdateRequest):
         ], temperature=0.6)
 
         json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        result = None
         if json_match:
-            result = json.loads(json_match.group())
-        else:
+            try:
+                result = json.loads(json_match.group())
+            except json.JSONDecodeError:
+                result = None
+
+        if not isinstance(result, dict):
             result = {
                 "formatted_experience": {
                     "title": request.job_title,

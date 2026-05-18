@@ -8,11 +8,13 @@ const Conversation = require('./Conversation');
 const ConversationMessage = require('./ConversationMessage');
 const ConversationParticipantState = require('./ConversationParticipantState');
 const Settlement = require('./Settlement');
+const Ticket = require('./Ticket');
+const AdminOperationLog = require('./AdminOperationLog');
+const SystemNotification = require('./SystemNotification');
+const NotificationReadState = require('./NotificationReadState');
+const PlatformSetting = require('./PlatformSetting');
 const Verification = require('./Verification')(sequelize, DataTypes);
 
-// 定义模型关联关系
-
-// User 和 Job 的关系：一个User可以发布多个Job
 User.hasMany(Job, {
   foreignKey: 'employerId',
   as: 'jobs'
@@ -22,7 +24,6 @@ Job.belongsTo(User, {
   as: 'employer'
 });
 
-// User 和 Application 的关系：一个学生可以提交多个申请
 User.hasMany(Application, {
   foreignKey: 'studentId',
   as: 'applications'
@@ -32,7 +33,6 @@ Application.belongsTo(User, {
   as: 'student'
 });
 
-// User 和 Review 的关系：一个用户可以审核多个申请（雇主）
 User.hasMany(Application, {
   foreignKey: 'reviewedBy',
   as: 'reviewedApplications'
@@ -42,7 +42,6 @@ Application.belongsTo(User, {
   as: 'reviewer'
 });
 
-// Job 和 Application 的关系：一个岗位可以有多个申请
 Job.hasMany(Application, {
   foreignKey: 'jobId',
   as: 'applications'
@@ -124,7 +123,6 @@ ConversationParticipantState.belongsTo(User, {
   as: 'user'
 });
 
-// User 和 Bookmark 的关系：一个学生可以收藏多个岗位
 User.hasMany(Bookmark, {
   foreignKey: 'studentId',
   as: 'bookmarks'
@@ -134,7 +132,6 @@ Bookmark.belongsTo(User, {
   as: 'student'
 });
 
-// Job 和 Bookmark 的关系：一个岗位可以被多个学生收藏
 Job.hasMany(Bookmark, {
   foreignKey: 'jobId',
   as: 'bookmarks'
@@ -189,7 +186,51 @@ Settlement.belongsTo(User, {
   as: 'processor'
 });
 
-// User 和 Verification 的关系：一个用户对应一条认证记录
+User.hasMany(Ticket, {
+  foreignKey: 'userId',
+  as: 'submittedTickets'
+});
+Ticket.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'submitter'
+});
+
+User.hasMany(Ticket, {
+  foreignKey: 'assigneeId',
+  as: 'assignedTickets'
+});
+Ticket.belongsTo(User, {
+  foreignKey: 'assigneeId',
+  as: 'assignee'
+});
+
+Job.hasMany(Ticket, {
+  foreignKey: 'relatedJobId',
+  as: 'tickets'
+});
+Ticket.belongsTo(Job, {
+  foreignKey: 'relatedJobId',
+  as: 'relatedJob'
+});
+
+Settlement.hasMany(Ticket, {
+  foreignKey: 'relatedSettlementId',
+  as: 'tickets'
+});
+Ticket.belongsTo(Settlement, {
+  foreignKey: 'relatedSettlementId',
+  as: 'relatedSettlement'
+});
+
+Verification.hasMany(Ticket, {
+  foreignKey: 'relatedVerificationId',
+  as: 'tickets'
+});
+Ticket.belongsTo(Verification, {
+  foreignKey: 'relatedVerificationId',
+  as: 'relatedVerification'
+});
+
 User.hasOne(Verification, {
   foreignKey: 'userId',
   as: 'verification'
@@ -199,7 +240,105 @@ Verification.belongsTo(User, {
   as: 'user'
 });
 
-// 导出所有模型和数据库连接
+User.hasMany(AdminOperationLog, {
+  foreignKey: 'adminId',
+  as: 'adminLogs'
+});
+AdminOperationLog.belongsTo(User, {
+  foreignKey: 'adminId',
+  as: 'admin'
+});
+
+User.hasMany(SystemNotification, {
+  foreignKey: 'senderAdminId',
+  as: 'sentNotifications'
+});
+SystemNotification.belongsTo(User, {
+  foreignKey: 'senderAdminId',
+  as: 'senderAdmin'
+});
+
+User.hasMany(SystemNotification, {
+  foreignKey: 'targetUserId',
+  as: 'targetedNotifications'
+});
+SystemNotification.belongsTo(User, {
+  foreignKey: 'targetUserId',
+  as: 'targetUser'
+});
+
+User.hasMany(SystemNotification, {
+  foreignKey: 'relatedUserId',
+  as: 'relatedNotifications'
+});
+SystemNotification.belongsTo(User, {
+  foreignKey: 'relatedUserId',
+  as: 'relatedUser'
+});
+
+SystemNotification.hasMany(NotificationReadState, {
+  foreignKey: 'notificationId',
+  as: 'readStates'
+});
+NotificationReadState.belongsTo(SystemNotification, {
+  foreignKey: 'notificationId',
+  as: 'notification'
+});
+
+User.hasMany(NotificationReadState, {
+  foreignKey: 'userId',
+  as: 'notificationReadStates'
+});
+NotificationReadState.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+User.hasMany(PlatformSetting, {
+  foreignKey: 'updatedBy',
+  as: 'updatedPlatformSettings'
+});
+PlatformSetting.belongsTo(User, {
+  foreignKey: 'updatedBy',
+  as: 'updatedByUser'
+});
+
+Ticket.hasMany(SystemNotification, {
+  foreignKey: 'relatedTicketId',
+  as: 'notifications'
+});
+SystemNotification.belongsTo(Ticket, {
+  foreignKey: 'relatedTicketId',
+  as: 'relatedTicket'
+});
+
+Job.hasMany(SystemNotification, {
+  foreignKey: 'relatedJobId',
+  as: 'notifications'
+});
+SystemNotification.belongsTo(Job, {
+  foreignKey: 'relatedJobId',
+  as: 'relatedJob'
+});
+
+Verification.hasMany(SystemNotification, {
+  foreignKey: 'relatedVerificationId',
+  as: 'notifications'
+});
+SystemNotification.belongsTo(Verification, {
+  foreignKey: 'relatedVerificationId',
+  as: 'relatedVerification'
+});
+
+Settlement.hasMany(SystemNotification, {
+  foreignKey: 'relatedSettlementId',
+  as: 'notifications'
+});
+SystemNotification.belongsTo(Settlement, {
+  foreignKey: 'relatedSettlementId',
+  as: 'relatedSettlement'
+});
+
 module.exports = {
   sequelize,
   User,
@@ -210,5 +349,10 @@ module.exports = {
   ConversationMessage,
   ConversationParticipantState,
   Settlement,
+  Ticket,
+  AdminOperationLog,
+  SystemNotification,
+  NotificationReadState,
+  PlatformSetting,
   Verification
 };

@@ -29,9 +29,9 @@ export class StudentWalletComponent implements OnInit {
   errorMessage = '';
 
   constructor(
-    private authService: AuthService,
-    private jobService: JobService,
-    private router: Router
+    private readonly authService: AuthService,
+    private readonly jobService: JobService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
@@ -56,12 +56,12 @@ export class StudentWalletComponent implements OnInit {
           this.settlements = res.data.settlements || [];
           this.summary = res.data.summary || this.summary;
         } else {
-          this.errorMessage = '加载收入记录失败';
+          this.errorMessage = '加载收入记录失败。';
         }
         this.loading = false;
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || '加载收入记录失败，请稍后重试';
+        this.errorMessage = err.error?.message || '加载收入记录失败，请稍后重试。';
         this.loading = false;
       }
     });
@@ -115,6 +115,17 @@ export class StudentWalletComponent implements OnInit {
     };
 
     return classes[status] || classes.pending;
+  }
+
+  createSettlementAppeal(settlement: SettlementRecord): void {
+    this.router.navigate(['/student/tickets'], {
+      queryParams: {
+        type: 'settlement_dispute',
+        title: `结算争议：${settlement.job?.title || '当前结算记录'}`,
+        description: '我对当前结算金额、状态或备注有异议，请平台协助核查。',
+        relatedSettlementId: settlement.id
+      }
+    });
   }
 
   private sumByStatus(status: SettlementStatus): number {

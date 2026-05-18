@@ -1,9 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 
-/**
- * 应用路由配置
- */
 export const routes: Routes = [
   {
     path: '',
@@ -12,114 +9,134 @@ export const routes: Routes = [
   },
   {
     path: 'student/jobs',
-    loadComponent: () => import('./features/student/pages/jobs/jobs.component').then(c => c.JobsComponent),
+    loadComponent: () => import('./features/student/pages/jobs/jobs.component').then((c) => c.JobsComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/jobs/:id',
-    loadComponent: () => import('./features/student/pages/jobs/job-detail.component').then(c => c.JobDetailComponent),
+    loadComponent: () => import('./features/student/pages/jobs/job-detail.component').then((c) => c.JobDetailComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/profile',
-    loadComponent: () => import('./features/student/pages/profile/profile.component').then(c => c.ProfileComponent),
+    loadComponent: () => import('./features/student/pages/profile/profile.component').then((c) => c.ProfileComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/verification',
-    loadComponent: () => import('./features/certification/pages/verification/verification.component').then(c => c.VerificationComponent),
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'employer/verification',
-    loadComponent: () => import('./features/certification/pages/verification/verification.component').then(c => c.VerificationComponent),
+    loadComponent: () => import('./features/certification/pages/verification/verification.component').then((c) => c.VerificationComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/ai',
-    loadComponent: () => import('./features/student/pages/ai/ai.component').then(c => c.StudentAiComponent),
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'employer/ai',
-    loadComponent: () => import('./features/employer/pages/ai/ai.component').then(c => c.EmployerAiComponent),
+    loadComponent: () => import('./features/student/pages/ai/ai.component').then((c) => c.StudentAiComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/applications',
-    loadComponent: () => import('./features/student/pages/applications/applications.component').then(c => c.StudentApplicationsComponent),
+    loadComponent: () => import('./features/student/pages/applications/applications.component').then((c) => c.StudentApplicationsComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/favorites',
-    loadComponent: () => import('./features/student/pages/favorites/favorites.component').then(c => c.StudentFavoritesComponent),
+    loadComponent: () => import('./features/student/pages/favorites/favorites.component').then((c) => c.StudentFavoritesComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'student/notifications',
+    loadComponent: () => import('./features/support/pages/notifications/notifications.component').then((c) => c.SupportNotificationsComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/messages',
-    loadComponent: () => import('./features/student/pages/messages/messages.component').then(c => c.StudentMessagesComponent),
+    loadComponent: () => import('./features/student/pages/messages/messages.component').then((c) => c.StudentMessagesComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'student/tickets',
+    loadComponent: () => import('./features/support/pages/tickets/tickets.component').then((c) => c.SupportTicketsComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/resume',
-    loadComponent: () => import('./features/student/pages/profile/profile.component').then(c => c.ProfileComponent),
+    loadComponent: () => import('./features/student/pages/profile/profile.component').then((c) => c.ProfileComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'student/wallet',
-    loadComponent: () => import('./features/student/pages/wallet/wallet.component').then(c => c.StudentWalletComponent),
+    loadComponent: () => import('./features/student/pages/wallet/wallet.component').then((c) => c.StudentWalletComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'employer/dashboard',
-    loadComponent: () => import('./features/employer/pages/dashboard/dashboard.component').then(c => c.EmployerDashboardComponent),
+    loadComponent: () => import('./features/employer/pages/dashboard/dashboard.component').then((c) => c.EmployerDashboardComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'employer/profile',
-    loadComponent: () => import('./features/employer/pages/profile/profile.component').then(c => c.EmployerProfileComponent),
+    loadComponent: () => import('./features/employer/pages/profile/profile.component').then((c) => c.EmployerProfileComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'employer/verification',
+    loadComponent: () => import('./features/certification/pages/verification/verification.component').then((c) => c.VerificationComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'employer/jobs',
-    loadComponent: () => import('./features/employer/pages/job-management/job-management.component').then(c => c.JobManagementComponent),
+    loadComponent: () => import('./features/employer/pages/job-management/job-management.component').then((c) => c.JobManagementComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'employer/applications',
-    loadComponent: () => import('./features/employer/pages/applications/applications.component').then(c => c.EmployerApplicationsComponent),
+    loadComponent: () => import('./features/employer/pages/applications/applications.component').then((c) => c.EmployerApplicationsComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'employer/notifications',
+    loadComponent: () => import('./features/support/pages/notifications/notifications.component').then((c) => c.SupportNotificationsComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'employer/messages',
-    loadComponent: () => import('./features/employer/pages/messages/messages.component').then(c => c.EmployerMessagesComponent),
+    loadComponent: () => import('./features/employer/pages/messages/messages.component').then((c) => c.EmployerMessagesComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'employer/tickets',
+    loadComponent: () => import('./features/support/pages/tickets/tickets.component').then((c) => c.SupportTicketsComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'employer/wallet',
-    loadComponent: () => import('./features/employer/pages/wallet/wallet.component').then(c => c.EmployerWalletComponent),
+    loadComponent: () => import('./features/employer/pages/wallet/wallet.component').then((c) => c.EmployerWalletComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'employer/ai',
+    loadComponent: () => import('./features/employer/pages/ai/ai.component').then((c) => c.EmployerAiComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'employer/jobs/post',
-    loadComponent: () => import('./features/employer/pages/post-job/post-job.component').then(c => c.PostJobComponent),
+    loadComponent: () => import('./features/employer/pages/post-job/post-job.component').then((c) => c.PostJobComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'employer/jobs/edit/:id',
-    loadComponent: () => import('./features/employer/pages/post-job/post-job.component').then(c => c.PostJobComponent),
+    loadComponent: () => import('./features/employer/pages/post-job/post-job.component').then((c) => c.PostJobComponent),
     canActivate: [AuthGuard]
   },
   {
     path: 'auth',
-    loadChildren: () => import('./features/auth/auth/auth.module').then(m => m.AuthModule)
+    loadChildren: () => import('./features/auth/auth/auth.module').then((m) => m.AuthModule)
   },
   {
     path: 'forbidden',
-    loadComponent: () => import('./features/not-found/not-found.component').then(c => c.NotFoundComponent)
+    loadComponent: () => import('./features/not-found/not-found.component').then((c) => c.NotFoundComponent)
   },
   {
     path: '**',
-    loadComponent: () => import('./features/not-found/not-found.component').then(c => c.NotFoundComponent)
+    loadComponent: () => import('./features/not-found/not-found.component').then((c) => c.NotFoundComponent)
   }
 ];

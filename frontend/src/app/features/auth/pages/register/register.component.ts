@@ -49,8 +49,8 @@ export class RegisterComponent implements OnInit {
     heroTitleLine1: '建立你的求职档案',
     heroTitleLine2: '从第一份实习开始',
     heroDescription:
-      '完成基础注册后，你可以完善画像、收藏岗位、管理投递进度，并获得 AI 推荐与面试辅助。',
-    chips: ['岗位浏览', '投递追踪', 'AI 辅助'],
+      '完成基础注册后，你可以完善资料、收藏岗位、管理投递进度，并使用推荐和面试练习功能。',
+    chips: ['岗位浏览', '投递追踪', '面试练习'],
     steps: [
       {
         title: '选择学生身份',
@@ -68,9 +68,9 @@ export class RegisterComponent implements OnInit {
     metricValue: '3',
     metricLabel: '分钟完成基础注册',
     secondaryTitle: '注册后可立即使用',
-    secondaryDescription: '岗位收藏、投递记录、AI 匹配推荐与面试辅助。',
+    secondaryDescription: '岗位收藏、投递记录、岗位推荐与面试练习。',
     cardTitle: '创建你的学生账号',
-    cardSubtitle: '先完成基础信息，登录后继续完善简历与求职画像。'
+    cardSubtitle: '先完成基础信息，登录后继续完善简历与求职资料。'
   };
 
   private readonly employerMeta: RegisterRoleMeta = {
@@ -78,12 +78,12 @@ export class RegisterComponent implements OnInit {
     heroTitleLine1: '搭建你的招聘工作台',
     heroTitleLine2: '更快触达合适学生',
     heroDescription:
-      '企业账号用于发布岗位、管理投递、查看 AI 辅助结果和维护结算记录，适合校园招聘全流程。',
-    chips: ['岗位发布', '投递管理', 'AI 招聘'],
+      '企业账号用于发布岗位、管理投递、查看推荐结果和维护结算记录，适合校园招聘全流程。',
+    chips: ['岗位发布', '投递管理', '沟通管理'],
     steps: [
       {
         title: '创建企业账号',
-        description: '先完成基础注册，建立企业端专属招聘工作台。'
+        description: '先完成基础注册，建立企业端招聘后台。'
       },
       {
         title: '完善企业资料',

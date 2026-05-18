@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
-import { JobService, Job } from '../../../../core/services/job.service';
+import { Job, JobService } from '../../../../core/services/job.service';
 import { EmployerShellSidebarComponent } from '../../../../shared/components/employer-shell-sidebar/employer-shell-sidebar.component';
 
 @Component({
@@ -22,9 +22,9 @@ export class JobManagementComponent implements OnInit {
   totalPages = 0;
 
   constructor(
-    private authService: AuthService,
-    private router: Router,
-    private jobService: JobService
+    private readonly authService: AuthService,
+    private readonly router: Router,
+    private readonly jobService: JobService
   ) {}
 
   ngOnInit(): void {
@@ -68,8 +68,25 @@ export class JobManagementComponent implements OnInit {
     });
   }
 
+  createJobAppeal(job: Job): void {
+    this.router.navigate(['/employer/tickets'], {
+      queryParams: {
+        type: 'job_appeal',
+        title: `岗位申诉：${job.title}`,
+        description: job.rejectionReason
+          ? `我对岗位审核结果有异议。当前审核反馈：${job.rejectionReason}。请平台协助复核。`
+          : '我对当前岗位处理结果有异议，请平台协助复核。',
+        relatedJobId: job.id
+      }
+    });
+  }
+
   canToggleStatus(job: Job): boolean {
     return job.auditStatus === 'approved' && (job.status === 'active' || job.status === 'closed');
+  }
+
+  canAppeal(job: Job): boolean {
+    return job.auditStatus === 'rejected' || job.status === 'cancelled';
   }
 
   toggleStatus(job: Job): void {
@@ -116,7 +133,7 @@ export class JobManagementComponent implements OnInit {
     }
 
     if (job.auditStatus === 'rejected') {
-      return { label: '审核拒绝', className: 'bg-rose-50 text-rose-700' };
+      return { label: '审核驳回', className: 'bg-rose-50 text-rose-700' };
     }
 
     const map: Record<string, { label: string; className: string }> = {
@@ -148,7 +165,7 @@ export class JobManagementComponent implements OnInit {
       monthly: '月薪'
     };
 
-    return `${typeMap[job.salaryType] || '薪资'} ￥${Number(job.salary || 0)}`;
+    return `${typeMap[job.salaryType] || '薪资'} ¥${Number(job.salary || 0)}`;
   }
 
   getToggleLabel(job: Job): string {

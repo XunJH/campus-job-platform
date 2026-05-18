@@ -2,7 +2,7 @@
 Smart matching API routes.
 """
 
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -19,21 +19,14 @@ class MatchRequest(BaseModel):
     top_n: int = 5
 
 
-class ReverseMatchRequest(BaseModel):
-    job_title: str
-    job_tags: List[str] = []
-    job_requirements: List[str] = []
-    top_n: int = 5
-
-
 class SmartReferralRequest(BaseModel):
-    job_id: str = Field(..., description="岗位ID")
+    job_id: str = Field(..., description="岗位 ID")
     job_title: str = Field(..., description="岗位名称")
     job_description: str = Field(default="", description="岗位描述")
-    job_requirements: List[str] = Field(default=[], description="岗位要求（技能列表）")
+    job_requirements: list[str] = Field(default=[], description="岗位要求")
     job_salary: Optional[str] = Field(default=None, description="薪资说明")
-    top_n: int = Field(default=10, ge=1, le=50, description="返回推荐人数上限")
-    include_gap_analysis: bool = Field(default=True, description="是否包含差距分析")
+    top_n: int = Field(default=10, ge=1, le=50, description="返回推荐数量上限")
+    include_gap_analysis: bool = Field(default=True, description="是否返回差距分析")
 
 
 @router.get("/jobs")
@@ -44,8 +37,8 @@ async def get_all_jobs():
         "message": "success",
         "data": {
             "total": len(jobs),
-            "jobs": jobs
-        }
+            "jobs": jobs,
+        },
     }
 
 
@@ -59,7 +52,7 @@ async def recommend_jobs(request: MatchRequest):
             if not profile:
                 raise HTTPException(
                     status_code=404,
-                    detail="未找到已保存的人格画像，请先完成测评并保存"
+                    detail="未找到已保存的人格画像，请先完成测评并保存。",
                 )
 
         results = matching_service.match_jobs(profile, request.top_n)
@@ -68,43 +61,21 @@ async def recommend_jobs(request: MatchRequest):
                 "job": result.job.model_dump(),
                 "match_score": result.match_score,
                 "match_reasons": result.match_reasons,
-                "warnings": result.warnings
+                "warnings": result.warnings,
             }
             for result in results
         ]
 
         return {
             "code": 200,
-            "message": "推荐完成",
+            "message": "岗位推荐完成",
             "data": {
                 "total": len(match_list),
-                "recommendations": match_list
-            }
+                "recommendations": match_list,
+            },
         }
     except HTTPException:
         raise
-    except Exception as error:
-        raise HTTPException(status_code=500, detail=str(error))
-
-
-@router.post("/reverse")
-async def reverse_recommend(request: ReverseMatchRequest):
-    try:
-        results = matching_service.reverse_match(
-            job_title=request.job_title,
-            job_tags=request.job_tags,
-            job_requirements=request.job_requirements,
-            top_n=request.top_n
-        )
-
-        return {
-            "code": 200,
-            "message": "反向推荐完成",
-            "data": {
-                "total": len(results),
-                "recommendations": results
-            }
-        }
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error))
 
@@ -119,13 +90,13 @@ async def smart_referral(request: SmartReferralRequest):
             job_requirements=request.job_requirements,
             job_salary=request.job_salary,
             top_n=request.top_n,
-            include_gap_analysis=request.include_gap_analysis
+            include_gap_analysis=request.include_gap_analysis,
         )
 
         return {
             "code": 200,
-            "message": "智能调剂推荐完成",
-            "data": result
+            "message": "候选人推荐完成",
+            "data": result,
         }
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error))

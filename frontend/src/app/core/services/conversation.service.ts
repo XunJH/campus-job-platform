@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { ApplicationStage, ApplicationStatus } from './job.service';
 
 export interface ConversationParticipant {
   id: number;
@@ -10,9 +11,11 @@ export interface ConversationParticipant {
 
 export interface ConversationApplication {
   id: number;
-  status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
+  status: ApplicationStatus;
+  applicationStage: ApplicationStage;
   appliedAt: string;
   reviewedAt?: string | null;
+  stageUpdatedAt?: string | null;
   resume?: string | null;
   coverLetter?: string | null;
   notes?: string | null;

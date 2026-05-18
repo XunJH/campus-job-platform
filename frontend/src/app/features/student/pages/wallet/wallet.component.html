@@ -95,7 +95,7 @@
           </div>
         </div>
 
-        <div class="flex flex-row gap-3 xl:w-44 xl:flex-col">
+        <div class="flex flex-row gap-3 xl:w-48 xl:flex-col">
           <a
             *ngIf="settlement.job?.id"
             [routerLink]="['/student/jobs', settlement.job?.id]"
@@ -104,6 +104,15 @@
             <span class="material-symbols-outlined text-[18px]">open_in_new</span>
             查看岗位
           </a>
+
+          <button
+            type="button"
+            (click)="createSettlementAppeal(settlement)"
+            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 transition-colors hover:bg-rose-100 xl:w-full"
+          >
+            <span class="material-symbols-outlined text-[18px]">gavel</span>
+            发起结算申诉
+          </button>
         </div>
       </div>
     </article>

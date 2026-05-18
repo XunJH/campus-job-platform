@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface VerificationStatus {
+  id?: number;
   status: 'unsubmitted' | 'pending' | 'approved' | 'rejected';
   companyName?: string;
   licenseNumber?: string;
@@ -32,6 +33,7 @@ export interface VerificationApplyData {
   contactName: string;
   contactPhone: string;
   licenseImage: string;
+  licenseImageUpload?: string;
   address?: string;
   city?: string;
   industry?: string;

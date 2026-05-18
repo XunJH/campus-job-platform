@@ -4,7 +4,7 @@ const AI_BASE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
 const aiClient = axios.create({
   baseURL: AI_BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
   }

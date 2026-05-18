@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const path = require('path');
+const { DataTypes } = require('sequelize');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
@@ -11,8 +12,13 @@ require('dotenv').config();
 
 const { sequelize, testConnection } = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
+const adminOperationLogRoutes = require('./routes/adminOperationLogRoutes');
+const adminReportRoutes = require('./routes/adminReportRoutes');
 const conversationRoutes = require('./routes/conversationRoutes');
 const jobRoutes = require('./routes/jobRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const platformSettingRoutes = require('./routes/platformSettingRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
 const userRoutes = require('./routes/userRoutes');
 const verificationRoutes = require('./routes/verificationRoutes');
 
@@ -43,13 +49,40 @@ const publicServerOrigin = (
 ).replace(/\/+$/, '');
 const publicApiBaseUrl = `${publicServerOrigin}${apiPrefix}`;
 
+const ensureApplicationWorkflowColumns = async () => {
+  const queryInterface = sequelize.getQueryInterface();
+  const columns = await queryInterface.describeTable('applications');
+
+  if (!columns.application_stage) {
+    await queryInterface.addColumn('applications', 'application_stage', {
+      type: DataTypes.STRING(32),
+      allowNull: false,
+      defaultValue: 'new'
+    });
+  }
+
+  if (!columns.stage_updated_at) {
+    await queryInterface.addColumn('applications', 'stage_updated_at', {
+      type: DataTypes.DATE,
+      allowNull: true
+    });
+  }
+
+  await sequelize.query(`
+    UPDATE applications
+    SET
+      application_stage = COALESCE(application_stage, 'new'),
+      stage_updated_at = COALESCE(stage_updated_at, applied_at, updated_at, NOW())
+  `);
+};
+
 const swaggerSpec = swaggerJsdoc({
   definition: {
     openapi: '3.0.0',
     info: {
-      title: '校园兼职平台 API',
+      title: '校园招聘平台 API',
       version: '1.0.0',
-      description: '校园智能兼职服务平台后端 API 文档。'
+      description: '校园智能招聘平台后端 API 文档'
     },
     servers: [
       {
@@ -101,7 +134,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get('/', (_req, res) => {
   res.status(200).json({
     success: true,
-    message: '校园兼职平台 API 服务',
+    message: '校园招聘平台 API 服务',
     version: '1.0.0',
     docs: `${publicServerOrigin}/api-docs`,
     health: `${publicServerOrigin}/health`,
@@ -126,8 +159,13 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 app.use(`${apiPrefix}/auth`, authRoutes);
+app.use(`${apiPrefix}/admin-operation-logs`, adminOperationLogRoutes);
+app.use(`${apiPrefix}/admin-reports`, adminReportRoutes);
 app.use(`${apiPrefix}/conversations`, conversationRoutes);
 app.use(`${apiPrefix}/jobs`, jobRoutes);
+app.use(`${apiPrefix}/notifications`, notificationRoutes);
+app.use(`${apiPrefix}/platform-settings`, platformSettingRoutes);
+app.use(`${apiPrefix}/tickets`, ticketRoutes);
 app.use(`${apiPrefix}/users`, userRoutes);
 app.use(`${apiPrefix}/verification`, verificationRoutes);
 
@@ -193,6 +231,8 @@ const startServer = async () => {
       console.log('数据库模型同步完成');
     }
 
+    await ensureApplicationWorkflowColumns();
+
     server = app.listen(PORT, () => {
       console.log('服务启动成功');
       console.log(`服务地址: ${publicServerOrigin}`);
@@ -202,7 +242,7 @@ const startServer = async () => {
       console.log(`数据库: ${process.env.DB_NAME || 'campus_job_platform'}`);
     });
   } catch (error) {
-    console.error('服务器启动失败', error);
+    console.error('服务器启动失败:', error);
     process.exit(1);
   }
 };

@@ -9,11 +9,30 @@ const {
 } = require('../models');
 const { sanitizeText } = require('../utils/sanitize');
 
+const APPLICATION_STAGE_PRIORITY = {
+  interview_confirmed: 7,
+  new: 6,
+  screening: 5,
+  interview_shortlist: 4,
+  rejected_pool: 2,
+  archived: 1
+};
+
 const conversationListInclude = [
   {
     model: Application,
     as: 'application',
-    attributes: ['id', 'status', 'appliedAt', 'reviewedAt', 'resume', 'coverLetter', 'notes']
+    attributes: [
+      'id',
+      'status',
+      'applicationStage',
+      'stageUpdatedAt',
+      'appliedAt',
+      'reviewedAt',
+      'resume',
+      'coverLetter',
+      'notes'
+    ]
   },
   {
     model: Job,
@@ -118,6 +137,39 @@ const normalizeMessageForConversation = (message, conversation) => {
   }
 
   return serialized;
+};
+
+const getConversationStagePriority = (conversation) => {
+  if (!conversation || conversation.application?.status === 'withdrawn') {
+    return 0;
+  }
+
+  return APPLICATION_STAGE_PRIORITY[conversation.application?.applicationStage || 'new'] || 0;
+};
+
+const sortConversationsForUser = (conversations, userRole) => {
+  return [...conversations].sort((left, right) => {
+    if (userRole === 'employer') {
+      const priorityDiff = getConversationStagePriority(right) - getConversationStagePriority(left);
+      if (priorityDiff !== 0) {
+        return priorityDiff;
+      }
+    }
+
+    if ((right.unreadCount || 0) !== (left.unreadCount || 0)) {
+      return (right.unreadCount || 0) - (left.unreadCount || 0);
+    }
+
+    const rightStageTime = right.application?.stageUpdatedAt ? new Date(right.application.stageUpdatedAt).getTime() : 0;
+    const leftStageTime = left.application?.stageUpdatedAt ? new Date(left.application.stageUpdatedAt).getTime() : 0;
+    if (rightStageTime !== leftStageTime) {
+      return rightStageTime - leftStageTime;
+    }
+
+    const rightTime = right.lastMessageAt ? new Date(right.lastMessageAt).getTime() : 0;
+    const leftTime = left.lastMessageAt ? new Date(left.lastMessageAt).getTime() : 0;
+    return rightTime - leftTime;
+  });
 };
 
 const ensureParticipantStates = async (conversation, options = {}) => {
@@ -405,20 +457,13 @@ exports.getMyConversations = async (req, res) => {
     const conversationIds = conversations.map((conversation) => conversation.id);
     const { unreadMap, totalUnread } = await getUnreadMapForUser(req.user, conversationIds);
 
-    const data = conversations
-      .map((conversation) => ({
+    const data = sortConversationsForUser(
+      conversations.map((conversation) => ({
         ...conversation.toJSON(),
         unreadCount: unreadMap[conversation.id] || 0
-      }))
-      .sort((left, right) => {
-        if ((right.unreadCount || 0) !== (left.unreadCount || 0)) {
-          return (right.unreadCount || 0) - (left.unreadCount || 0);
-        }
-
-        const rightTime = right.lastMessageAt ? new Date(right.lastMessageAt).getTime() : 0;
-        const leftTime = left.lastMessageAt ? new Date(left.lastMessageAt).getTime() : 0;
-        return rightTime - leftTime;
-      });
+      })),
+      req.user.role
+    );
 
     return res.json({
       success: true,
@@ -509,7 +554,14 @@ exports.sendMessage = async (req, res) => {
       });
     }
 
-    const conversation = await Conversation.findByPk(conversationId);
+    const conversation = await Conversation.findByPk(conversationId, {
+      include: [{
+        model: Application,
+        as: 'application',
+        attributes: ['id', 'applicationStage', 'status']
+      }]
+    });
+
     if (!canAccessConversation(conversation, req.user)) {
       return res.status(404).json({
         success: false,

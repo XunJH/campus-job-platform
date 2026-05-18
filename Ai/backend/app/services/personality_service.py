@@ -1,349 +1,262 @@
-"""
-AI人格画像服务
+"""Personality profile service."""
 
-这是平台最核心的功能之一
-通过动态问卷 + AI分析，生成用户的人格画像
-支持 DeepSeek / Gemini / Mock 三种模式
-"""
+from __future__ import annotations
 
-from typing import List, Dict, Any
-from ..models.ai_models import (
-    PersonalityQuestion,
-    PersonalityAnswer,
-    PersonalityProfile
-)
+import json
+import re
+from typing import Any, Dict, List
+
+from ..models.ai_models import PersonalityProfile, PersonalityQuestion
 from ..services.ai_provider import _ai_service
 
 
 class PersonalityService:
-    """人格画像服务"""
+    """Generate a structured personality profile from questionnaire answers."""
 
-    def __init__(self):
-        # 预设问卷题库（实际项目可以从数据库读取）
+    def __init__(self) -> None:
         self.question_pool = self._init_question_pool()
 
     def _init_question_pool(self) -> List[PersonalityQuestion]:
-        """
-        初始化问卷题库
-
-        这里定义了10道核心题目
-        每道题对应一个人格维度
-        """
-        questions = [
-            # 维度1：外向性 - 你是"社牛"还是"社恐"？
+        return [
             PersonalityQuestion(
                 id=1,
-                question="周末你更喜欢：",
+                question="周末你更喜欢哪种安排？",
                 options=[
-                    {"text": "约朋友一起出去玩", "score": 5},
+                    {"text": "和朋友一起外出活动", "score": 5},
                     {"text": "参加聚会或社交活动", "score": 4},
-                    {"text": "一个人安静地待着", "score": 2},
-                    {"text": "在家看书或看电影", "score": 1}
+                    {"text": "一个人安静休息", "score": 2},
+                    {"text": "在家看书或看电影", "score": 1},
                 ],
-                dimension="外向性"
+                dimension="外向性",
             ),
-
-            # 维度2：尽责性 - 你有多"靠谱"？
             PersonalityQuestion(
                 id=2,
-                question="当老师/老板布置了一个任务，你会：",
+                question="接到任务后，你通常会怎么做？",
                 options=[
-                    {"text": "提前完成，还主动优化", "score": 5},
-                    {"text": "按时完成，保证质量", "score": 4},
-                    {"text": "拖到最后一天才做", "score": 2},
-                    {"text": "经常忘记或拖延", "score": 1}
+                    {"text": "提前完成并主动优化", "score": 5},
+                    {"text": "按时完成并保证质量", "score": 4},
+                    {"text": "拖到最后再处理", "score": 2},
+                    {"text": "经常忘记或拖延", "score": 1},
                 ],
-                dimension="尽责性"
+                dimension="尽责性",
             ),
-
-            # 维度3：开放性 - 你有多"有创意"？
             PersonalityQuestion(
                 id=3,
-                question="面对一个新问题，你通常会：",
+                question="面对新问题时，你通常会？",
                 options=[
-                    {"text": "尝试完全不同的方法", "score": 5},
-                    {"text": "参考别人做法再改进", "score": 4},
+                    {"text": "主动尝试不同方法", "score": 5},
+                    {"text": "参考别人的做法后改进", "score": 4},
                     {"text": "用最常规的方法解决", "score": 2},
-                    {"text": "等待别人来解决", "score": 1}
+                    {"text": "等别人来处理", "score": 1},
                 ],
-                dimension="开放性"
+                dimension="开放性",
             ),
-
-            # 维度4：宜人性 - 你有多"好相处"？
             PersonalityQuestion(
                 id=4,
-                question="当和同事/同学发生矛盾时，你会：",
+                question="和同学或同事有分歧时，你更倾向于？",
                 options=[
-                    {"text": "主动沟通，寻求双赢", "score": 5},
-                    {"text": "冷静分析后协商解决", "score": 4},
+                    {"text": "主动沟通，争取双赢", "score": 5},
+                    {"text": "冷静分析后协商", "score": 4},
                     {"text": "尽量避免冲突", "score": 2},
-                    {"text": "生气或冷战", "score": 1}
+                    {"text": "情绪化处理或回避", "score": 1},
                 ],
-                dimension="宜人性"
+                dimension="宜人性",
             ),
-
-            # 维度5：情绪稳定性 - 你有多"抗压"？
             PersonalityQuestion(
                 id=5,
-                question="当deadline提前了一天，你会：",
+                question="截止时间突然提前时，你会？",
                 options=[
-                    {"text": "冷静调整计划，高效完成", "score": 5},
-                    {"text": "有点紧张但能应对", "score": 4},
-                    {"text": "感到焦虑，手忙脚乱", "score": 2},
-                    {"text": "崩溃，不知道怎么办", "score": 1}
+                    {"text": "迅速调整计划并高效推进", "score": 5},
+                    {"text": "会紧张，但能应对", "score": 4},
+                    {"text": "容易焦虑，手忙脚乱", "score": 2},
+                    {"text": "不知道该怎么处理", "score": 1},
                 ],
-                dimension="情绪稳定性"
+                dimension="情绪稳定性",
             ),
-
-            # 维度6：时间管理
             PersonalityQuestion(
                 id=6,
-                question="你平时如何安排兼职和学习的时间？",
+                question="你如何安排兼职与学习时间？",
                 options=[
-                    {"text": "提前规划，严格执行", "score": 5},
-                    {"text": "有个大概计划，灵活调整", "score": 4},
+                    {"text": "提前规划并严格执行", "score": 5},
+                    {"text": "有大致计划，灵活调整", "score": 4},
                     {"text": "走一步看一步", "score": 2},
-                    {"text": "经常顾此失彼", "score": 1}
+                    {"text": "经常顾此失彼", "score": 1},
                 ],
-                dimension="时间管理"
+                dimension="时间管理",
             ),
-
-            # 维度7：沟通能力
             PersonalityQuestion(
                 id=7,
-                question="和新认识的同事/同学交流，你感觉：",
+                question="和新认识的人交流时，你的感受更像？",
                 options=[
-                    {"text": "很自然，很快就熟络", "score": 5},
+                    {"text": "很自然，很快熟悉", "score": 5},
                     {"text": "需要一点时间适应", "score": 4},
                     {"text": "有点紧张，不太主动", "score": 2},
-                    {"text": "很不自在，尽量少说话", "score": 1}
+                    {"text": "很不自在，尽量少说话", "score": 1},
                 ],
-                dimension="沟通能力"
+                dimension="沟通能力",
             ),
-
-            # 维度8：学习能力
             PersonalityQuestion(
                 id=8,
-                question="学习一项新技能时，你通常：",
+                question="学习一项新技能时，你通常？",
                 options=[
                     {"text": "主动研究，不懂就查资料", "score": 5},
                     {"text": "跟着教程一步步学", "score": 4},
-                    {"text": "需要别人手把手教", "score": 2},
-                    {"text": "学不会就放弃了", "score": 1}
+                    {"text": "需要别人手把手带", "score": 2},
+                    {"text": "学不会就容易放弃", "score": 1},
                 ],
-                dimension="学习能力"
+                dimension="学习能力",
             ),
-
-            # 维度9：职业动机
             PersonalityQuestion(
                 id=9,
-                question="你找兼职的主要目的是：",
+                question="你找兼职的主要目标是？",
                 options=[
-                    {"text": "积累经验，为未来打基础", "score": 5},
-                    {"text": "赚零花钱，顺便学东西", "score": 4},
+                    {"text": "积累经验，为未来铺路", "score": 5},
+                    {"text": "赚零花钱，同时学点东西", "score": 4},
                     {"text": "主要为了赚钱", "score": 2},
-                    {"text": "打发时间", "score": 1}
+                    {"text": "打发时间", "score": 1},
                 ],
-                dimension="职业动机"
+                dimension="职业动机",
             ),
-
-            # 维度10：专注力
             PersonalityQuestion(
                 id=10,
-                question="工作时手机来了消息，你会：",
+                question="工作时手机来了消息，你会？",
                 options=[
                     {"text": "先专注工作，稍后回复", "score": 5},
                     {"text": "看一眼，简单回复后继续工作", "score": 4},
-                    {"text": "忍不住回复，导致工作拖沓", "score": 2},
-                    {"text": "直接玩手机忘了工作", "score": 1}
+                    {"text": "忍不住频繁回复，影响工作", "score": 2},
+                    {"text": "直接玩手机忘了工作", "score": 1},
                 ],
-                dimension="专注力"
+                dimension="专注力",
             ),
         ]
-        return questions
 
     def get_questionnaire(self, count: int = 10) -> List[Dict[str, Any]]:
-        """
-        获取问卷（给前端用）
-
-        返回指定数量的题目，去掉敏感信息（得分）
-        """
         questions = self.question_pool[:count]
         return [
             {
-                "id": q.id,
-                "question": q.question,
-                "options": [{"text": opt["text"]} for opt in q.options],
-                "dimension": q.dimension
+                "id": question.id,
+                "question": question.question,
+                "options": [{"text": option["text"]} for option in question.options],
+                "dimension": question.dimension,
             }
-            for q in questions
+            for question in questions
         ]
 
-    def analyze_answers(
-        self,
-        user_id: str,
-        answers: List[Dict[str, Any]]
-    ) -> PersonalityProfile:
-        """
-        核心功能：分析用户答题结果，生成人格画像
-
-        步骤：
-        1. 计算各维度得分
-        2. 调用Gemini生成分析报告
-        3. 返回完整的人格画像
-        """
-        # Step 1: 计算各维度得分
+    def analyze_answers(self, user_id: str, answers: List[Dict[str, Any]]) -> PersonalityProfile:
         dimension_scores: Dict[str, List[int]] = {}
 
         for answer in answers:
-            question_id = answer["question_id"]
-            selected_index = answer["selected_option"]
+            question_id = int(answer["question_id"])
+            selected_index = int(answer["selected_option"])
 
-            # 找到对应题目
-            question = next(
-                (q for q in self.question_pool if q.id == question_id),
-                None
-            )
+            question = next((item for item in self.question_pool if item.id == question_id), None)
             if not question:
-                continue
+                raise ValueError(f"未找到编号为 {question_id} 的测评题目。")
 
-            dimension = question.dimension
-            score = question.options[selected_index]["score"]
+            if selected_index < 0 or selected_index >= len(question.options):
+                raise ValueError(f"第 {question_id} 题的选项索引无效。")
 
-            if dimension not in dimension_scores:
-                dimension_scores[dimension] = []
-            dimension_scores[dimension].append(score)
+            dimension_scores.setdefault(question.dimension, []).append(
+                int(question.options[selected_index]["score"])
+            )
 
-        # 计算平均分并转换为0-1的比率
-        normalized_scores = {}
-        for dim, scores in dimension_scores.items():
-            avg_score = sum(scores) / len(scores)
-            normalized_scores[dim] = round(avg_score / 5, 2)  # 归一化到0-1
+        if not dimension_scores:
+            raise ValueError("没有可用于分析的测评答案。")
 
-        # Step 2: 构建提示词，让AI生成分析报告
+        normalized_scores = {
+            dimension: round(sum(scores) / len(scores) / 5, 2)
+            for dimension, scores in dimension_scores.items()
+        }
+
         prompt = self._build_analysis_prompt(normalized_scores, dimension_scores)
-
-        # Step 3: 调用AI分析（DeepSeek/Gemini/Mock）
-        analysis = _ai_service.generate_text(
-            prompt,
-            temperature=0.7
-        )
-
-        # Step 4: 解析AI的回复，生成结构化报告
-        profile = self._parse_ai_response(user_id, normalized_scores, analysis)
-
-        return profile
+        analysis = _ai_service.generate_text(prompt, temperature=0.7)
+        return self._parse_ai_response(user_id, normalized_scores, analysis)
 
     def _build_analysis_prompt(
         self,
         normalized_scores: Dict[str, float],
-        raw_scores: Dict[str, List[int]]
+        raw_scores: Dict[str, List[int]],
     ) -> str:
-        """
-        构建分析提示词
+        score_text = "\n".join(
+            [
+                f"- {dimension}: {', '.join(map(str, scores))}（平均 {sum(scores) / len(scores):.1f}/5）"
+                for dimension, scores in raw_scores.items()
+            ]
+        )
 
-        提示词工程是AI应用的核心
-        好的提示词能让AI输出更准确、更有用的结果
-        """
-        # 把分数转成易读的文本
-        score_text = "\n".join([
-            f"- {dim}: {', '.join(map(str, scores))} (平均: {sum(scores)/len(scores):.1f}/5分)"
-            for dim, scores in raw_scores.items()
-        ])
+        return f"""
+你是一名专业的校园求职顾问。请根据以下人格测评结果，输出一份适合大学生兼职与实习场景的画像摘要。
 
-        prompt = f"""
-你是一个专业的职业性格分析师。请分析以下校园兼职求职者的性格测试结果，生成一份专业的人格画像报告。
-
-【测试结果】
+【测评结果】
 {score_text}
 
-【分析要求】
-请从以下维度生成分析报告：
+【输出要求】
+1. 给出 3 到 5 个清晰、积极、可用于招聘匹配的人格标签。
+2. 给出 2 到 3 条核心优势，强调与工作相关的表现。
+3. 给出 1 到 2 条需要注意的不足，语气客观且建设性。
+4. 推荐 3 到 5 类适合的岗位方向。
+5. 给出一段 60 字以内的整体总结。
 
-1. **性格标签**：根据测试结果，给出3-5个精准的性格标签（如：开朗外向、责任心强、善于沟通、细心认真等）
-
-2. **优势分析**：列出该求职者最突出的2-3个优势
-
-3. **不足之处**：客观指出需要注意的1-2个不足（语气要委婉）
-
-4. **适合的岗位类型**：根据性格特点，推荐3-5种适合的兼职岗位类型
-
-5. **一句话总结**：用一段话（50字以内）总结该求职者的整体特点
-
-请用JSON格式输出，结构如下：
+请只输出 JSON，格式如下：
 {{
-    "tags": ["标签1", "标签2", "标签3"],
-    "strengths": ["优势1", "优势2"],
-    "weaknesses": ["不足1", "不足2"],
-    "suitable_jobs": ["岗位类型1", "岗位类型2"],
-    "summary": "一句话总结"
+  "tags": ["标签1", "标签2", "标签3"],
+  "strengths": ["优势1", "优势2"],
+  "weaknesses": ["不足1", "不足2"],
+  "suitable_jobs": ["岗位方向1", "岗位方向2"],
+  "summary": "一句话总结"
 }}
 """
-        return prompt
 
     def _parse_ai_response(
         self,
         user_id: str,
         normalized_scores: Dict[str, float],
-        raw_response: str
+        raw_response: str,
     ) -> PersonalityProfile:
-        """
-        解析AI的回复
+        data: Dict[str, Any] = {}
+        json_match = re.search(r"\{.*\}", raw_response, re.DOTALL)
 
-        这里做了一个简单的JSON提取
-        实际项目中可能需要更健壮的解析逻辑
-        """
-        import json
-        import re
-
-        # 尝试从回复中提取JSON
-        json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
         if json_match:
             try:
                 data = json.loads(json_match.group())
             except json.JSONDecodeError:
-                # JSON解析失败，使用默认值
                 data = {}
-        else:
-            data = {}
 
-        # 生成性格标签（基于分数自动生成 + Gemini补充）
         auto_tags = self._generate_tags_from_scores(normalized_scores)
-        gemini_tags = data.get("tags", [])
-        all_tags = list(dict.fromkeys(auto_tags + gemini_tags))[:5]  # 去重，最多5个
+        ai_tags = [str(item).strip() for item in data.get("tags", []) if str(item).strip()]
+        all_tags = list(dict.fromkeys(auto_tags + ai_tags))[:5]
 
-        # 构建返回结果
-        profile = PersonalityProfile(
-            user_id=user_id,
-            dimensions=normalized_scores,
-            tags=all_tags,
-            summary=data.get("summary", "性格特点待分析"),
-            strengths=data.get("strengths", []),
-            weaknesses=data.get("weaknesses", []),
-            suitable_jobs=data.get("suitable_jobs", [])
+        strengths = [str(item).strip() for item in data.get("strengths", []) if str(item).strip()]
+        weaknesses = [str(item).strip() for item in data.get("weaknesses", []) if str(item).strip()]
+        suitable_jobs = [str(item).strip() for item in data.get("suitable_jobs", []) if str(item).strip()]
+        summary = (
+            str(data.get("summary", "")).strip()
+            or "这位同学整体表现较稳，适合继续结合具体岗位场景做进一步评估。"
         )
 
-        return profile
+        return PersonalityProfile(
+            user_id=user_id,
+            dimensions=normalized_scores,
+            tags=all_tags or ["踏实稳健", "具备成长潜力"],
+            summary=summary,
+            strengths=strengths or ["执行节奏较稳定", "具备持续提升空间"],
+            weaknesses=weaknesses or ["建议结合真实工作场景继续验证个人优势"],
+            suitable_jobs=suitable_jobs or ["校园运营", "助理支持", "内容整理"],
+        )
 
     def _generate_tags_from_scores(self, scores: Dict[str, float]) -> List[str]:
-        """
-        根据分数自动生成标签
-
-        这是一个基于规则的方法，作为Gemini分析的补充
-        """
-        tags = []
-
-        # 根据各维度分数自动打标签
+        tags: List[str] = []
         thresholds = {
             "外向性": (0.7, "开朗健谈"),
             "尽责性": (0.7, "认真负责"),
             "开放性": (0.7, "富有创意"),
             "宜人性": (0.7, "善于合作"),
-            "情绪稳定性": (0.6, "心态稳健"),
+            "情绪稳定性": (0.6, "心态稳定"),
             "时间管理": (0.7, "善于规划"),
             "沟通能力": (0.7, "表达流畅"),
             "学习能力": (0.7, "学习力强"),
-            "专注力": (0.7, "专注度高")
+            "职业动机": (0.7, "目标明确"),
+            "专注力": (0.7, "专注度高"),
         }
 
         for dimension, (threshold, tag) in thresholds.items():
@@ -353,5 +266,4 @@ class PersonalityService:
         return tags
 
 
-# 创建全局实例
 personality_service = PersonalityService()

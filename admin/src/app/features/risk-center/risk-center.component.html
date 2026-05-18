@@ -1,0 +1,188 @@
+<div class="max-w-7xl mx-auto space-y-6">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+    <div>
+      <h2 class="font-h1 text-h1 text-primary">风险监控中心</h2>
+      <p class="font-body-md text-secondary mt-1">集中查看高风险认证、岗位反诈结果和结算争议，减少管理员在多个页面间来回切换。</p>
+    </div>
+
+    <button
+      type="button"
+      (click)="loadRiskOverview()"
+      class="flex items-center gap-2 px-4 py-2 border border-outline rounded-lg font-button text-button hover:bg-surface-container transition-all"
+    >
+      <span class="material-symbols-outlined text-sm">refresh</span>
+      刷新风险数据
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="flex items-center justify-center py-20">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-gutter">
+      <div *ngFor="let card of summaryCards" class="bg-white p-lg rounded-xl shadow-card flex flex-col gap-3">
+        <div class="flex justify-between items-start">
+          <span class="text-caption font-caption text-secondary uppercase tracking-wider">{{ card.title }}</span>
+          <div class="p-2 rounded-lg" [ngClass]="card.tone">
+            <span class="material-symbols-outlined text-md">{{ card.icon }}</span>
+          </div>
+        </div>
+        <span class="text-h1 font-h1 text-primary">{{ card.value }}</span>
+        <p class="text-caption font-caption text-gray-400">{{ card.description }}</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-gutter">
+      <div class="bg-white rounded-xl shadow-card overflow-hidden">
+        <div class="p-lg border-b border-gray-100 flex justify-between items-center gap-4">
+          <div>
+            <h3 class="font-h2 text-h2 text-primary">风险处置队列</h3>
+            <p class="text-body-md text-secondary">按风险级别和时间排序，优先处理最容易影响平台安全与体验的问题。</p>
+          </div>
+        </div>
+
+        <div class="divide-y divide-gray-50">
+          <div *ngFor="let item of riskFeed" class="px-lg py-4 flex flex-col lg:flex-row lg:items-center gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h4 class="font-body-lg text-primary font-semibold truncate">{{ item.title }}</h4>
+                <span class="px-2 py-1 rounded text-caption font-caption" [ngClass]="getRiskClass(item.level)">
+                  {{ getRiskLabel(item.level) }}
+                </span>
+              </div>
+              <p class="text-caption text-gray-400 mt-1">{{ item.subtitle }}</p>
+              <p class="text-body-md text-secondary mt-2 leading-6">{{ item.description }}</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <span class="text-caption text-gray-400 whitespace-nowrap">{{ formatDate(item.createdAt) }}</span>
+              <a
+                [routerLink]="item.route"
+                class="px-4 py-2 bg-primary text-white rounded-lg font-button text-button hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
+              >
+                {{ item.actionLabel }}
+              </a>
+            </div>
+          </div>
+
+          <div *ngIf="!riskFeed.length" class="px-lg py-10 text-center text-body-md text-gray-400">
+            当前没有待优先处理的风险项。
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div class="bg-white rounded-xl shadow-card overflow-hidden">
+          <div class="p-lg border-b border-gray-100 flex justify-between items-center gap-4">
+            <div>
+              <h3 class="font-h2 text-h2 text-primary">高风险认证</h3>
+              <p class="text-body-md text-secondary">重点看 AI 预审命中的企业认证。</p>
+            </div>
+            <a routerLink="/verification-review" class="text-primary font-button text-button hover:underline">查看全部</a>
+          </div>
+
+          <div class="divide-y divide-gray-50">
+            <div *ngFor="let item of highRiskVerifications" class="px-lg py-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h4 class="font-body-lg text-primary font-semibold">{{ item.companyName }}</h4>
+                    <span class="px-2 py-1 rounded text-caption font-caption" [ngClass]="getRiskClass(getVerificationRiskLevel(item))">
+                      {{ getRiskLabel(getVerificationRiskLevel(item)) }}
+                    </span>
+                  </div>
+                  <p class="text-caption text-gray-400 mt-1">
+                    {{ item.user?.username || '企业用户' }} · {{ formatDate(item.submittedAt) }}
+                  </p>
+                  <p class="text-body-md text-secondary mt-2 leading-6">{{ getVerificationRiskSummary(item) }}</p>
+                </div>
+
+                <a [routerLink]="['/verification-review', item.id]" class="text-primary font-button text-button hover:underline whitespace-nowrap">
+                  去处理
+                </a>
+              </div>
+            </div>
+
+            <div *ngIf="!highRiskVerifications.length" class="px-lg py-8 text-center text-body-md text-gray-400">
+              当前没有高风险认证。
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-card overflow-hidden">
+          <div class="p-lg border-b border-gray-100 flex justify-between items-center gap-4">
+            <div>
+              <h3 class="font-h2 text-h2 text-primary">岗位风险与结算争议</h3>
+              <p class="text-body-md text-secondary">这里聚合岗位反诈和账目争议，方便管理员快速切换处理。</p>
+            </div>
+          </div>
+
+          <div class="p-lg space-y-4">
+            <div class="rounded-xl bg-surface-container-low p-4">
+              <div class="flex justify-between items-center gap-3">
+                <div>
+                  <h4 class="font-body-lg text-primary font-semibold">岗位反诈风险</h4>
+                  <p class="text-caption text-gray-400 mt-1">高风险优先，中风险持续观察。</p>
+                </div>
+                <a routerLink="/jobs" class="text-primary font-button text-button hover:underline whitespace-nowrap">去岗位审核</a>
+              </div>
+
+              <div class="mt-4 space-y-3">
+                <div *ngFor="let job of riskyJobs.slice(0, 4)" class="rounded-lg bg-white px-4 py-3">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <div class="flex flex-wrap items-center gap-2">
+                        <p class="font-body-md font-semibold text-primary">{{ job.title }}</p>
+                        <span class="px-2 py-1 rounded text-caption font-caption" [ngClass]="getRiskClass(getJobRiskLevel(job))">
+                          {{ getRiskLabel(getJobRiskLevel(job)) }}
+                        </span>
+                      </div>
+                      <p class="text-caption text-gray-400 mt-1">{{ job.employer?.username || '企业未命名' }}</p>
+                      <p class="text-body-md text-secondary mt-2 leading-6">{{ getJobRiskSummary(job) }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div *ngIf="!riskyJobs.length" class="text-center text-body-md text-gray-400 py-4">
+                  当前没有需重点关注的岗位风险。
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-xl bg-surface-container-low p-4">
+              <div class="flex justify-between items-center gap-3">
+                <div>
+                  <h4 class="font-body-lg text-primary font-semibold">结算争议</h4>
+                  <p class="text-caption text-gray-400 mt-1">需要管理员介入核实的争议账目。</p>
+                </div>
+                <a routerLink="/settlements" class="text-primary font-button text-button hover:underline whitespace-nowrap">去看账目</a>
+              </div>
+
+              <div class="mt-4 space-y-3">
+                <div *ngFor="let record of disputedSettlements.slice(0, 4)" class="rounded-lg bg-white px-4 py-3">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="font-body-md font-semibold text-primary">{{ record.job?.title || '结算记录' }}</p>
+                      <p class="text-caption text-gray-400 mt-1">
+                        {{ record.student?.username || '学生' }} / {{ record.employer?.username || '企业' }}
+                      </p>
+                      <p class="text-body-md text-secondary mt-2 leading-6">{{ record.notes || '该记录已进入争议状态，建议尽快复核结算依据。' }}</p>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-red-50 text-red-700 text-caption font-caption whitespace-nowrap">
+                      {{ getSettlementAmount(record) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div *ngIf="!disputedSettlements.length" class="text-center text-body-md text-gray-400 py-4">
+                  当前没有争议结算。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

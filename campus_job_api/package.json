@@ -11,6 +11,7 @@
     "test:coverage": "jest --coverage --passWithNoTests",
     "db:sync": "node scripts/sync-database.js",
     "db:drop": "node scripts/drop-database.js",
+    "db:seed-demo": "node scripts/reset-demo-data.js",
     "lint": "eslint . --ext .js --ignore-pattern node_modules --ignore-pattern coverage --ignore-pattern dist --ignore-pattern '*.err' --ignore-pattern package-lock.json",
     "lint:fix": "eslint . --ext .js --fix --ignore-pattern node_modules --ignore-pattern coverage --ignore-pattern dist --ignore-pattern '*.err' --ignore-pattern package-lock.json"
   },

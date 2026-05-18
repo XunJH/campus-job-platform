@@ -15,6 +15,7 @@ router.get('/applications/my', authenticateToken, studentGuard, jobController.ge
 router.get('/settlements/my', authenticateToken, studentGuard, jobController.getMySettlements);
 router.patch('/applications/:applicationId/withdraw', authenticateToken, studentGuard, jobController.withdrawApplication);
 router.get('/applications/received', authenticateToken, employerGuard, jobController.getReceivedApplications);
+router.patch('/applications/:applicationId/stage', authenticateToken, employerGuard, jobController.updateApplicationStage);
 router.patch('/applications/:applicationId/status', authenticateToken, employerGuard, jobController.reviewApplication);
 router.get('/settlements/employer', authenticateToken, employerGuard, jobController.getEmployerSettlements);
 router.patch('/settlements/:settlementId/status', authenticateToken, employerGuard, jobController.updateSettlementStatus);

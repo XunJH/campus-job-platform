@@ -1,0 +1,214 @@
+<app-employer-shell-sidebar *ngIf="isEmployerView"></app-employer-shell-sidebar>
+<app-student-shell-header *ngIf="!isEmployerView"></app-student-shell-header>
+
+<main [class]="pageContainerClasses">
+  <div class="mx-auto max-w-7xl space-y-8">
+    <section class="rounded-3xl bg-white p-8 shadow-sm">
+      <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+        <div class="max-w-3xl">
+          <p class="text-sm font-semibold tracking-[0.3em] text-slate-400">工单中心</p>
+          <h1 class="mt-3 text-3xl font-black text-[#1A365D]">{{ getHeaderTitle() }}</h1>
+          <p class="mt-3 text-sm leading-7 text-slate-500">
+            {{ getHeaderDescription() }}
+          </p>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2 xl:w-[28rem]">
+          <div class="rounded-2xl bg-slate-50 px-5 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">适用场景</p>
+            <p class="mt-2 text-sm font-semibold text-slate-900">审核异议、投诉举报、结算争议</p>
+            <p class="mt-1 text-xs leading-6 text-slate-500">建议写清楚事实经过、诉求和希望平台协助确认的内容。</p>
+          </div>
+          <div class="rounded-2xl bg-slate-50 px-5 py-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">处理方式</p>
+            <p class="mt-2 text-sm font-semibold text-slate-900">提交后进入管理员工单中心</p>
+            <p class="mt-1 text-xs leading-6 text-slate-500">你可以在这里持续查看工单状态和管理员处理说明。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+      <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-2xl font-black text-[#1A365D]">提交申诉</h2>
+        <p class="mt-2 text-sm text-slate-500">平台建议优先关联对应岗位、认证或结算记录，方便管理员更快定位问题。</p>
+
+        <div class="mt-6 space-y-4">
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">申诉标题</span>
+            <input
+              [(ngModel)]="form.title"
+              type="text"
+              class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+              placeholder="例如：对岗位审核结果提出复核申请"
+            />
+          </label>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block space-y-2">
+              <span class="text-sm font-semibold text-slate-700">申诉类型</span>
+              <select
+                [(ngModel)]="form.type"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+              >
+                <option *ngFor="let item of typeOptions" [ngValue]="item.value">{{ item.label }}</option>
+              </select>
+            </label>
+
+            <label class="block space-y-2">
+              <span class="text-sm font-semibold text-slate-700">紧急程度</span>
+              <select
+                [(ngModel)]="form.priority"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+              >
+                <option *ngFor="let item of priorityOptions" [ngValue]="item.value">{{ item.label }}</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-3">
+            <label class="block space-y-2">
+              <span class="text-sm font-semibold text-slate-700">关联岗位 ID</span>
+              <input
+                [(ngModel)]="form.relatedJobId"
+                type="number"
+                class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+                placeholder="可选"
+              />
+            </label>
+
+            <label class="block space-y-2">
+              <span class="text-sm font-semibold text-slate-700">关联认证 ID</span>
+              <input
+                [(ngModel)]="form.relatedVerificationId"
+                type="number"
+                class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+                placeholder="可选"
+              />
+            </label>
+
+            <label class="block space-y-2">
+              <span class="text-sm font-semibold text-slate-700">关联结算 ID</span>
+              <input
+                [(ngModel)]="form.relatedSettlementId"
+                type="number"
+                class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+                placeholder="可选"
+              />
+            </label>
+          </div>
+
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">申诉说明</span>
+            <textarea
+              [(ngModel)]="form.description"
+              rows="7"
+              class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm leading-7 outline-none focus:border-[#1A365D]"
+              placeholder="请尽量写清楚发生了什么、你认为哪里有问题、希望平台如何协助处理。"
+            ></textarea>
+          </label>
+
+          <div *ngIf="errorMessage" class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {{ errorMessage }}
+          </div>
+
+          <div *ngIf="successMessage" class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {{ successMessage }}
+          </div>
+
+          <button
+            type="button"
+            (click)="submitTicket()"
+            [disabled]="creating || !form.title.trim() || !form.description.trim()"
+            class="rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {{ creating ? '提交中...' : '提交申诉工单' }}
+          </button>
+        </div>
+      </section>
+
+      <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 class="text-2xl font-black text-[#1A365D]">我的工单</h2>
+            <p class="mt-2 text-sm text-slate-500">可以按状态和类型筛选，随时查看管理员是否已经接单或给出处理结果。</p>
+          </div>
+
+          <button
+            type="button"
+            (click)="loadTickets()"
+            class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+          >
+            刷新列表
+          </button>
+        </div>
+
+        <div class="mt-5 grid gap-3 sm:grid-cols-2">
+          <select
+            [(ngModel)]="statusFilter"
+            (ngModelChange)="onFilterChange()"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+          >
+            <option [ngValue]="''">全部状态</option>
+            <option *ngFor="let item of statusOptions" [ngValue]="item.value">{{ item.label }}</option>
+          </select>
+
+          <select
+            [(ngModel)]="typeFilter"
+            (ngModelChange)="onFilterChange()"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+          >
+            <option [ngValue]="''">全部类型</option>
+            <option *ngFor="let item of typeOptions" [ngValue]="item.value">{{ item.label }}</option>
+          </select>
+        </div>
+
+        <div *ngIf="loading" class="mt-10 flex items-center justify-center py-10">
+          <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-[#1A365D]"></div>
+        </div>
+
+        <div *ngIf="!loading" class="mt-6 space-y-4">
+          <article *ngFor="let ticket of tickets" class="rounded-2xl border border-slate-200 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-lg font-black text-[#1A365D]">{{ ticket.title }}</h3>
+                  <span class="rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getStatusClass(ticket.status)">
+                    {{ getStatusLabel(ticket.status) }}
+                  </span>
+                  <span class="rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getPriorityClass(ticket.priority)">
+                    {{ getPriorityLabel(ticket.priority) }}优先级
+                  </span>
+                </div>
+                <p class="mt-2 text-sm text-slate-500">
+                  {{ getTypeLabel(ticket.type) }} · {{ getRelatedSummary(ticket) }}
+                </p>
+              </div>
+
+              <div class="text-right text-xs text-slate-400">
+                <p>提交时间</p>
+                <p class="mt-1 font-semibold text-slate-500">{{ formatDate(ticket.createdAt) }}</p>
+              </div>
+            </div>
+
+            <p class="mt-4 text-sm leading-7 text-slate-600">{{ ticket.description }}</p>
+
+            <div *ngIf="ticket.resolutionNote" class="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600">
+              <span class="font-semibold text-[#1A365D]">处理说明：</span>{{ ticket.resolutionNote }}
+            </div>
+
+            <div class="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-400">
+              <span>提交角色：{{ getSubmitterRoleLabel(ticket.sourceRole) }}</span>
+              <span *ngIf="ticket.assignee">处理人：{{ ticket.assignee.username }}</span>
+              <span *ngIf="ticket.resolvedAt">处理完成：{{ formatDate(ticket.resolvedAt) }}</span>
+            </div>
+          </article>
+
+          <div *ngIf="!tickets.length" class="rounded-2xl border border-dashed border-slate-300 px-6 py-12 text-center text-sm text-slate-500">
+            目前还没有申诉工单。提交后，这里会显示处理进度和管理员说明。
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>

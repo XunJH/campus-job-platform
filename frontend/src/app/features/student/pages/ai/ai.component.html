@@ -1,168 +1,654 @@
 <app-student-shell-header></app-student-shell-header>
 
-<main class="mx-auto max-w-4xl px-6 py-8">
-  <section class="mb-8">
-    <h1 class="text-3xl font-bold text-[#1A365D]">AI 人格画像</h1>
-    <p class="mt-2 text-slate-500">测评结果会先写入主库，再基于真实画像生成岗位推荐。</p>
+<main class="mx-auto max-w-6xl px-6 py-8">
+  <section class="rounded-3xl bg-white p-8 shadow-sm">
+    <div class="flex flex-wrap items-start justify-between gap-6">
+      <div class="max-w-3xl">
+        <p class="text-sm font-semibold tracking-[0.3em] text-slate-400">STUDENT TOOLS</p>
+        <h1 class="mt-3 text-3xl font-black text-[#1A365D]">学生辅助中心</h1>
+        <p class="mt-3 text-sm leading-7 text-slate-500">
+          这里集中放置人格测评、模拟面试、职业规划和简历相关结果。简历资料填写请在个人资料页完成，
+          这里更适合查看历史记录、继续调整内容，并复用之前的分析结果。
+        </p>
+      </div>
+
+      <div
+        *ngIf="aiRuntimeStatus"
+        class="min-w-[240px] rounded-3xl border border-slate-200 bg-slate-50 p-5"
+      >
+        <p class="text-xs font-semibold tracking-[0.2em] text-slate-400">状态</p>
+        <p class="mt-3 text-lg font-black text-[#1A365D]">{{ getAiRuntimeLabel() }}</p>
+        <p class="mt-2 text-sm leading-7 text-slate-500">{{ getAiRuntimeHint() }}</p>
+        <span class="mt-4 inline-flex rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getAiRuntimeBadgeClasses()">
+          {{ aiRuntimeStatus.mode === 'live' ? '实时服务' : '备用模式' }}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-6 flex flex-wrap gap-3">
+    <button
+      *ngFor="let tab of tabs"
+      type="button"
+      (click)="switchTab(tab.id)"
+      class="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition-all"
+      [class.bg-[#1A365D]]="activeTab === tab.id"
+      [class.text-white]="activeTab === tab.id"
+      [class.bg-white]="activeTab !== tab.id"
+      [class.text-[#1A365D]]="activeTab !== tab.id"
+    >
+      <span class="material-symbols-outlined text-lg">{{ tab.icon }}</span>
+      {{ getTabLabel(tab.id) }}
+    </button>
   </section>
 
   <div
     *ngIf="message"
-    class="mb-6 rounded-xl border px-4 py-3 text-sm"
+    class="mt-6 rounded-2xl border px-4 py-3 text-sm"
+    [class.border-rose-200]="error"
     [class.bg-rose-50]="error"
-    [class.border-rose-100]="error"
     [class.text-rose-700]="error"
-    [class.bg-blue-50]="!error"
-    [class.border-blue-100]="!error"
+    [class.border-sky-200]="!error"
+    [class.bg-sky-50]="!error"
     [class.text-[#1A365D]]="!error"
   >
     {{ message }}
   </div>
 
-  <section *ngIf="!testCompleted" class="rounded-2xl border border-slate-100 bg-white p-8 shadow-sm">
-    <div class="mb-6">
-      <div class="mb-2 flex items-center justify-between">
-        <span class="text-sm font-medium text-[#1A365D]">第 {{ currentQuestionIndex + 1 }} 题</span>
-        <span class="text-xs text-slate-400">{{ currentQuestionIndex + 1 }} / {{ questionnaire.length }}</span>
+  <section *ngIf="hasWorkbenchContent" class="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <p class="text-xs font-semibold tracking-[0.22em] text-slate-400">记录</p>
+        <h2 class="mt-2 text-2xl font-black text-[#1A365D]">历史结果</h2>
+        <p class="mt-2 text-sm leading-7 text-slate-500">
+          这里会保留你已经生成过的分析结果，方便回看、继续调整或补充到资料页。
+        </p>
       </div>
-      <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-        <div class="h-full rounded-full bg-[#1A365D] transition-all duration-300" [style.width.%]="(currentQuestionIndex + 1) / questionnaire.length * 100"></div>
-      </div>
-    </div>
-
-    <div *ngIf="currentQuestion" class="mb-8">
-      <h2 class="mb-6 text-xl font-bold text-slate-900">{{ currentQuestion.question }}</h2>
-      <div class="space-y-3">
-        <button
-          *ngFor="let option of currentQuestion.options; let i = index"
-          type="button"
-          (click)="selectAnswer(i)"
-          class="w-full rounded-xl border-2 px-5 py-4 text-left text-sm transition-all"
-          [class.border-[#1A365D]]="answers[currentQuestionIndex] === i + 1"
-          [class.bg-slate-50]="answers[currentQuestionIndex] === i + 1"
-          [class.font-semibold]="answers[currentQuestionIndex] === i + 1"
-          [class.text-[#1A365D]]="answers[currentQuestionIndex] === i + 1"
-          [class.border-slate-200]="answers[currentQuestionIndex] !== i + 1"
-          [class.text-slate-700]="answers[currentQuestionIndex] !== i + 1"
-          [class.hover:border-[#1A365D]]="answers[currentQuestionIndex] !== i + 1"
-        >
-          {{ option.text }}
-        </button>
+      <div class="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        已保存 {{ savedWorkbenchCount }} 项记录
       </div>
     </div>
 
-    <div class="flex justify-end gap-3">
+    <div class="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+      <article *ngFor="let card of workbenchCards" class="rounded-3xl border border-slate-200 p-5" [hidden]="!getWorkbenchSnapshot(card.section)">
+        <p class="text-xs font-semibold tracking-[0.18em] text-slate-400">{{ card.tab | uppercase }}</p>
+        <h3 class="mt-2 text-lg font-black text-[#1A365D]">{{ getWorkbenchCardTitle(card.section) }}</h3>
+        <p class="mt-2 text-sm leading-7 text-slate-500">{{ getWorkbenchCardDescription(card.section) }}</p>
+        <p class="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          {{ getWorkbenchPreview(card.section) }}
+        </p>
+        <div class="mt-4 flex items-center justify-between gap-3">
+          <span class="text-xs text-slate-400">
+            {{ getWorkbenchUpdatedAt(card.section) | date:'MM-dd HH:mm' }}
+          </span>
+          <button
+            type="button"
+            (click)="continueWorkbench(card)"
+            class="rounded-2xl bg-[#1A365D] px-4 py-2 text-sm font-semibold text-white"
+          >
+            {{ getWorkbenchCardAction(card.section) }}
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <div class="mt-6 flex flex-wrap gap-3">
       <button
+        *ngIf="getWorkbenchSnapshot('resumeUpdate')"
         type="button"
-        (click)="prevQuestion()"
-        [disabled]="currentQuestionIndex === 0"
-        class="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+        (click)="useResumeExperienceDraft()"
+        class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
       >
-        上一题
+        将兼职经历带到资料页经历模块
       </button>
       <button
-        *ngIf="currentQuestionIndex < questionnaire.length - 1"
+        *ngIf="getWorkbenchSnapshot('careerPlan')"
         type="button"
-        (click)="nextQuestion()"
-        [disabled]="answers[currentQuestionIndex] === 0"
-        class="rounded-xl bg-[#1A365D] px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
+        (click)="useCareerGoalForInterview()"
+        class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
       >
-        下一题
-      </button>
-      <button
-        *ngIf="currentQuestionIndex === questionnaire.length - 1"
-        type="button"
-        (click)="submitTest()"
-        [disabled]="answers[currentQuestionIndex] === 0 || testLoading"
-        class="rounded-xl bg-[#1A365D] px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
-      >
-        {{ testLoading ? '分析中...' : '提交测评' }}
+        将职业目标带到模拟面试
       </button>
     </div>
   </section>
 
-  <section *ngIf="testCompleted" class="space-y-6">
-    <article *ngIf="personalityResult" class="rounded-2xl border border-slate-100 bg-white p-8 shadow-sm">
-      <div class="mb-6 flex items-center gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-[#1A365D]">
-          <span class="material-symbols-outlined">psychology</span>
+  <section *ngIf="activeTab === 'test'" class="mt-6 space-y-6">
+    <article class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-black text-[#1A365D]">人格测评</h2>
+            <p class="mt-2 text-sm leading-7 text-slate-500">
+              测评结果会保存到个人资料中，后续可继续用于岗位推荐、资料整理和面试练习。
+            </p>
+          </div>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            {{ currentQuestionIndex + 1 }} / {{ questionnaire.length || 10 }}
+          </span>
         </div>
-        <h2 class="text-xl font-bold text-[#1A365D]">你的画像结果</h2>
+
+        <div *ngIf="!testCompleted" class="mt-6">
+          <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+            <div
+              class="h-full rounded-full bg-[#1A365D] transition-all duration-300"
+              [style.width.%]="((currentQuestionIndex + 1) / (questionnaire.length || 1)) * 100"
+            ></div>
+          </div>
+
+          <div *ngIf="currentQuestion" class="mt-6">
+            <h3 class="text-xl font-black text-slate-900">{{ currentQuestion.question }}</h3>
+            <div class="mt-5 space-y-3">
+              <button
+                *ngFor="let option of currentQuestion.options; let i = index"
+                type="button"
+                (click)="selectAnswer(i)"
+                class="w-full rounded-2xl border-2 px-5 py-4 text-left text-sm transition-all"
+                [class.border-[#1A365D]]="answers[currentQuestionIndex] === i + 1"
+                [class.bg-slate-50]="answers[currentQuestionIndex] === i + 1"
+                [class.font-semibold]="answers[currentQuestionIndex] === i + 1"
+                [class.text-[#1A365D]]="answers[currentQuestionIndex] === i + 1"
+                [class.border-slate-200]="answers[currentQuestionIndex] !== i + 1"
+                [class.text-slate-700]="answers[currentQuestionIndex] !== i + 1"
+              >
+                {{ option.text }}
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              (click)="prevQuestion()"
+              [disabled]="currentQuestionIndex === 0"
+              class="rounded-2xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 disabled:opacity-40"
+            >
+              上一题
+            </button>
+            <button
+              *ngIf="currentQuestionIndex < questionnaire.length - 1"
+              type="button"
+              (click)="nextQuestion()"
+              [disabled]="answers[currentQuestionIndex] === 0"
+              class="rounded-2xl bg-[#1A365D] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+            >
+              下一题
+            </button>
+            <button
+              *ngIf="currentQuestionIndex === questionnaire.length - 1"
+              type="button"
+              (click)="submitTest()"
+              [disabled]="answers[currentQuestionIndex] === 0 || testLoading"
+              class="rounded-2xl bg-[#1A365D] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+            >
+              {{ testLoading ? '分析中...' : '提交测评' }}
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="testCompleted && personalityResult" class="mt-6 space-y-5">
+          <div class="flex flex-wrap gap-2">
+            <span *ngFor="let tag of personalityResult.tags" class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-[#1A365D]">
+              {{ tag }}
+            </span>
+          </div>
+
+          <p class="text-sm leading-7 text-slate-600">{{ personalityResult.summary }}</p>
+
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <h3 class="text-sm font-semibold text-slate-900">核心优势</h3>
+              <ul class="mt-3 space-y-2 text-sm text-slate-600">
+                <li *ngFor="let strength of personalityResult.strengths">- {{ strength }}</li>
+              </ul>
+            </div>
+
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <h3 class="text-sm font-semibold text-slate-900">适合岗位</h3>
+              <ul class="mt-3 space-y-2 text-sm text-slate-600">
+                <li *ngFor="let jobName of personalityResult.suitable_jobs">- {{ jobName }}</li>
+              </ul>
+            </div>
+          </div>
+
+          <button type="button" (click)="resetTest()" class="rounded-2xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600">
+            重新测评
+          </button>
+        </div>
       </div>
 
-      <div class="mb-6 flex flex-wrap gap-2">
-        <span *ngFor="let tag of personalityResult.tags" class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-[#1A365D]">
-          {{ tag }}
-        </span>
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-[#1A365D]">
+            <span class="material-symbols-outlined">recommend</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-black text-[#1A365D]">岗位推荐</h2>
+            <p class="text-sm text-slate-500">根据已保存的测评和资料内容生成推荐结果。</p>
+          </div>
+        </div>
+
+        <div *ngIf="recommendLoading" class="mt-8 text-center text-slate-500">
+          <span class="material-symbols-outlined animate-spin text-3xl text-[#1A365D]">progress_activity</span>
+          <p class="mt-3 text-sm">正在匹配适合你的岗位...</p>
+        </div>
+
+        <div *ngIf="!recommendLoading && recommendations.length" class="mt-6 space-y-4">
+          <article *ngFor="let recommendation of recommendations; let i = index" class="rounded-2xl bg-slate-50 p-4">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="text-sm font-black text-[#1A365D]">{{ i + 1 }}. {{ recommendation.job?.title || '岗位' }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ recommendation.job?.company || '' }}</p>
+              </div>
+              <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#1A365D]">
+                {{ recommendation.match_score }}%
+              </span>
+            </div>
+
+            <div class="mt-3 flex flex-wrap gap-2">
+              <span *ngFor="let reason of recommendation.match_reasons" class="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-600">
+                {{ reason }}
+              </span>
+            </div>
+          </article>
+        </div>
+
+        <div *ngIf="!recommendLoading && !recommendations.length" class="mt-8 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+          完成人格测评并保存画像后，这里会出现与你更匹配的岗位推荐。
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section *ngIf="activeTab === 'interview'" class="mt-6 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+    <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-2xl font-black text-[#1A365D]">模拟面试</h2>
+      <p class="mt-2 text-sm leading-7 text-slate-500">
+        先设定目标岗位，系统会根据岗位内容连续追问，并给出评分、提醒和改进建议，方便反复练习。
+      </p>
+
+      <div class="mt-6 space-y-4">
+        <label class="block space-y-2">
+          <span class="text-sm font-semibold text-slate-700">目标岗位</span>
+          <input [(ngModel)]="interviewJobTitle" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="例如：前端开发实习生">
+        </label>
+
+        <label class="block space-y-2">
+          <span class="text-sm font-semibold text-slate-700">岗位描述（可选）</span>
+          <textarea [(ngModel)]="interviewJobDescription" rows="5" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="把岗位职责或 JD 摘要贴进来，后续问题会更贴近真实场景。"></textarea>
+        </label>
+
+        <div class="flex flex-wrap gap-3">
+          <button type="button" (click)="startInterview()" [disabled]="interviewLoading" class="rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+            {{ interviewStarted ? '重新开始' : '开始面试' }}
+          </button>
+          <button type="button" (click)="restartInterview()" [disabled]="interviewLoading" class="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600">
+            清空记录
+          </button>
+        </div>
       </div>
 
-      <p *ngIf="personalityResult.summary" class="mb-6 leading-7 text-slate-600">{{ personalityResult.summary }}</p>
+      <div *ngIf="interviewEvaluation" class="mt-6 rounded-2xl bg-slate-50 p-5">
+        <div class="flex flex-wrap gap-3">
+          <div *ngFor="let item of getDimensionEntries(interviewEvaluation.scores)" class="rounded-2xl bg-white px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{{ item.key }}</p>
+            <p class="mt-2 text-2xl font-black text-[#1A365D]">{{ item.value }}</p>
+          </div>
+        </div>
 
-      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div>
-          <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <span class="material-symbols-outlined text-sm text-[#1A365D]">star</span>
-            核心优势
-          </h3>
-          <ul class="space-y-2 text-sm text-slate-600">
-            <li *ngFor="let strength of personalityResult.strengths" class="flex items-start gap-2">
-              <span class="mt-2 h-1.5 w-1.5 rounded-full bg-[#1A365D]"></span>
-              <span>{{ strength }}</span>
-            </li>
+        <p class="mt-4 text-sm leading-7 text-slate-600">{{ interviewEvaluation.overall_evaluation }}</p>
+
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            (click)="restartInterview()"
+            class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
+          >
+            重新开始这一轮
+          </button>
+          <button
+            type="button"
+            (click)="continueWorkbench(workbenchCards[0])"
+            class="rounded-2xl bg-[#1A365D] px-4 py-2 text-sm font-semibold text-white"
+          >
+            保存结果并继续追问
+          </button>
+        </div>
+
+        <div *ngIf="interviewEvaluation.suggestions?.length" class="mt-4">
+          <h3 class="text-sm font-semibold text-slate-900">改进建议</h3>
+          <ul class="mt-3 space-y-2 text-sm text-slate-600">
+            <li *ngFor="let suggestion of interviewEvaluation.suggestions">- {{ suggestion }}</li>
           </ul>
         </div>
 
-        <div>
-          <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <span class="material-symbols-outlined text-sm text-[#1A365D]">work</span>
-            适合岗位
-          </h3>
-          <ul class="space-y-2 text-sm text-slate-600">
-            <li *ngFor="let jobName of personalityResult.suitable_jobs" class="flex items-start gap-2">
-              <span class="mt-2 h-1.5 w-1.5 rounded-full bg-[#1A365D]"></span>
-              <span>{{ jobName }}</span>
+        <div *ngIf="interviewEvaluation.risk_warnings?.length" class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <h3 class="text-sm font-semibold text-amber-800">本场面试的风险提醒</h3>
+          <ul class="mt-3 space-y-2 text-sm text-amber-700">
+            <li *ngFor="let warning of interviewEvaluation.risk_warnings">
+              {{ warning.type }} / {{ warning.category }}：{{ warning.description }}
             </li>
           </ul>
         </div>
       </div>
     </article>
 
-    <article *ngIf="recommendations.length > 0" class="rounded-2xl border border-slate-100 bg-white p-8 shadow-sm">
-      <div class="mb-6 flex items-center gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-[#1A365D]">
-          <span class="material-symbols-outlined">recommend</span>
+    <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-[#1A365D]">面试对话</h2>
+          <p class="mt-2 text-sm text-slate-500">建议像真实面试一样完整回答，不要只写一句话。</p>
         </div>
-        <h2 class="text-xl font-bold text-[#1A365D]">基于主库画像的岗位推荐</h2>
+        <button type="button" (click)="endInterview()" [disabled]="!interviewStarted || interviewLoading" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 disabled:opacity-50">
+          结束并生成总结
+        </button>
       </div>
 
-      <div class="space-y-4">
-        <div *ngFor="let recommendation of recommendations; let i = index" class="flex gap-4 rounded-xl bg-slate-50 p-4">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1A365D] text-sm font-bold text-white">
-            {{ i + 1 }}
+      <div class="mt-6 h-[420px] space-y-4 overflow-y-auto rounded-2xl bg-slate-50 p-4">
+        <div *ngIf="!interviewMessages.length" class="flex h-full items-center justify-center text-center text-sm text-slate-500">
+          先点击左侧“开始面试”，这里会进入正式对话。
+        </div>
+
+        <div
+          *ngFor="let message of interviewMessages"
+          class="max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-7"
+          [class.ml-auto]="message.role === 'user'"
+          [class.bg-[#1A365D]]="message.role === 'user'"
+          [class.text-white]="message.role === 'user'"
+          [class.bg-white]="message.role !== 'user'"
+          [class.text-slate-700]="message.role !== 'user'"
+        >
+          {{ message.content }}
+        </div>
+      </div>
+
+      <div *ngIf="interviewWarning" class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+        面试提醒：{{ interviewWarning.text || interviewWarning.description || interviewWarning.level }}
+      </div>
+
+      <div class="mt-5 flex gap-3">
+        <textarea
+          [(ngModel)]="interviewInput"
+          rows="4"
+          class="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+          placeholder="输入你的回答..."
+        ></textarea>
+        <button type="button" (click)="sendInterviewMessage()" [disabled]="interviewLoading || !interviewStarted || !interviewInput.trim()" class="self-end rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+          {{ interviewLoading ? '发送中...' : '发送回答' }}
+        </button>
+      </div>
+    </article>
+  </section>
+
+  <section *ngIf="activeTab === 'resume'" class="mt-6 space-y-6">
+    <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-[#1A365D]">简历成果与继续优化</h2>
+          <p class="mt-2 text-sm leading-7 text-slate-500">
+            简历编辑请优先在个人资料页完成，这里更适合查看已有结果、继续调整某一段内容，或把兼职经历整理成可回填的草稿。
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button
+            type="button"
+            (click)="goToProfileEditor('basic')"
+            class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+          >
+            前往资料页编辑个人简介
+          </button>
+          <button
+            type="button"
+            (click)="goToProfileEditor('experience')"
+            class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+          >
+            前往资料页编辑经历项目
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <p class="text-xs font-semibold tracking-[0.18em] text-slate-400">资料说明</p>
+        <h3 class="mt-2 text-lg font-black text-[#1A365D]">资料页是简历主入口</h3>
+        <p class="mt-2 text-sm leading-7 text-slate-500">
+          当你需要正式填写自我介绍、教育背景、经历项目和技能信息时，请回到个人资料页。这里主要保留继续调整和查看历史结果的能力，避免在两个页面重复录入同一份简历。
+        </p>
+      </div>
+
+      <div class="mt-6 grid gap-6 xl:grid-cols-2">
+        <div class="space-y-4">
+          <div class="rounded-2xl bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900">补充优化入口</h3>
+            <p class="mt-2 text-sm leading-7 text-slate-500">
+              如果你想临时粘贴一段文字继续打磨，或者想快速测试不同表述效果，可以在这里继续生成建议；正式写回简历时，建议回到资料页应用。
+            </p>
           </div>
-          <div class="min-w-0 flex-1">
-            <h3 class="text-sm font-semibold text-slate-900">{{ recommendation.job?.title || '岗位' }}</h3>
-            <p class="mt-1 text-xs text-slate-500">{{ recommendation.job?.company || '' }}</p>
-            <p class="mt-2 text-xs font-semibold text-[#1A365D]">匹配度：{{ recommendation.match_score }}%</p>
-            <div class="mt-3 flex flex-wrap gap-2">
-              <span *ngFor="let reason of recommendation.match_reasons" class="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[#1A365D]">
-                {{ reason }}
+
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">优化板块</span>
+            <select [(ngModel)]="resumeOptimize.section" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]">
+              <option value="自我介绍">自我介绍</option>
+              <option value="项目经历">项目经历</option>
+              <option value="实习经历">实习经历</option>
+              <option value="校园经历">校园经历</option>
+              <option value="技能描述">技能描述</option>
+            </select>
+          </label>
+
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">目标岗位（可选）</span>
+            <input [(ngModel)]="resumeOptimize.jobTarget" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="例如：数据分析实习生">
+          </label>
+
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">待优化内容</span>
+            <textarea [(ngModel)]="resumeOptimize.content" rows="9" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="把你现在的简历片段贴进来，系统会从量化表达、岗位匹配和用词准确性几方面给出建议。"></textarea>
+          </label>
+
+          <button type="button" (click)="runResumeOptimize()" [disabled]="resumeOptimizeLoading" class="rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+            {{ resumeOptimizeLoading ? '分析中...' : '生成优化建议' }}
+          </button>
+        </div>
+
+        <div class="rounded-2xl bg-slate-50 p-5">
+          <h3 class="text-lg font-black text-[#1A365D]">优化结果</h3>
+          <div *ngIf="resumeOptimizeResult; else emptyOptimizeResultClean" class="mt-4 space-y-4">
+            <div class="rounded-2xl bg-white px-4 py-3">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">质量评分</p>
+              <p class="mt-2 text-3xl font-black text-[#1A365D]">{{ resumeOptimizeResult.score || 0 }}</p>
+            </div>
+
+            <div *ngIf="resumeOptimizeResult.issues?.length">
+              <h4 class="text-sm font-semibold text-slate-900">主要问题</h4>
+              <ul class="mt-3 space-y-2 text-sm text-slate-600">
+                <li *ngFor="let issue of resumeOptimizeResult.issues">- {{ issue }}</li>
+              </ul>
+            </div>
+
+            <div *ngIf="resumeOptimizeResult.suggestions?.length">
+              <h4 class="text-sm font-semibold text-slate-900">逐条优化建议</h4>
+              <div class="mt-3 space-y-3">
+                <div *ngFor="let item of resumeOptimizeResult.suggestions" class="rounded-2xl bg-white p-4 text-sm text-slate-600">
+                  <p><span class="font-semibold text-slate-900">原文：</span>{{ item.original }}</p>
+                  <p class="mt-2"><span class="font-semibold text-slate-900">建议：</span>{{ item.improved }}</p>
+                  <p class="mt-2 text-xs text-slate-500">{{ item.reason }}</p>
+                </div>
+              </div>
+            </div>
+
+            <p class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
+              {{ resumeOptimizeResult.overall_tip }}
+            </p>
+          </div>
+
+          <ng-template #emptyOptimizeResultClean>
+            <p class="mt-4 text-sm leading-7 text-slate-500">生成后，这里会显示评分、问题清单和可直接改写的优化版本。</p>
+          </ng-template>
+        </div>
+      </div>
+    </article>
+
+    <article class="grid gap-6 xl:grid-cols-2">
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-2xl font-black text-[#1A365D]">拒信分析</h2>
+        <div class="mt-6 space-y-4">
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">投递岗位</span>
+            <input [(ngModel)]="rejectionForm.jobTitle" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="例如：校园运营助理">
+          </label>
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">拒信内容 / 被拒描述</span>
+            <textarea [(ngModel)]="rejectionForm.rejectionMessage" rows="6" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="把拒信原文贴进来，或者把你被拒的情况描述清楚。"></textarea>
+          </label>
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">简历摘要（可选）</span>
+            <textarea [(ngModel)]="rejectionForm.resumeSummary" rows="4" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="这里可以补充你的优势、项目经历或技能摘要。"></textarea>
+          </label>
+          <button type="button" (click)="runRejectionAnalysis()" [disabled]="rejectionLoading" class="rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+            {{ rejectionLoading ? '分析中...' : '分析被拒原因' }}
+          </button>
+        </div>
+
+        <div *ngIf="rejectionResult" class="mt-6 rounded-2xl bg-slate-50 p-4">
+          <h3 class="text-sm font-semibold text-slate-900">原因拆解</h3>
+          <div class="mt-3 space-y-3 text-sm text-slate-600">
+            <div *ngFor="let reason of rejectionResult.rejection_reasons" class="rounded-2xl bg-white p-4">
+              <p class="font-semibold text-slate-900">{{ reason.reason }}（{{ reason.likelihood }}）</p>
+              <p class="mt-2">{{ reason.explanation }}</p>
+            </div>
+          </div>
+          <div *ngIf="rejectionResult.skill_gaps?.length" class="mt-4">
+            <h4 class="text-sm font-semibold text-slate-900">技能缺口</h4>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <span *ngFor="let gap of rejectionResult.skill_gaps" class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                {{ gap }}
               </span>
             </div>
           </div>
         </div>
       </div>
+
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-2xl font-black text-[#1A365D]">兼职经历转简历</h2>
+        <div class="mt-6 space-y-4">
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">岗位名称</span>
+            <input [(ngModel)]="resumeUpdateForm.jobTitle" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="例如：校园大使">
+          </label>
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">企业 / 团队</span>
+            <input [(ngModel)]="resumeUpdateForm.company" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="例如：某互联网公司">
+          </label>
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">工作周期</span>
+            <input [(ngModel)]="resumeUpdateForm.duration" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="例如：2026.03 - 2026.05">
+          </label>
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">工作内容</span>
+            <textarea [(ngModel)]="resumeUpdateForm.description" rows="5" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="写清楚你具体做了什么、产出了什么、有哪些结果或数据。"></textarea>
+          </label>
+          <button type="button" (click)="runResumeUpdate()" [disabled]="resumeUpdateLoading" class="rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+            {{ resumeUpdateLoading ? '整理中...' : '生成简历经历' }}
+          </button>
+        </div>
+
+        <div *ngIf="resumeUpdateResult" class="mt-6 rounded-2xl bg-slate-50 p-4">
+          <h3 class="text-sm font-semibold text-slate-900">整理结果</h3>
+          <div class="mt-3 rounded-2xl bg-white p-4 text-sm text-slate-600">
+            <p class="font-semibold text-slate-900">
+              {{ resumeUpdateResult.formatted_experience?.title }} / {{ resumeUpdateResult.formatted_experience?.company }}
+            </p>
+            <p class="mt-1 text-xs text-slate-500">{{ resumeUpdateResult.formatted_experience?.duration }}</p>
+            <ul class="mt-3 space-y-2">
+              <li *ngFor="let bullet of resumeUpdateResult.formatted_experience?.bullets">- {{ bullet }}</li>
+            </ul>
+          </div>
+          <div *ngIf="resumeUpdateResult.keywords?.length" class="mt-4 flex flex-wrap gap-2">
+            <span *ngFor="let keyword of resumeUpdateResult.keywords" class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+              {{ keyword }}
+            </span>
+          </div>
+          <p class="mt-4 text-sm text-slate-600">{{ resumeUpdateResult.add_reason }}</p>
+          <button type="button" (click)="useResumeExperienceDraft()" class="mt-4 rounded-2xl bg-[#1A365D] px-4 py-2 text-sm font-semibold text-white">
+            带到资料页经历模块继续完善
+          </button>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section *ngIf="activeTab === 'career'" class="mt-6 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-2xl font-black text-[#1A365D]">职业规划</h2>
+      <p class="mt-2 text-sm leading-7 text-slate-500">
+        结合你当前的画像和技能，生成从现在到目标岗位的成长路径，适合在投递前先把路线看清楚。
+      </p>
+
+      <div class="mt-6 space-y-4">
+        <label class="block space-y-2">
+          <span class="text-sm font-semibold text-slate-700">目标岗位</span>
+          <input [(ngModel)]="careerForm.targetJob" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="例如：产品经理实习生">
+        </label>
+        <label class="block space-y-2">
+          <span class="text-sm font-semibold text-slate-700">当前技能</span>
+          <textarea [(ngModel)]="careerForm.currentSkills" rows="5" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="用顿号、逗号或换行分隔，例如：数据分析、Axure、PPT、沟通表达。"></textarea>
+        </label>
+        <label class="block space-y-2">
+          <span class="text-sm font-semibold text-slate-700">人格标签</span>
+          <textarea [(ngModel)]="careerForm.personalityTags" rows="4" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]" placeholder="例如：细致、主动、执行力强。"></textarea>
+        </label>
+        <button type="button" (click)="generateCareerPath()" [disabled]="careerLoading" class="rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+          {{ careerLoading ? '生成中...' : '生成成长路径' }}
+        </button>
+      </div>
     </article>
 
-    <div *ngIf="recommendLoading" class="rounded-2xl border border-slate-100 bg-white p-12 text-center shadow-sm">
-      <span class="material-symbols-outlined animate-spin text-3xl text-[#1A365D]">progress_activity</span>
-      <p class="mt-3 text-sm text-slate-500">正在基于主库画像匹配岗位...</p>
-    </div>
+    <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-[#1A365D]">成长路径结果</h2>
+          <p class="mt-2 text-sm text-slate-500">系统会给出每一步该学什么、做什么，以及预计投入周期。</p>
+        </div>
+        <span *ngIf="careerResult?.estimated_duration" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+          {{ careerResult.estimated_duration }}
+        </span>
+      </div>
 
-    <div class="text-center">
-      <button type="button" (click)="resetTest()" class="rounded-xl border border-slate-200 px-6 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
-        重新测评
-      </button>
-    </div>
+      <div *ngIf="careerResult?.steps?.length; else emptyCareerClean" class="mt-6 space-y-4">
+        <article *ngFor="let step of careerResult.steps" class="rounded-2xl bg-slate-50 p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Step {{ step.step }}</p>
+              <h3 class="mt-2 text-lg font-black text-[#1A365D]">{{ step.title }}</h3>
+            </div>
+            <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">{{ step.estimated_time }}</span>
+          </div>
+          <p class="mt-3 text-sm leading-7 text-slate-600">{{ step.description }}</p>
+          <div *ngIf="step.skills_to_learn?.length" class="mt-3 flex flex-wrap gap-2">
+            <span *ngFor="let skill of step.skills_to_learn" class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+              {{ skill }}
+            </span>
+          </div>
+          <p class="mt-3 text-sm font-semibold text-slate-700">下一步行动：{{ step.action }}</p>
+        </article>
+
+        <div *ngIf="careerResult.tips?.length" class="rounded-2xl border border-sky-200 bg-sky-50 p-4">
+          <h3 class="text-sm font-semibold text-sky-800">补充建议</h3>
+          <ul class="mt-3 space-y-2 text-sm text-sky-700">
+            <li *ngFor="let tip of careerResult.tips">- {{ tip }}</li>
+          </ul>
+        </div>
+
+        <button type="button" (click)="useCareerGoalForInterview()" class="rounded-2xl bg-[#1A365D] px-4 py-2 text-sm font-semibold text-white">
+          用这个目标直接开始模拟面试
+        </button>
+      </div>
+
+      <ng-template #emptyCareerClean>
+        <div class="mt-8 rounded-2xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">
+          先设定目标岗位，这里会出现分阶段成长路线。
+        </div>
+      </ng-template>
+    </article>
   </section>
-</main>
+
+  </main>

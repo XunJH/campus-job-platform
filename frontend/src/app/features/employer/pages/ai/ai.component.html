@@ -2,51 +2,120 @@
 
 <main class="min-h-screen bg-[#F7FAFC] px-6 py-8 md:px-8 lg:ml-64">
   <div class="mx-auto max-w-7xl space-y-8">
-    <section class="rounded-3xl bg-white p-8 shadow-sm">
-      <p class="text-sm font-semibold tracking-[0.3em] text-slate-400">AI RECRUITMENT TOOLS</p>
-      <h1 class="mt-3 text-3xl font-black text-[#1A365D]">AI 招聘助手</h1>
-      <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-        统一提供招聘问答和候选人推荐工具，避免和发布岗位页里的 JD 生成功能重复。
-      </p>
+    <section class="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+      <p class="text-sm font-semibold tracking-[0.3em] text-slate-400">RECRUITMENT TOOLS</p>
+      <div class="mt-3 flex flex-wrap items-start justify-between gap-4">
+        <div class="max-w-3xl">
+          <h1 class="text-3xl font-black text-[#1A365D]">招聘辅助</h1>
+          <p class="mt-3 text-sm leading-7 text-slate-500">
+            这里聚焦企业招聘场景，提供招聘问答、候选人推荐和沟通安全相关辅助能力。
+            各项结果会尽量连接到岗位、申请和消息记录，方便直接用于实际流程。
+          </p>
+        </div>
+
+        <div *ngIf="aiRuntimeStatus" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p class="text-xs font-semibold tracking-[0.16em] text-slate-400">状态</p>
+          <p class="mt-2 text-sm font-semibold text-[#1A365D]">{{ getAiRuntimeDisplayLabel() }}</p>
+          <p class="mt-2 max-w-xs text-xs leading-6 text-slate-500">{{ getAiRuntimeDisplayHint() }}</p>
+          <span class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getAiRuntimeBadgeClasses()">
+            {{ aiRuntimeStatus.mode === 'live' ? '实时服务' : '备用模式' }}
+          </span>
+        </div>
+      </div>
     </section>
 
     <section class="flex flex-wrap gap-3">
       <button
+        *ngFor="let tab of tabs"
         type="button"
-        (click)="switchTab('chat')"
-        class="rounded-2xl px-5 py-3 text-sm font-semibold transition-all"
-        [class.bg-[#1A365D]]="activeTab === 'chat'"
-        [class.text-white]="activeTab === 'chat'"
-        [class.bg-white]="activeTab !== 'chat'"
-        [class.text-[#1A365D]]="activeTab !== 'chat'"
+        (click)="switchTab(tab.id)"
+        class="flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition-all"
+        [class.bg-[#1A365D]]="activeTab === tab.id"
+        [class.text-white]="activeTab === tab.id"
+        [class.bg-white]="activeTab !== tab.id"
+        [class.text-[#1A365D]]="activeTab !== tab.id"
       >
-        AI 招聘问答
+        <span class="material-symbols-outlined text-[18px]">{{ tab.icon }}</span>
+        <span>{{ getTabLabel(tab.id) }}</span>
       </button>
-      <button
-        type="button"
-        (click)="switchTab('reverse')"
-        class="rounded-2xl px-5 py-3 text-sm font-semibold transition-all"
-        [class.bg-[#1A365D]]="activeTab === 'reverse'"
-        [class.text-white]="activeTab === 'reverse'"
-        [class.bg-white]="activeTab !== 'reverse'"
-        [class.text-[#1A365D]]="activeTab !== 'reverse'"
-      >
-        候选人推荐
-      </button>
+    </section>
+
+    <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <article class="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-white p-6 shadow-sm">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="max-w-2xl">
+            <p class="text-xs font-semibold tracking-[0.22em] text-amber-600">沟通安全</p>
+            <h2 class="mt-3 text-2xl font-black text-[#1A365D]">聊天风险预警已接入沟通渠道。</h2>
+            <p class="mt-3 text-sm leading-7 text-slate-600">
+              这个能力不是独立的聊天工具，而是发送消息前的 AI 安全护栏。系统会结合消息内容和当前会话上下文，
+              识别是否存在诈骗、诱导转账、脱离平台沟通、过度索取隐私等风险，并给出提醒、建议或拦截。
+            </p>
+          </div>
+
+          <button
+            type="button"
+            (click)="goToMessageSafety()"
+            class="rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-95"
+          >
+            前往沟通渠道
+          </button>
+        </div>
+
+        <div class="mt-6 grid gap-4 md:grid-cols-3">
+          <div class="rounded-2xl border border-amber-100 bg-white/90 p-4">
+            <p class="text-sm font-semibold text-[#1A365D]">触发时机</p>
+            <p class="mt-2 text-sm leading-6 text-slate-600">在企业发送消息前自动检测，不需要额外切换到其他 AI 页面。</p>
+          </div>
+          <div class="rounded-2xl border border-amber-100 bg-white/90 p-4">
+            <p class="text-sm font-semibold text-[#1A365D]">识别目标</p>
+            <p class="mt-2 text-sm leading-6 text-slate-600">重点识别押金收费、私下加联系方式、跳转平台外交易和异常索取信息。</p>
+          </div>
+          <div class="rounded-2xl border border-amber-100 bg-white/90 p-4">
+            <p class="text-sm font-semibold text-[#1A365D]">反馈方式</p>
+            <p class="mt-2 text-sm leading-6 text-slate-600">低风险正常发送，中风险提醒修改，高风险直接拦截，保留平台治理建议。</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p class="text-xs font-semibold tracking-[0.2em] text-slate-400">识别范围</p>
+        <h2 class="mt-3 text-2xl font-black text-[#1A365D]">当前识别重点</h2>
+        <div *ngIf="riskTypes; else riskTypesFallback" class="mt-5 space-y-4">
+          <div *ngFor="let group of riskTypes | keyvalue" class="rounded-2xl bg-slate-50 p-4">
+            <p class="text-sm font-semibold text-slate-900">{{ group.value.description || group.key }}</p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <span
+                *ngFor="let type of group.value.types"
+                class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600"
+              >
+                {{ type.name }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #riskTypesFallback>
+          <div class="mt-5 rounded-2xl bg-slate-50 p-5 text-sm leading-7 text-slate-500">
+            风险识别会覆盖异常收费、脱离平台沟通、过度索取隐私和不合规招聘表达等场景。
+          </div>
+        </ng-template>
+      </article>
     </section>
 
     <section *ngIf="activeTab === 'chat'" class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
       <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div>
-          <h2 class="text-2xl font-black text-[#1A365D]">招聘 AI 问答</h2>
-          <p class="mt-2 text-sm text-slate-500">可以询问面试建议、招聘文案、岗位要求梳理等问题。</p>
+          <h2 class="text-2xl font-black text-[#1A365D]">招聘问答</h2>
+          <p class="mt-2 text-sm text-slate-500">
+            适合梳理岗位卖点、整理面试题、优化招聘文案，或者快速讨论兼职招聘中的真实问题。
+          </p>
         </div>
 
         <div class="mt-6 h-[420px] space-y-4 overflow-y-auto rounded-2xl bg-slate-50 p-4">
           <div *ngIf="!chatMessages.length" class="flex h-full items-center justify-center text-center text-slate-500">
             <div>
               <span class="material-symbols-outlined text-5xl text-slate-300">forum</span>
-              <p class="mt-3">输入你的招聘问题，AI 会给出建议。</p>
+              <p class="mt-3">输入招聘问题，系统会结合企业招聘场景给出可执行建议。</p>
             </div>
           </div>
 
@@ -68,7 +137,7 @@
             [(ngModel)]="chatInput"
             rows="3"
             class="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-            placeholder="例如：帮我优化一份面向大学生的校园大使招聘话术"
+            placeholder="例如：帮我把这份校园兼职岗位介绍改得更适合学生投递。"
           ></textarea>
           <button
             type="button"
@@ -84,97 +153,288 @@
       <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-2xl font-black text-[#1A365D]">推荐问法</h2>
         <div class="mt-5 space-y-4">
-          <div class="rounded-2xl bg-slate-50 p-4">
-            <p class="text-sm font-semibold text-slate-900">岗位描述优化</p>
-            <p class="mt-2 text-sm leading-6 text-slate-500">“帮我把这份兼职岗位说明改得更吸引大学生。”</p>
-          </div>
-          <div class="rounded-2xl bg-slate-50 p-4">
-            <p class="text-sm font-semibold text-slate-900">面试问题准备</p>
-            <p class="mt-2 text-sm leading-6 text-slate-500">“针对运营助理岗位，给我 10 个面试问题。”</p>
-          </div>
-          <div class="rounded-2xl bg-slate-50 p-4">
-            <p class="text-sm font-semibold text-slate-900">招聘流程建议</p>
-            <p class="mt-2 text-sm leading-6 text-slate-500">“校园招聘从发布到录用，给我一个简化流程。”</p>
-          </div>
+          <button
+            *ngFor="let prompt of quickPrompts; let promptIndex = index"
+            type="button"
+            (click)="usePrompt(prompt)"
+            class="w-full rounded-2xl bg-slate-50 p-4 text-left transition hover:bg-slate-100"
+          >
+            <p class="text-sm leading-6 text-slate-600">{{ getQuickPromptLabel(promptIndex) }}</p>
+          </button>
         </div>
       </article>
     </section>
 
-    <section *ngIf="activeTab === 'reverse'" class="space-y-6">
+    <section *ngIf="activeTab === 'referral'" class="space-y-6">
       <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-2xl font-black text-[#1A365D]">候选人推荐</h2>
-        <p class="mt-2 text-sm text-slate-500">填写岗位名称、关键词和要求，AI 会返回更匹配的学生候选人。</p>
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <h2 class="text-2xl font-black text-[#1A365D]">候选人推荐</h2>
+            <p class="mt-2 text-sm text-slate-500">
+              优先选择企业真实岗位，系统会从平台学生候选池里给出可推进到招聘流程的推荐结果。
+            </p>
+          </div>
 
-        <div class="mt-6 grid gap-4 lg:grid-cols-3">
-          <label class="space-y-2">
-            <span class="text-sm font-semibold text-slate-700">岗位名称</span>
-            <input
-              [(ngModel)]="jobTitleInput"
-              type="text"
-              class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-              placeholder="例如：新媒体运营助理"
-            />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm font-semibold text-slate-700">岗位关键词</span>
-            <input
-              [(ngModel)]="jobTagsInput"
-              type="text"
-              class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-              placeholder="例如：内容策划，短视频，社群"
-            />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm font-semibold text-slate-700">能力要求</span>
-            <input
-              [(ngModel)]="jobRequirementsInput"
-              type="text"
-              class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
-              placeholder="例如：沟通能力，执行力，办公软件"
-            />
-          </label>
+          <div class="flex flex-wrap items-end gap-4">
+            <label class="space-y-2">
+              <span class="text-sm font-semibold text-slate-700">选择岗位</span>
+              <select
+                [(ngModel)]="selectedJobId"
+                class="min-w-[240px] rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+              >
+                <option [ngValue]="null">请选择岗位</option>
+                <option *ngFor="let job of employerJobs; trackBy: trackByJobId" [ngValue]="job.id">
+                  {{ job.title }}
+                </option>
+              </select>
+            </label>
+
+            <label class="space-y-2">
+              <span class="text-sm font-semibold text-slate-700">推荐数量</span>
+              <select
+                [(ngModel)]="recommendationLimit"
+                class="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
+              >
+                <option [ngValue]="5">5 人</option>
+                <option [ngValue]="8">8 人</option>
+                <option [ngValue]="10">10 人</option>
+              </select>
+            </label>
+
+            <button
+              type="button"
+              (click)="runSmartReferral()"
+              [disabled]="referralLoading || !selectedJob"
+              class="rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {{ referralLoading ? '推荐中...' : '生成推荐' }}
+            </button>
+          </div>
         </div>
 
-        <button
-          type="button"
-          (click)="reverseRecommend()"
-          [disabled]="reverseLoading || !jobTitleInput.trim()"
-          class="mt-6 rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
-        >
-          {{ reverseLoading ? '推荐中...' : '开始推荐' }}
-        </button>
+        <div *ngIf="jobsLoading" class="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+          正在加载企业岗位...
+        </div>
+        <div *ngIf="jobsError" class="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
+          {{ jobsError }}
+        </div>
+        <div *ngIf="referralError" class="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
+          {{ referralError }}
+        </div>
+
+        <div *ngIf="selectedJob" class="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <div class="rounded-3xl bg-slate-50 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold tracking-[0.2em] text-slate-400">当前岗位</p>
+                <h3 class="mt-2 text-xl font-black text-[#1A365D]">{{ selectedJob.title }}</h3>
+                <p class="mt-2 text-sm text-slate-500">
+                  {{ selectedJob.employer?.username || currentEmployerName }} · {{ selectedJob.location || '地点待补充' }}
+                </p>
+              </div>
+              <span class="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700">
+                {{ selectedJob.auditStatus === 'approved' ? '审核通过' : '待审核 / 已驳回' }}
+              </span>
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-2">
+              <span class="rounded-full bg-white px-3 py-1 text-xs text-slate-600">{{ selectedJob.category || '未分类' }}</span>
+              <span class="rounded-full bg-white px-3 py-1 text-xs text-slate-600">{{ formatJobTypeLabel(selectedJob.jobType) }}</span>
+              <span class="rounded-full bg-white px-3 py-1 text-xs text-slate-600">{{ formatWorkLocationLabel(selectedJob.workLocation) }}</span>
+            </div>
+
+            <p class="mt-4 text-sm leading-7 text-slate-600">
+              {{ selectedJob.description || '岗位描述待补充。' }}
+            </p>
+          </div>
+
+          <div class="rounded-3xl border border-dashed border-slate-300 p-5">
+            <p class="text-sm font-semibold text-slate-900">推荐观察点</p>
+            <ul class="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+              <li>优先查看技能匹配、资料完整度、信用评分和申请阶段。</li>
+              <li>已确认面试的候选人会被明显抬高流程优先级。</li>
+              <li>每条推荐都尽量给出下一步动作，方便直接进入筛选、沟通或面试流程。</li>
+            </ul>
+          </div>
+        </div>
       </article>
 
-      <section *ngIf="reverseResults.length" class="grid gap-5 lg:grid-cols-2">
-        <article *ngFor="let item of reverseResults; let idx = index" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="text-sm text-slate-500">候选人 {{ idx + 1 }}</p>
-              <h3 class="mt-2 text-xl font-black text-[#1A365D]">{{ item.student_name || item.name || '未命名学生' }}</h3>
-            </div>
-            <div class="rounded-2xl bg-blue-50 px-4 py-2 text-right">
-              <p class="text-xs text-slate-500">匹配度</p>
-              <p class="text-xl font-black text-[#1A365D]">{{ item.score ?? item.match_score ?? '--' }}</p>
-            </div>
-          </div>
+      <section *ngIf="referralResult" class="space-y-6">
+        <div *ngIf="referralActionMessage" class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {{ referralActionMessage }}
+        </div>
+        <div *ngIf="referralActionError" class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+          {{ referralActionError }}
+        </div>
 
-          <div class="mt-5 grid gap-3 sm:grid-cols-2">
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="text-xs text-slate-500">技能标签</p>
-              <p class="mt-2 text-sm leading-6 text-slate-700">{{ formatArray(item.skills || item.tags) }}</p>
-            </div>
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="text-xs text-slate-500">推荐原因</p>
-              <p class="mt-2 text-sm leading-6 text-slate-700">{{ item.reason || item.summary || '暂无说明' }}</p>
-            </div>
-          </div>
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <article class="rounded-3xl bg-white p-5 shadow-sm">
+            <p class="text-sm text-slate-500">候选池总量</p>
+            <p class="mt-3 text-3xl font-black text-[#1A365D]">{{ referralResult.total_candidates }}</p>
+            <p class="mt-2 text-xs text-slate-400">{{ getCandidateSourceLabelDisplay(referralResult.candidate_source) }}</p>
+          </article>
+
+          <article class="rounded-3xl bg-white p-5 shadow-sm">
+            <p class="text-sm text-slate-500">强烈推荐</p>
+            <p class="mt-3 text-3xl font-black text-emerald-600">{{ referralResult.statistics.strongly_recommended }}</p>
+            <p class="mt-2 text-xs text-slate-400">适合优先沟通或直接推进面试</p>
+          </article>
+
+          <article class="rounded-3xl bg-white p-5 shadow-sm">
+            <p class="text-sm text-slate-500">可继续跟进</p>
+            <p class="mt-3 text-3xl font-black text-sky-600">{{ referralResult.statistics.worth_considering }}</p>
+            <p class="mt-2 text-xs text-slate-400">建议进入待筛选或待面试流程</p>
+          </article>
+
+          <article class="rounded-3xl bg-white p-5 shadow-sm">
+            <p class="text-sm text-slate-500">暂不推荐</p>
+            <p class="mt-3 text-3xl font-black text-rose-600">{{ referralResult.statistics.not_recommended }}</p>
+            <p class="mt-2 text-xs text-slate-400">可保留观察或等待资料补充</p>
+          </article>
+        </div>
+
+        <article class="rounded-3xl bg-[#1A365D] p-6 text-white shadow-sm">
+          <p class="text-xs font-semibold tracking-[0.25em] text-slate-300">综合摘要</p>
+          <p class="mt-3 text-sm leading-7 text-slate-100">{{ referralResult.ai_summary }}</p>
         </article>
-      </section>
 
-      <section *ngIf="!reverseLoading && !reverseResults.length" class="rounded-3xl border border-dashed border-slate-300 bg-white p-16 text-center shadow-sm">
-        <span class="material-symbols-outlined text-5xl text-slate-300">group_search</span>
-        <p class="mt-4 text-slate-500">填写岗位信息后可生成候选人推荐结果。</p>
+        <section class="grid gap-5 xl:grid-cols-2">
+          <article *ngFor="let item of referralResult.recommendations" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-2xl font-black text-[#1A365D]">{{ item.student.name }}</h3>
+                  <span class="rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getRecommendationTierClasses(item.match_score)">
+                    {{ getRecommendationTierDisplay(item.match_score) }}
+                  </span>
+                </div>
+                <p class="mt-2 text-sm text-slate-500">
+                  {{ item.student.major || '专业待补充' }} · {{ item.student.grade || '年级待补充' }}
+                </p>
+              </div>
+
+              <div class="text-right">
+                <p class="text-xs font-semibold tracking-[0.16em] text-slate-400">匹配分</p>
+                <p class="mt-2 text-3xl font-black text-[#1A365D]">{{ item.match_score }}</p>
+              </div>
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-2">
+              <span
+                *ngIf="item.student.recruitment_context?.application_stage"
+                class="rounded-full px-3 py-1 text-xs font-semibold"
+                [ngClass]="getPipelineStageClasses(item.student.recruitment_context?.application_stage)"
+              >
+                {{ getPipelineStageLabelDisplay(item.student.recruitment_context?.application_stage) }}
+              </span>
+              <span
+                *ngIf="item.student.recruitment_context?.application_status"
+                class="rounded-full px-3 py-1 text-xs font-semibold"
+                [ngClass]="getApplicationStatusClasses(item.student.recruitment_context?.application_status)"
+              >
+                {{ getApplicationStatusLabelDisplay(item.student.recruitment_context?.application_status) }}
+              </span>
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
+                简历图：{{ item.student.has_resume_image ? '已上传' : '未上传' }}
+              </span>
+              <span *ngIf="item.student.credit_score !== undefined" class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
+                信用分：{{ item.student.credit_score }}
+              </span>
+            </div>
+
+            <div class="mt-5 grid gap-4 md:grid-cols-2">
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="text-sm font-semibold text-slate-900">推荐理由</p>
+                <ul class="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                  <li *ngFor="let reason of item.match_reasons">- {{ reason }}</li>
+                </ul>
+              </div>
+
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="text-sm font-semibold text-slate-900">下一步建议</p>
+                <p class="mt-3 text-sm leading-6 text-slate-600">{{ getCandidateNextActionDisplay(item) }}</p>
+                <p class="mt-3 text-xs text-slate-400">候选人状态：{{ item.candidate_readiness || '待评估' }}</p>
+              </div>
+            </div>
+
+            <div *ngIf="item.gap_analysis" class="mt-5 grid gap-4 md:grid-cols-2">
+              <div class="rounded-2xl border border-slate-200 p-4">
+                <p class="text-sm font-semibold text-slate-900">已匹配项</p>
+                <ul class="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                  <li *ngFor="let matched of item.gap_analysis.matched_items">- {{ matched.requirement }}：{{ matched.evidence }}</li>
+                </ul>
+              </div>
+
+              <div class="rounded-2xl border border-slate-200 p-4">
+                <p class="text-sm font-semibold text-slate-900">待补足项</p>
+                <ul class="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                  <li *ngFor="let gap of item.gap_analysis.gap_items">
+                    - {{ gap.requirement }}（{{ gap.severity }}）：{{ gap.suggestion }}
+                  </li>
+                </ul>
+                <p class="mt-3 text-xs text-slate-400">{{ item.gap_analysis.gap_suggestion }}</p>
+              </div>
+            </div>
+
+            <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div *ngFor="let metric of getFitMetricEntriesDisplay(item)" class="rounded-2xl bg-slate-50 px-4 py-3">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm text-slate-600">{{ metric.label }}</span>
+                  <span class="text-sm font-semibold text-[#1A365D]">{{ metric.value }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-5 flex flex-wrap gap-3">
+              <button
+                type="button"
+                *ngIf="item.student.recruitment_context?.application_id"
+                (click)="openConversation(item)"
+                class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+              >
+                发起沟通
+              </button>
+              <button
+                type="button"
+                *ngIf="item.student.resume_image"
+                (click)="openResumeImage(item)"
+                class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+              >
+                查看简历图
+              </button>
+              <button
+                type="button"
+                *ngIf="item.student.recruitment_context?.application_id"
+                (click)="goToApplications(selectedJob?.id)"
+                class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+              >
+                打开申请管理
+              </button>
+            </div>
+
+            <div *ngIf="getStageActionOptions(item).length" class="mt-5 rounded-2xl border border-slate-200 p-4">
+              <div>
+                <p class="text-sm font-semibold text-slate-900">快速推进到招聘流程</p>
+                <p class="mt-1 text-xs text-slate-500">从推荐结果直接推进到待筛选、待面试、确认面试或淘汰池。</p>
+              </div>
+
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button
+                  *ngFor="let action of getStageActionOptions(item)"
+                  type="button"
+                  class="rounded-2xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                  [ngClass]="action.style"
+                  [disabled]="referralActionLoadingId === item.student.recruitment_context?.application_id"
+                  (click)="moveCandidateToStage(item, action.stage)"
+                >
+                  {{ referralActionLoadingId === item.student.recruitment_context?.application_id ? '处理中...' : getStageActionLabel(action.stage) }}
+                </button>
+              </div>
+            </div>
+          </article>
+        </section>
       </section>
     </section>
+
   </div>
 </main>

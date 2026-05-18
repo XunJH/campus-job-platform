@@ -38,9 +38,9 @@ export class EmployerWalletComponent implements OnInit {
   };
 
   constructor(
-    private authService: AuthService,
-    private jobService: JobService,
-    private router: Router
+    private readonly authService: AuthService,
+    private readonly jobService: JobService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
@@ -143,9 +143,20 @@ export class EmployerWalletComponent implements OnInit {
     return classes[status] || classes.pending;
   }
 
+  createSettlementAppeal(settlement: SettlementRecord): void {
+    this.router.navigate(['/employer/tickets'], {
+      queryParams: {
+        type: 'settlement_dispute',
+        title: `结算争议：${this.getJobTitle(settlement)}`,
+        description: `我对学生 ${this.getStudentName(settlement)} 的这条结算记录有异议，请平台协助复核。`,
+        relatedSettlementId: settlement.id
+      }
+    });
+  }
+
   formatAmount(amount?: number | string | null): string {
     const value = Number(amount || 0);
-    return `￥${value.toFixed(2)}`;
+    return `¥${value.toFixed(2)}`;
   }
 
   formatAmountWithType(settlement: SettlementRecord): string {

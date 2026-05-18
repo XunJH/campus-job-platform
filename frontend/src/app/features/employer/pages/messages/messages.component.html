@@ -6,9 +6,15 @@
       <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 class="text-3xl font-black text-[#1A365D]">沟通渠道</h1>
-          <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-500">申请提交后会自动收到学生发送的简历图片，收到新消息会提醒并自动置顶。</p>
+          <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
+            这里承接岗位投递后的沟通。已确认面试的候选人会被单独置顶，发送消息前也会自动进行内容安全检查，
+            用于识别诈骗、诱导转账、脱离平台沟通和异常索取信息等风险。
+          </p>
         </div>
-        <a routerLink="/employer/applications" class="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#1A365D] no-underline hover:bg-slate-50">
+        <a
+          routerLink="/employer/applications"
+          class="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#1A365D] no-underline hover:bg-slate-50"
+        >
           返回申请管理
         </a>
       </div>
@@ -18,7 +24,7 @@
       {{ errorMessage }}
     </div>
 
-    <section class="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+    <section class="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
       <article class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
         <div *ngIf="loading" class="flex justify-center p-10">
           <span class="material-symbols-outlined animate-spin text-4xl text-[#1A365D]">progress_activity</span>
@@ -28,48 +34,69 @@
           暂无沟通记录
         </div>
 
-        <div *ngIf="!loading && conversations.length > 0" class="space-y-3">
-          <button
-            *ngFor="let conversation of conversations"
-            type="button"
-            (click)="selectConversation(conversation)"
-            class="block w-full rounded-2xl border p-4 text-left transition-all"
-            [class.border-[#1A365D]]="selectedConversation?.id === conversation.id"
-            [class.bg-blue-50]="selectedConversation?.id === conversation.id"
-            [class.border-slate-200]="selectedConversation?.id !== conversation.id"
-          >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <p class="truncate font-semibold text-[#1A365D]">{{ getConversationTitle(conversation) }}</p>
-                  <span *ngIf="conversation.unreadCount" class="inline-flex min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
-                    {{ conversation.unreadCount! > 99 ? '99+' : conversation.unreadCount }}
-                  </span>
-                </div>
-                <p class="mt-1 text-sm text-slate-500">{{ getCounterpartName(conversation) }}</p>
-                <p class="mt-2 truncate text-xs text-slate-400">{{ conversation.lastMessagePreview || '已建立沟通渠道' }}</p>
-              </div>
-              <span class="shrink-0 text-xs text-slate-400">{{ formatDate(conversation.lastMessageAt) }}</span>
+        <div *ngIf="!loading && conversations.length > 0" class="space-y-5">
+          <section *ngFor="let group of groupedConversations">
+            <div class="mb-3 px-1">
+              <h2 class="text-sm font-bold tracking-wide text-[#1A365D]">{{ group.title }}</h2>
+              <p class="mt-1 text-xs leading-5 text-slate-500">{{ group.description }}</p>
             </div>
-          </button>
+
+            <div class="space-y-3">
+              <button
+                *ngFor="let conversation of group.conversations; trackBy: trackConversation"
+                type="button"
+                (click)="selectConversation(conversation)"
+                class="block w-full rounded-2xl border p-4 text-left transition-all"
+                [class.border-[#1A365D]]="isSelectedConversation(conversation)"
+                [class.bg-blue-50]="isSelectedConversation(conversation)"
+                [class.border-slate-200]="!isSelectedConversation(conversation)"
+                [class.shadow-[0_12px_40px_-28px_rgba(26,54,93,0.6)]]="conversation.application?.applicationStage === 'interview_confirmed'"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <p class="truncate font-semibold text-[#1A365D]">{{ getConversationTitle(conversation) }}</p>
+                      <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold" [ngClass]="getStageClasses(conversation.application?.applicationStage)">
+                        {{ getStageLabel(conversation.application?.applicationStage) }}
+                      </span>
+                      <span
+                        *ngIf="conversation.unreadCount"
+                        class="inline-flex min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white"
+                      >
+                        {{ conversation.unreadCount! > 99 ? '99+' : conversation.unreadCount }}
+                      </span>
+                    </div>
+                    <p class="mt-1 text-sm text-slate-500">{{ getCounterpartName(conversation) }}</p>
+                    <p class="mt-2 truncate text-xs text-slate-400">{{ conversation.lastMessagePreview || '已发起岗位沟通' }}</p>
+                  </div>
+                  <span class="shrink-0 text-xs text-slate-400">{{ formatDate(conversation.lastMessageAt) }}</span>
+                </div>
+              </button>
+            </div>
+          </section>
         </div>
       </article>
 
       <article class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div *ngIf="detailLoading" class="flex min-h-[560px] items-center justify-center">
+        <div *ngIf="detailLoading" class="flex min-h-[600px] items-center justify-center">
           <span class="material-symbols-outlined animate-spin text-4xl text-[#1A365D]">progress_activity</span>
         </div>
 
-        <div *ngIf="!detailLoading && !selectedConversation" class="flex min-h-[560px] items-center justify-center text-slate-500">
+        <div *ngIf="!detailLoading && !selectedConversation" class="flex min-h-[600px] items-center justify-center text-slate-500">
           请选择左侧会话查看详情
         </div>
 
-        <div *ngIf="!detailLoading && selectedConversation as conversation" class="flex min-h-[560px] flex-col">
+        <div *ngIf="!detailLoading && selectedConversation as conversation" class="flex min-h-[600px] flex-col">
           <div class="border-b border-slate-100 px-6 py-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 class="text-2xl font-black text-[#1A365D]">{{ getConversationTitle(conversation) }}</h2>
-                <p class="mt-1 text-sm text-slate-500">学生：{{ getCounterpartName(conversation) }}</p>
+                <div class="flex flex-wrap items-center gap-3">
+                  <h2 class="text-2xl font-black text-[#1A365D]">{{ getConversationTitle(conversation) }}</h2>
+                  <span class="rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getStageClasses(conversation.application?.applicationStage)">
+                    {{ getStageLabel(conversation.application?.applicationStage) }}
+                  </span>
+                </div>
+                <p class="mt-2 text-sm text-slate-500">学生：{{ getCounterpartName(conversation) }}</p>
               </div>
               <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
                 {{ getStatusLabel(conversation.application?.status) }}
@@ -79,16 +106,24 @@
 
           <div class="flex-1 space-y-4 px-6 py-5">
             <div *ngFor="let message of conversation.messages" class="flex" [class.justify-end]="isMyMessage(message)" [class.justify-start]="!isMyMessage(message)">
-              <div class="max-w-[78%] rounded-2xl px-4 py-3"
+              <div
+                class="max-w-[78%] rounded-2xl px-4 py-3"
                 [class.bg-[#1A365D]]="isMyMessage(message)"
                 [class.text-white]="isMyMessage(message)"
                 [class.bg-slate-100]="!isMyMessage(message)"
-                [class.text-slate-700]="!isMyMessage(message)">
+                [class.text-slate-700]="!isMyMessage(message)"
+              >
                 <p class="text-xs opacity-70">{{ getSenderLabel(message) }} · {{ formatDate(message.createdAt) }}</p>
                 <p *ngIf="message.content" class="mt-2 whitespace-pre-line text-sm leading-6">{{ message.content }}</p>
                 <div *ngIf="message.attachmentUrl" class="mt-3 space-y-2">
-                  <img [src]="message.attachmentUrl" alt="附件图片" class="max-h-96 w-full rounded-xl object-contain bg-white/70 p-2" />
-                  <a [href]="message.attachmentUrl" target="_blank" class="inline-flex text-xs font-semibold" [class.text-white]="isMyMessage(message)" [class.text-[#1A365D]]="!isMyMessage(message)">
+                  <img [src]="message.attachmentUrl" alt="附件图片" class="max-h-96 w-full rounded-xl bg-white/70 object-contain p-2" />
+                  <a
+                    [href]="message.attachmentUrl"
+                    target="_blank"
+                    class="inline-flex text-xs font-semibold"
+                    [class.text-white]="isMyMessage(message)"
+                    [class.text-[#1A365D]]="!isMyMessage(message)"
+                  >
                     查看原图
                   </a>
                 </div>
@@ -97,9 +132,54 @@
           </div>
 
           <div class="border-t border-slate-100 px-6 py-4">
+            <div class="mb-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              发送前会自动执行内容安全检查。高风险内容会被拦截，中风险内容会提醒你修改后再发送。
+            </div>
+
+            <div *ngIf="riskChecking" class="mb-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+              正在检查消息风险，请稍候…
+            </div>
+
+            <div *ngIf="riskWarning" class="mb-3 rounded-2xl border px-4 py-3 text-sm" [ngClass]="riskBannerTone">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="flex min-w-0 items-start gap-3">
+                  <span class="material-symbols-outlined text-[20px]">{{ riskBannerIcon }}</span>
+                  <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="font-semibold">{{ riskStatusTitle }}</span>
+                      <span class="rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold">{{ riskWarning.riskLevel }}</span>
+                      <span class="rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold">{{ riskWarning.decision }}</span>
+                    </div>
+                    <p class="mt-2 leading-6">{{ riskWarning.summary }}</p>
+                  </div>
+                </div>
+
+                <span class="rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold">可信度 {{ riskWarning.confidence }}</span>
+              </div>
+
+              <div *ngIf="riskWarning.actions.length" class="mt-3">
+                <p class="text-xs font-semibold tracking-wide opacity-80">建议动作</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5">
+                  <li *ngFor="let action of riskWarning.actions">{{ action }}</li>
+                </ul>
+              </div>
+
+              <div *ngIf="riskWarning.platformActions.length" class="mt-3">
+                <p class="text-xs font-semibold tracking-wide opacity-80">平台侧提示</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5">
+                  <li *ngFor="let action of riskWarning.platformActions">{{ action }}</li>
+                </ul>
+              </div>
+
+              <p *ngIf="riskWarning.shouldBlock" class="mt-3 text-xs font-semibold">
+                当前消息不会被直接发送，请先根据提示修改内容后再试。
+              </p>
+            </div>
+
             <div class="flex gap-3">
               <textarea
                 [(ngModel)]="draftMessage"
+                (ngModelChange)="onDraftMessageChange()"
                 rows="3"
                 class="min-h-[88px] flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#1A365D]"
                 placeholder="输入你想发送给学生的消息"
@@ -107,10 +187,10 @@
               <button
                 type="button"
                 (click)="sendMessage()"
-                [disabled]="sending || !draftMessage.trim()"
+                [disabled]="!canSendMessage"
                 class="self-end rounded-2xl bg-[#1A365D] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
               >
-                {{ sending ? '发送中...' : '发送消息' }}
+                {{ sending ? '发送中...' : (riskWarning?.shouldBlock ? '请先修改消息' : '发送消息') }}
               </button>
             </div>
           </div>

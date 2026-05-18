@@ -4,7 +4,12 @@ const crypto = require('crypto');
 const fs = require('fs/promises');
 const { Op } = require('sequelize');
 const path = require('path');
-const { User, Verification } = require('../models');
+const {
+  User,
+  Verification,
+  Application,
+  Conversation
+} = require('../models');
 const { sanitizeText } = require('../utils/sanitize');
 
 if (!process.env.JWT_SECRET) {
@@ -260,6 +265,105 @@ const hasUsableAiProfile = (profile) => (
   (Array.isArray(profile.tags) && profile.tags.length > 0) &&
   (Array.isArray(profile.suitable_jobs) && profile.suitable_jobs.length > 0)
 );
+
+const pickProfileText = (profile, keys) => {
+  for (const key of keys) {
+    const value = profile?.[key];
+    if (typeof value === 'string' && value.trim()) {
+      return sanitizeText(value.trim());
+    }
+  }
+
+  return '';
+};
+
+const getStagePriority = (stage, status) => {
+  if (status === 'approved') return 100;
+  if (stage === 'interview_confirmed') return 95;
+  if (stage === 'interview_shortlist') return 75;
+  if (stage === 'screening') return 55;
+  if (stage === 'new') return 35;
+  if (stage === 'archived') return 5;
+  return 0;
+};
+
+const getRecruitmentAction = (application, conversation) => {
+  if (!application) {
+    if (conversation?.lastMessageAt) {
+      return '建议查看历史沟通并决定是否转入正式筛选';
+    }
+    return '建议发起沟通并确认核心要求';
+  }
+
+  if (application.status === 'withdrawn') {
+    return '学生已撤回申请，暂不继续推进';
+  }
+
+  if (application.status === 'rejected' || application.applicationStage === 'rejected_pool') {
+    return '该候选人已淘汰，无需重复推进';
+  }
+
+  if (application.status === 'approved' || application.applicationStage === 'interview_confirmed') {
+    return '已确认面试，建议直接进入沟通与安排环节';
+  }
+
+  if (application.applicationStage === 'interview_shortlist') {
+    return '建议优先安排面试并确认时间';
+  }
+
+  if (application.applicationStage === 'screening') {
+    return '建议先完成初筛沟通，再决定是否进入面试';
+  }
+
+  return '建议尽快查看申请并进入筛选流程';
+};
+
+const buildRecruitmentContext = (application, conversation) => {
+  const stage = application?.applicationStage || null;
+  const status = application?.status || null;
+  const blocked = status === 'withdrawn' || status === 'rejected' || stage === 'rejected_pool' || stage === 'archived';
+
+  return {
+    application_id: application?.id || null,
+    application_status: status,
+    application_stage: stage,
+    applied_at: application?.appliedAt || null,
+    stage_updated_at: application?.stageUpdatedAt || null,
+    has_conversation: Boolean(conversation),
+    conversation_status: conversation?.status || null,
+    last_message_at: conversation?.lastMessageAt || null,
+    in_pipeline: Boolean(application) && !blocked,
+    pipeline_priority: getStagePriority(stage, status),
+    next_action: getRecruitmentAction(application, conversation)
+  };
+};
+
+const buildInternalCandidateProfile = (user, recruitmentContext = null) => {
+  const completedAt = user.personalityProfileCompletedAt || new Date();
+  const normalizedProfile = normalizeAiPersonalityProfile(user.personalityProfile || {}, user.id, completedAt);
+  const resumeImage = typeof user.personalityProfile?.resumeImage === 'string'
+    ? user.personalityProfile.resumeImage
+    : '';
+
+  return {
+    student_id: String(user.id),
+    name: user.username,
+    major: pickProfileText(user.personalityProfile, ['major', 'educationMajor', 'schoolMajor', 'specialty']),
+    grade: pickProfileText(user.personalityProfile, ['grade', 'educationGrade', 'schoolGrade', 'year']),
+    bio: sanitizeText(user.bio || ''),
+    tags: normalizedProfile.tags,
+    strengths: normalizedProfile.strengths,
+    suitable_jobs: normalizedProfile.suitable_jobs,
+    dimensions: normalizedProfile.dimensions,
+    summary: normalizedProfile.summary,
+    credit_score: user.creditScore,
+    resume_image: resumeImage,
+    has_resume_image: Boolean(resumeImage),
+    completed_at: user.personalityProfileCompletedAt,
+    created_at: normalizedProfile.created_at,
+    recruitment_context: recruitmentContext
+  };
+};
 
 exports.register = async (req, res) => {
   try {
@@ -677,6 +781,121 @@ exports.getInternalPersonalityProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('Internal personality profile error:', error);
+    return res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+exports.getInternalCandidateProfiles = async (req, res) => {
+  try {
+    const token = req.headers['x-ai-service-token'];
+
+    if (!token || token !== AI_INTERNAL_TOKEN) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden'
+      });
+    }
+
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 200, 1), 500);
+    const jobId = parseInt(req.query.jobId, 10);
+    const selectedJobId = Number.isNaN(jobId) ? null : jobId;
+
+    const students = await User.findAll({
+      where: {
+        role: 'student',
+        status: 'active'
+      },
+      attributes: [
+        'id',
+        'username',
+        'bio',
+        'creditScore',
+        'personalityProfileCompletedAt',
+        'personalityProfile'
+      ],
+      order: [
+        ['personalityProfileCompletedAt', 'DESC'],
+        ['updatedAt', 'DESC']
+      ],
+      limit
+    });
+
+    const validStudents = students.filter((student) => hasUsableAiProfile(student.personalityProfile));
+    const studentIds = validStudents.map((student) => student.id);
+
+    let applicationsByStudent = new Map();
+    let conversationsByStudent = new Map();
+
+    if (studentIds.length) {
+      const applicationWhere = {
+        studentId: {
+          [Op.in]: studentIds
+        }
+      };
+      const conversationWhere = {
+        studentId: {
+          [Op.in]: studentIds
+        }
+      };
+
+      if (selectedJobId) {
+        applicationWhere.jobId = selectedJobId;
+        conversationWhere.jobId = selectedJobId;
+      }
+
+      const [applications, conversations] = await Promise.all([
+        Application.findAll({
+          where: applicationWhere,
+          order: [
+            ['stageUpdatedAt', 'DESC'],
+            ['updatedAt', 'DESC']
+          ]
+        }),
+        Conversation.findAll({
+          where: conversationWhere,
+          order: [
+            ['lastMessageAt', 'DESC'],
+            ['updatedAt', 'DESC']
+          ]
+        })
+      ]);
+
+      applicationsByStudent = applications.reduce((map, application) => {
+        if (!map.has(application.studentId)) {
+          map.set(application.studentId, application);
+        }
+        return map;
+      }, new Map());
+
+      conversationsByStudent = conversations.reduce((map, conversation) => {
+        if (!map.has(conversation.studentId)) {
+          map.set(conversation.studentId, conversation);
+        }
+        return map;
+      }, new Map());
+    }
+
+    const candidates = validStudents.map((student) => {
+      const recruitmentContext = buildRecruitmentContext(
+        applicationsByStudent.get(student.id) || null,
+        conversationsByStudent.get(student.id) || null
+      );
+
+      return buildInternalCandidateProfile(student, recruitmentContext);
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        total: candidates.length,
+        candidates
+      }
+    });
+  } catch (error) {
+    console.error('Internal candidate profiles error:', error);
     return res.status(500).json({
       success: false,
       message: '服务器内部错误'

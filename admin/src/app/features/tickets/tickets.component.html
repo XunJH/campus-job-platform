@@ -1,0 +1,267 @@
+<div class="max-w-7xl mx-auto space-y-6">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+    <div>
+      <h2 class="font-h1 text-h1 text-primary">申诉 / 工单中心</h2>
+      <p class="font-body-md text-secondary mt-1">统一处理认证申诉、岗位申诉、投诉举报和系统自动生成的争议工单。</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-gutter">
+    <div class="bg-white p-lg rounded-xl shadow-card flex flex-col gap-2">
+      <span class="text-caption font-caption text-secondary uppercase tracking-wider">全部工单</span>
+      <span class="text-h1 font-h1 text-primary">{{ summary.total }}</span>
+      <p class="text-caption font-caption text-gray-400">当前工单池总量</p>
+    </div>
+
+    <div class="bg-white p-lg rounded-xl shadow-card flex flex-col gap-2">
+      <span class="text-caption font-caption text-secondary uppercase tracking-wider">待受理</span>
+      <span class="text-h1 font-h1 text-primary">{{ summary.open }}</span>
+      <p class="text-caption font-caption text-gray-400">等待管理员接单</p>
+    </div>
+
+    <div class="bg-white p-lg rounded-xl shadow-card flex flex-col gap-2">
+      <span class="text-caption font-caption text-secondary uppercase tracking-wider">处理中</span>
+      <span class="text-h1 font-h1 text-primary">{{ summary.inProgress }}</span>
+      <p class="text-caption font-caption text-gray-400">已经受理，尚未结案</p>
+    </div>
+
+    <div class="bg-white p-lg rounded-xl shadow-card flex flex-col gap-2">
+      <span class="text-caption font-caption text-secondary uppercase tracking-wider">高优先级 / 争议</span>
+      <span class="text-h1 font-h1 text-primary">{{ summary.highPriority }} / {{ summary.disputes }}</span>
+      <p class="text-caption font-caption text-gray-400">优先级高的工单和系统争议单</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-gutter">
+    <div class="bg-white rounded-xl shadow-card p-lg space-y-4">
+      <div>
+        <h3 class="font-h2 text-h2 text-primary">创建工单</h3>
+        <p class="text-body-md text-secondary mt-1">管理员可以先手动登记线下申诉、投诉或内部复核需求。</p>
+      </div>
+
+      <label class="block space-y-2">
+        <span class="text-body-md font-semibold text-primary">工单标题</span>
+        <input
+          [(ngModel)]="createForm.title"
+          type="text"
+          class="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+          placeholder="例如：企业对认证结果提出复核申请"
+        />
+      </label>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <label class="block space-y-2">
+          <span class="text-body-md font-semibold text-primary">工单类型</span>
+          <select
+            [(ngModel)]="createForm.type"
+            class="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+          >
+            <option *ngFor="let option of typeOptions" [ngValue]="option.value">{{ option.label }}</option>
+          </select>
+        </label>
+
+        <label class="block space-y-2">
+          <span class="text-body-md font-semibold text-primary">优先级</span>
+          <select
+            [(ngModel)]="createForm.priority"
+            class="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+          >
+            <option *ngFor="let option of priorityOptions" [ngValue]="option.value">{{ option.label }}</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="block space-y-2">
+        <span class="text-body-md font-semibold text-primary">工单描述</span>
+        <textarea
+          [(ngModel)]="createForm.description"
+          rows="6"
+          class="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+          placeholder="补充申诉原因、问题背景、需要管理员处理的内容。"
+        ></textarea>
+      </label>
+
+      <button
+        type="button"
+        (click)="createTicket()"
+        [disabled]="creating || !createForm.title.trim() || !createForm.description.trim()"
+        class="px-5 py-3 bg-primary text-white rounded-lg font-button text-button hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+      >
+        {{ creating ? '创建中...' : '创建工单' }}
+      </button>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-card p-lg space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h3 class="font-h2 text-h2 text-primary">筛选工单</h3>
+          <p class="text-body-md text-secondary mt-1">按状态、类型、优先级快速切换待处理范围。</p>
+        </div>
+
+        <button
+          type="button"
+          (click)="loadTickets()"
+          class="px-4 py-2 border border-outline rounded-lg font-button text-button hover:bg-surface-container transition-all"
+        >
+          刷新列表
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <input
+          [(ngModel)]="searchText"
+          (keyup.enter)="onSearch()"
+          type="text"
+          class="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+          placeholder="搜索标题或描述"
+        />
+
+        <select
+          [(ngModel)]="statusFilter"
+          (ngModelChange)="onFilterChange()"
+          class="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+        >
+          <option [ngValue]="''">全部状态</option>
+          <option *ngFor="let option of statusOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+
+        <select
+          [(ngModel)]="typeFilter"
+          (ngModelChange)="onFilterChange()"
+          class="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+        >
+          <option [ngValue]="''">全部类型</option>
+          <option *ngFor="let option of typeOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+
+        <select
+          [(ngModel)]="priorityFilter"
+          (ngModelChange)="onFilterChange()"
+          class="w-full rounded-lg border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+        >
+          <option [ngValue]="''">全部优先级</option>
+          <option *ngFor="let option of priorityOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+      </div>
+
+      <button
+        type="button"
+        (click)="onSearch()"
+        class="px-4 py-2 border border-outline rounded-lg font-button text-button hover:bg-surface-container transition-all"
+      >
+        开始筛选
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-card overflow-hidden">
+    <div class="p-lg border-b border-gray-100 flex justify-between items-center gap-4">
+      <div>
+        <h3 class="font-h2 text-h2 text-primary">工单列表</h3>
+        <p class="text-body-md text-secondary">这里聚合人工工单和系统自动生成的争议工单。</p>
+      </div>
+      <span class="text-caption font-caption text-gray-400">共 {{ total }} 条</span>
+    </div>
+
+    <div *ngIf="isLoading" class="flex items-center justify-center py-16">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+
+    <div *ngIf="!isLoading" class="divide-y divide-gray-50">
+      <div *ngFor="let ticket of tickets" class="px-lg py-5 space-y-4">
+        <div class="flex flex-col xl:flex-row xl:items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h4 class="font-body-lg text-primary font-semibold">{{ ticket.title }}</h4>
+              <span class="px-2 py-1 rounded text-caption font-caption" [ngClass]="getStatusClass(ticket.status)">
+                {{ getStatusLabel(ticket.status) }}
+              </span>
+              <span class="px-2 py-1 rounded text-caption font-caption" [ngClass]="getPriorityClass(ticket.priority)">
+                {{ getPriorityLabel(ticket.priority) }}优先级
+              </span>
+              <span class="px-2 py-1 rounded bg-slate-100 text-slate-700 text-caption font-caption">
+                {{ getTypeLabel(ticket.type) }}
+              </span>
+            </div>
+
+            <p class="text-caption text-gray-400 mt-2">
+              提交角色：{{ getSourceRoleLabel(ticket.sourceRole) }}
+              <span *ngIf="ticket.submitter"> · 提交人：{{ ticket.submitter.username }}</span>
+              <span *ngIf="ticket.assignee"> · 当前处理人：{{ ticket.assignee.username }}</span>
+              · 创建于 {{ formatDate(ticket.createdAt) }}
+            </p>
+
+            <p class="text-body-md text-secondary mt-3 leading-7">{{ ticket.description }}</p>
+
+            <div class="mt-3 flex flex-wrap gap-3 text-caption text-gray-500">
+              <span>{{ getRelatedLabel(ticket) }}</span>
+              <a *ngIf="getRelatedRoute(ticket)" [routerLink]="getRelatedRoute(ticket)" class="text-primary hover:underline">
+                查看关联对象
+              </a>
+              <span *ngIf="ticket.resolvedAt">处理时间：{{ formatDate(ticket.resolvedAt) }}</span>
+            </div>
+
+            <div *ngIf="ticket.resolutionNote" class="mt-3 rounded-lg bg-surface-container-low px-4 py-3 text-body-md text-secondary leading-6">
+              <span class="font-semibold text-primary">处理说明：</span>{{ ticket.resolutionNote }}
+            </div>
+          </div>
+
+          <div class="flex flex-wrap xl:flex-col gap-3 xl:min-w-[9rem]">
+            <button
+              *ngIf="ticket.status === 'open'"
+              type="button"
+              (click)="markInProgress(ticket)"
+              class="px-4 py-2 border border-outline rounded-lg font-button text-button hover:bg-surface-container transition-all"
+            >
+              标记处理中
+            </button>
+
+            <button
+              *ngIf="ticket.status === 'open' || ticket.status === 'in_progress'"
+              type="button"
+              (click)="resolveTicket(ticket)"
+              class="px-4 py-2 bg-primary text-white rounded-lg font-button text-button hover:opacity-90 active:scale-95 transition-all"
+            >
+              标记解决
+            </button>
+
+            <button
+              *ngIf="ticket.status === 'open' || ticket.status === 'in_progress'"
+              type="button"
+              (click)="rejectTicket(ticket)"
+              class="px-4 py-2 border border-rose-200 text-rose-700 rounded-lg font-button text-button hover:bg-rose-50 transition-all"
+            >
+              驳回工单
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!tickets.length" class="px-lg py-12 text-center text-body-md text-gray-400">
+        当前没有符合条件的工单。
+      </div>
+    </div>
+
+    <div *ngIf="!isLoading && totalPages > 1" class="p-lg border-t border-gray-100 flex items-center justify-between gap-4">
+      <button
+        type="button"
+        (click)="goToPage(page - 1)"
+        [disabled]="page <= 1"
+        class="px-4 py-2 border border-outline rounded-lg font-button text-button hover:bg-surface-container transition-all disabled:opacity-50"
+      >
+        上一页
+      </button>
+
+      <span class="text-caption font-caption text-gray-400">第 {{ page }} / {{ totalPages }} 页</span>
+
+      <button
+        type="button"
+        (click)="goToPage(page + 1)"
+        [disabled]="page >= totalPages"
+        class="px-4 py-2 border border-outline rounded-lg font-button text-button hover:bg-surface-container transition-all disabled:opacity-50"
+      >
+        下一页
+      </button>
+    </div>
+  </div>
+</div>

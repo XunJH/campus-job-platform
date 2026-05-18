@@ -1,6 +1,11 @@
-// 少量自定义动画与补充样式
+:host {
+  display: block;
+}
+
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-spin {

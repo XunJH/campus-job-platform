@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { AiApiService } from '../../../../core/services/ai-api.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { Job, JobApplication, JobService } from '../../../../core/services/job.service';
 import { StudentShellHeaderComponent } from '../../../../shared/components/student-shell-header/student-shell-header.component';
@@ -8,7 +10,7 @@ import { StudentShellHeaderComponent } from '../../../../shared/components/stude
 @Component({
   selector: 'app-student-applications',
   standalone: true,
-  imports: [CommonModule, RouterModule, StudentShellHeaderComponent],
+  imports: [CommonModule, FormsModule, RouterModule, StudentShellHeaderComponent],
   templateUrl: './applications.component.html',
   styleUrls: ['./applications.component.scss']
 })
@@ -18,8 +20,12 @@ export class StudentApplicationsComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   withdrawingId: number | null = null;
+  reviewDrafts: Record<number, { rating: number; reviewText: string }> = {};
+  reviewLoadingId: number | null = null;
+  reviewResults: Record<number, any> = {};
 
   constructor(
+    private aiApi: AiApiService,
     private authService: AuthService,
     private jobService: JobService,
     private router: Router
@@ -89,6 +95,49 @@ export class StudentApplicationsComponent implements OnInit {
       error: (err) => {
         this.errorMessage = err.error?.message || '撤回申请失败，请稍后重试。';
         this.withdrawingId = null;
+      }
+    });
+  }
+
+  analyzeReview(application: JobApplication): void {
+    const draft = this.getReviewDraft(application.id);
+    if (!application.id || !this.canReview(application) || !draft.reviewText.trim()) {
+      this.errorMessage = '请先填写评价内容，再进行分析。';
+      this.successMessage = '';
+      return;
+    }
+
+    this.reviewLoadingId = application.id;
+    this.reviewResults = {
+      ...this.reviewResults,
+      [application.id]: null
+    };
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.aiApi.analyzeStudentReviewToEmployer(
+      String(this.authService.getCurrentUser()?.id || ''),
+      String(application.job?.id || ''),
+      application.job?.employer?.username || '目标企业',
+      application.job?.title || '目标岗位',
+      draft.rating,
+      draft.reviewText.trim()
+    ).subscribe({
+      next: (res) => {
+        this.reviewResults = {
+          ...this.reviewResults,
+          [application.id]: res.data?.ai_analysis || null
+        };
+        this.reviewLoadingId = null;
+      },
+      error: (err) => {
+        this.reviewResults = {
+          ...this.reviewResults,
+          [application.id]: {
+            error: err.error?.detail || err.error?.message || '评价分析失败，请稍后重试。'
+          }
+        };
+        this.reviewLoadingId = null;
       }
     });
   }
@@ -170,6 +219,30 @@ export class StudentApplicationsComponent implements OnInit {
     }
 
     return this.formatDate(application.appliedAt);
+  }
+
+  canReview(application: JobApplication): boolean {
+    return application.status === 'approved';
+  }
+
+  getReviewDraft(applicationId?: number): { rating: number; reviewText: string } {
+    const key = Number(applicationId || 0);
+    if (!this.reviewDrafts[key]) {
+      this.reviewDrafts[key] = {
+        rating: 5,
+        reviewText: ''
+      };
+    }
+
+    return this.reviewDrafts[key];
+  }
+
+  getReviewResult(applicationId?: number): any {
+    return this.reviewResults[Number(applicationId || 0)] || null;
+  }
+
+  getDimensionEntries(dimensions: Record<string, string> | undefined): Array<{ key: string; value: string }> {
+    return Object.entries(dimensions || {}).map(([key, value]) => ({ key, value }));
   }
 
   private countByStatus(status: JobApplication['status']): number {

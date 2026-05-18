@@ -1,5 +1,490 @@
-/* Profile Component Styles */
+:host {
+  display: block;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(191, 219, 254, 0.28), transparent 28%),
+    radial-gradient(circle at top right, rgba(251, 191, 36, 0.15), transparent 22%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+}
 
-.radar-chart-bg {
-  background: radial-gradient(circle, rgba(26,54,93,0.05) 0%, rgba(26,54,93,0) 70%);
+.resume-workbench {
+  color: #0f172a;
+}
+
+.resume-hero {
+  position: relative;
+}
+
+.resume-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto 8% -80px auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.resume-input {
+  width: 100%;
+  border-radius: 1.25rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  padding: 0.95rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #0f172a;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+  resize: vertical;
+}
+
+.resume-input:focus {
+  border-color: #0f172a;
+  box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
+}
+
+.resume-input::placeholder {
+  color: #94a3b8;
+}
+
+.preview-control-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.resume-primary-button,
+.resume-secondary-button,
+.resume-tertiary-button,
+.resume-danger-button,
+.resume-ai-pill,
+.resume-template-switch,
+.resume-mini-danger,
+.resume-theme-switch,
+.resume-tone-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.resume-primary-button,
+.resume-secondary-button,
+.resume-tertiary-button,
+.resume-danger-button {
+  padding: 0.72rem 1rem;
+}
+
+.resume-primary-button {
+  border: 1px solid #0f172a;
+  background: #0f172a;
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+}
+
+.resume-primary-button:hover,
+.resume-secondary-button:hover,
+.resume-tertiary-button:hover,
+.resume-ai-pill:hover,
+.resume-template-switch:hover,
+.resume-mini-danger:hover,
+.resume-theme-switch:hover,
+.resume-tone-switch:hover {
+  transform: translateY(-1px);
+}
+
+.resume-secondary-button {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+}
+
+.resume-secondary-button:hover,
+.resume-tertiary-button:hover,
+.resume-ai-pill:hover,
+.resume-template-switch:hover,
+.resume-theme-switch:hover,
+.resume-tone-switch:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.resume-tertiary-button {
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.resume-danger-button,
+.resume-mini-danger {
+  border: 1px solid #fecdd3;
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.resume-danger-button:hover,
+.resume-mini-danger:hover {
+  box-shadow: 0 10px 20px rgba(225, 29, 72, 0.08);
+}
+
+.resume-ai-pill {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+  padding: 0.65rem 0.95rem;
+}
+
+.resume-ai-pill-primary {
+  border-color: #0f172a;
+  background: #0f172a;
+  color: #fff;
+  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.12);
+}
+
+.resume-template-switch {
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 0.8rem 0.95rem;
+  text-align: left;
+}
+
+.resume-template-switch.is-active {
+  border-color: #0f172a;
+  background: #0f172a;
+  color: #fff;
+  box-shadow: 0 18px 28px rgba(15, 23, 42, 0.12);
+}
+
+.template-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.template-desc {
+  margin-top: 0.18rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.resume-template-switch.is-active .template-desc {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.resume-theme-switch {
+  align-items: flex-start;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 0.72rem 0.8rem;
+  min-width: 168px;
+}
+
+.resume-theme-switch.is-active {
+  border-color: #0f172a;
+  background: #f8fafc;
+  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.08);
+}
+
+.theme-swatch {
+  height: 2.2rem;
+  width: 2.2rem;
+  border-radius: 0.95rem;
+  flex-shrink: 0;
+}
+
+.theme-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.theme-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.theme-desc {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.resume-tone-switch {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #475569;
+  padding: 0.62rem 0.95rem;
+}
+
+.resume-tone-switch.is-active {
+  border-color: #0f172a;
+  background: #0f172a;
+  color: #fff;
+}
+
+.resume-mini-danger {
+  height: 2.25rem;
+  width: 2.25rem;
+  justify-content: center;
+  align-self: flex-start;
+}
+
+.resume-preview-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.96)),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 30%);
+}
+
+.resume-sheet {
+  --resume-accent: #0f172a;
+  --resume-accent-soft: #eff6ff;
+  --resume-accent-border: #dbeafe;
+  --resume-sidebar-start: #1e3a5f;
+  --resume-sidebar-end: #10243a;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+}
+
+.resume-sheet[data-theme='graphite'] {
+  --resume-accent: #111827;
+  --resume-accent-soft: #f3f4f6;
+  --resume-accent-border: #d1d5db;
+  --resume-sidebar-start: #1f2937;
+  --resume-sidebar-end: #111827;
+}
+
+.resume-sheet[data-theme='emerald'] {
+  --resume-accent: #065f46;
+  --resume-accent-soft: #ecfdf5;
+  --resume-accent-border: #a7f3d0;
+  --resume-sidebar-start: #0f766e;
+  --resume-sidebar-end: #065f46;
+}
+
+.resume-sheet-a4 {
+  aspect-ratio: 1 / 1.414;
+  min-height: 960px;
+}
+
+.resume-nav-active-shadow {
+  box-shadow: 0 20px 32px rgba(15, 23, 42, 0.12);
+}
+
+.resume-sidebar {
+  background:
+    linear-gradient(180deg, var(--resume-sidebar-start) 0%, color-mix(in srgb, var(--resume-sidebar-start) 68%, var(--resume-sidebar-end) 32%) 48%, var(--resume-sidebar-end) 100%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 40%);
+}
+
+.resume-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.25rem;
+  border-bottom: 2px solid var(--resume-accent);
+  padding-bottom: 1rem;
+}
+
+.resume-sheet-header.compact {
+  border-bottom-color: var(--resume-accent-border);
+}
+
+.resume-avatar-frame {
+  display: flex;
+  height: 4.5rem;
+  width: 4.5rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, var(--resume-accent-soft), #ffffff);
+  color: var(--resume-accent);
+  font-size: 1.75rem;
+  font-weight: 900;
+}
+
+.resume-header-name {
+  font-size: 1.7rem;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.resume-header-role {
+  margin-top: 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.resume-header-contact {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  text-align: right;
+  font-size: 0.76rem;
+  color: #334155;
+}
+
+.resume-header-contact span {
+  margin-right: 0.5rem;
+  color: #94a3b8;
+}
+
+.resume-sheet-section {
+  margin-top: 1.15rem;
+}
+
+.resume-sheet-title {
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #334155;
+}
+
+.resume-sheet-title.alt {
+  border-bottom: 0;
+  border-left: 4px solid var(--resume-accent);
+  padding-bottom: 0;
+  padding-left: 0.8rem;
+  letter-spacing: 0.18em;
+  color: var(--resume-accent);
+}
+
+.resume-formal-entry {
+  margin-top: 1rem;
+}
+
+.resume-entry-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.resume-entry-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.resume-entry-subtitle {
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.resume-entry-meta {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.resume-bullet {
+  position: relative;
+  padding-left: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: #475569;
+}
+
+.resume-bullet::before {
+  content: '';
+  position: absolute;
+  top: 0.72rem;
+  left: 0;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--resume-accent);
+}
+
+.resume-bullet-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: start;
+  border-radius: 1.4rem;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  padding: 0.85rem;
+}
+
+.resume-preview-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--resume-accent-border);
+  background: var(--resume-accent-soft);
+  padding: 0.34rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--resume-accent);
+}
+
+.resume-preview-chip.compact {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.resume-sheet-compact {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98)),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--resume-accent-soft) 80%, transparent 20%), transparent 24%);
+}
+
+@media (max-width: 1535px) {
+  .resume-sheet-a4 {
+    min-height: 880px;
+  }
+}
+
+@media (max-width: 1279px) {
+  .resume-preview-panel {
+    position: static;
+  }
+
+  .resume-sheet-a4 {
+    min-height: auto;
+    aspect-ratio: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .resume-sheet-header,
+  .resume-entry-topline,
+  .resume-bullet-card,
+  .resume-theme-switch {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .resume-sheet-header {
+    gap: 1rem;
+  }
+
+  .resume-header-contact {
+    text-align: left;
+  }
 }

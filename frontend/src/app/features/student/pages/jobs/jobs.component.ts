@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { JobService, Job } from '../../../../core/services/job.service';
+import { PlatformSettingsService } from '../../../../core/services/platform-settings.service';
 import { PersonalityProfileService } from '../../../../core/services/personality-profile.service';
 import { AiFabComponent } from '../../../../shared/components/ai-fab/ai-fab.component';
 import { StudentShellHeaderComponent } from '../../../../shared/components/student-shell-header/student-shell-header.component';
@@ -41,9 +42,11 @@ export class JobsComponent implements OnInit {
   batchApplyLoading = false;
   batchApplyMessage = '';
   batchApplyError = false;
-  readonly maxBatchApplyCount = 100;
+  maxBatchApplyCount = 100;
+  batchApplyEnabled = true;
+  aiAssistantEnabled = true;
 
-  categories = ['技术类', '教学类', '配送类', '营销类'];
+  categories = ['技术类', '教学类', '运营类', '设计类', '市场类', '其他'];
   workLocations = [
     { value: 'on_campus', label: '校内' },
     { value: 'remote', label: '远程' },
@@ -67,10 +70,13 @@ export class JobsComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private jobService: JobService,
+    private platformSettingsService: PlatformSettingsService,
     private personalityProfileService: PersonalityProfileService
   ) {}
 
   ngOnInit(): void {
+    this.loadPlatformSettings();
+
     this.personalityProfileService.getStatus().subscribe({
       next: (status) => {
         if (status.profile) {
@@ -91,7 +97,44 @@ export class JobsComponent implements OnInit {
   }
 
   get canBatchApply(): boolean {
-    return this.jobs.length > 0 && !this.loading && !this.batchApplyLoading;
+    return this.batchApplyEnabled && this.jobs.length > 0 && !this.loading && !this.batchApplyLoading;
+  }
+
+  private loadPlatformSettings(): void {
+    this.platformSettingsService.getPublicSettings().subscribe({
+      next: (response) => {
+        const settings = response.data;
+        this.categories = settings.jobCategories?.length ? settings.jobCategories : this.categories;
+        this.workLocations = this.mapWorkLocationOptions(settings.workLocationOptions);
+        this.maxBatchApplyCount = settings.operationRules?.batchApplyLimit || 100;
+        this.batchApplyEnabled = settings.featureToggles?.enableBatchApply !== false;
+        this.aiAssistantEnabled = settings.featureToggles?.enableAiAssistant !== false;
+        this.selectedCategories = this.selectedCategories.filter((category) => this.categories.includes(category));
+      },
+      error: () => {}
+    });
+  }
+
+  private mapWorkLocationOptions(labels?: string[]): Array<{ value: string; label: string }> {
+    const defaults = ['校内', '远程', '混合'];
+    const source = labels && labels.length ? labels : defaults;
+
+    return [
+      { value: 'on_campus', label: this.normalizeWorkLocationLabel(source[0], defaults[0]) },
+      { value: 'remote', label: this.normalizeWorkLocationLabel(source[1], defaults[1]) },
+      { value: 'hybrid', label: this.normalizeWorkLocationLabel(source[2], defaults[2]) }
+    ];
+  }
+
+  private normalizeWorkLocationLabel(label: string | undefined, fallback: string): string {
+    const normalized = (label || '').trim();
+    const presetMap: Record<string, string> = {
+      on_campus: '校内',
+      remote: '远程',
+      hybrid: '混合'
+    };
+
+    return presetMap[normalized] || normalized || fallback;
   }
 
   private getActiveFilterArgs(): {
@@ -210,6 +253,12 @@ export class JobsComponent implements OnInit {
   applyFilteredJobs(): void {
     if (!this.authService.isAuthenticated()) {
       this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    if (!this.batchApplyEnabled) {
+      this.batchApplyError = true;
+      this.batchApplyMessage = '平台暂时关闭了一键批量投递功能。';
       return;
     }
 

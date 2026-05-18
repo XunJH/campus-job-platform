@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } 
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { JobService } from '../../../../core/services/job.service';
 import { AiApiService } from '../../../../core/services/ai-api.service';
+import { PlatformSettingsService } from '../../../../core/services/platform-settings.service';
 import { EmployerShellSidebarComponent } from '../../../../shared/components/employer-shell-sidebar/employer-shell-sidebar.component';
 
 @Component({
@@ -39,6 +40,7 @@ export class PostJobComponent implements OnInit {
     private fb: FormBuilder,
     private jobService: JobService,
     private aiApi: AiApiService,
+    private platformSettingsService: PlatformSettingsService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -58,6 +60,8 @@ export class PostJobComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadPlatformSettings();
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.jobId = parseInt(id, 10);
@@ -96,6 +100,39 @@ export class PostJobComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  private loadPlatformSettings(): void {
+    this.platformSettingsService.getPublicSettings().subscribe({
+      next: (response) => {
+        const settings = response.data;
+        this.categories = settings.jobCategories?.length ? settings.jobCategories : this.categories;
+        this.workLocations = this.mapWorkLocationOptions(settings.workLocationOptions);
+      },
+      error: () => {}
+    });
+  }
+
+  private mapWorkLocationOptions(labels?: string[]): Array<{ value: string; label: string }> {
+    const defaults = ['校内', '远程', '混合'];
+    const source = labels && labels.length ? labels : defaults;
+
+    return [
+      { value: 'on_campus', label: this.normalizeWorkLocationLabel(source[0], defaults[0]) },
+      { value: 'remote', label: this.normalizeWorkLocationLabel(source[1], defaults[1]) },
+      { value: 'hybrid', label: this.normalizeWorkLocationLabel(source[2], defaults[2]) }
+    ];
+  }
+
+  private normalizeWorkLocationLabel(label: string | undefined, fallback: string): string {
+    const normalized = (label || '').trim();
+    const presetMap: Record<string, string> = {
+      on_campus: '校内',
+      remote: '远程',
+      hybrid: '混合'
+    };
+
+    return presetMap[normalized] || normalized || fallback;
   }
 
   onSubmit(): void {
