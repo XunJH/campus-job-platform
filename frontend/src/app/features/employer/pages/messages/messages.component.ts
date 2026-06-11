@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { Subscription, debounceTime, distinctUntilChanged, filter, interval, of, switchMap } from 'rxjs';
+import { Subscription, catchError, debounceTime, distinctUntilChanged, filter, interval, of, switchMap, timeout } from 'rxjs';
 import { Subject } from 'rxjs';
 import {
   ConversationDetail,
@@ -73,7 +73,7 @@ export class EmployerMessagesComponent implements OnInit, OnDestroy {
 
     this.draftRiskSubscription = this.draftMessage$
       .pipe(
-        debounceTime(500),
+        debounceTime(250),
         distinctUntilChanged(),
         filter(() => !!this.selectedConversation),
         switchMap((message) => {
@@ -84,11 +84,21 @@ export class EmployerMessagesComponent implements OnInit, OnDestroy {
             return of(null);
           }
 
+          const localWarning = this.getLocalRiskWarning(trimmed);
+          if (localWarning?.shouldBlock) {
+            this.riskWarning = localWarning;
+            this.riskChecking = false;
+            return of(null);
+          }
+
           this.riskChecking = true;
           return this.aiApiService.checkChatWarningMessage(
             trimmed,
             'employer',
             String(this.selectedConversation?.id ?? '')
+          ).pipe(
+            timeout(6000),
+            catchError(() => of(null))
           );
         })
       )
@@ -275,10 +285,23 @@ export class EmployerMessagesComponent implements OnInit, OnDestroy {
     }
 
     const content = this.draftMessage.trim();
+    const localWarning = this.getLocalRiskWarning(content);
+
+    if (localWarning?.shouldBlock) {
+      this.riskWarning = localWarning;
+      this.riskChecking = false;
+      this.sending = false;
+      this.errorMessage = '当前消息存在较高风险，请先根据提示修改后再发送。';
+      return;
+    }
 
     this.sending = true;
     this.aiApiService
       .checkChatWarningMessage(content, 'employer', String(this.selectedConversation.id))
+      .pipe(
+        timeout(6000),
+        catchError(() => of(null))
+      )
       .subscribe({
         next: (res) => {
           this.riskWarning = res?.data ? this.normalizeRiskWarning(res.data) : null;
@@ -374,7 +397,7 @@ export class EmployerMessagesComponent implements OnInit, OnDestroy {
   }
 
   private persistMessage(content: string): void {
-    this.conversationService.sendMessage(this.selectedConversation!.id, content).subscribe({
+    this.conversationService.sendMessage(this.selectedConversation!.id, content).pipe(timeout(8000)).subscribe({
       next: (res) => {
         this.sending = false;
         this.draftMessage = '';
@@ -447,6 +470,52 @@ export class EmployerMessagesComponent implements OnInit, OnDestroy {
       shouldBlock: !!data.should_block || !!data.block_recommended,
       confidence: data.confidence || '--'
     };
+  }
+
+  private getLocalRiskWarning(content: string): RiskWarning | null {
+    const normalized = content.toLowerCase();
+    const offPlatformWords = ['微信', 'vx', 'v信', '加我', '私聊', 'qq', '手机号'];
+    const moneyWords = ['押金', '保证金', '转账', '汇款', '手续费', '培训费', '入职费', '报名费', '垫付'];
+    const privacyWords = ['身份证', '银行卡', '验证码', '密码', '账号'];
+
+    const hitOffPlatform = offPlatformWords.some((word) => normalized.includes(word.toLowerCase()));
+    const hitMoney = moneyWords.some((word) => normalized.includes(word.toLowerCase()));
+    const hitPrivacy = privacyWords.some((word) => normalized.includes(word.toLowerCase()));
+
+    if (hitMoney || (hitOffPlatform && hitPrivacy)) {
+      return {
+        hasRisk: true,
+        riskLevel: '较高风险',
+        decision: '已拦截',
+        summary: hitMoney
+          ? '消息涉及押金、转账或前置收费要求，存在明显招聘诈骗风险。'
+          : '消息同时包含脱离平台沟通和敏感信息索取，存在较高风险。',
+        actions: [
+          '删除押金、转账、保证金等前置收费表达。',
+          '请在平台内沟通岗位安排、面试时间和结算方式。'
+        ],
+        platformActions: ['当前消息不会直接发送。'],
+        shouldBlock: true,
+        confidence: '规则命中'
+      };
+    }
+
+    if (hitOffPlatform || hitPrivacy) {
+      return {
+        hasRisk: true,
+        riskLevel: '中风险',
+        decision: '建议修改',
+        summary: hitOffPlatform
+          ? '消息包含引导脱离平台沟通的表达，建议保留在平台内沟通。'
+          : '消息涉及敏感个人信息，建议减少不必要的信息索取。',
+        actions: ['建议修改措辞后再发送。'],
+        platformActions: [],
+        shouldBlock: false,
+        confidence: '规则命中'
+      };
+    }
+
+    return null;
   }
 
   private sortConversations(conversations: ConversationSummary[]): ConversationSummary[] {
